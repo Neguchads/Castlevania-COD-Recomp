@@ -1,0 +1,81 @@
+# build
+/out/
+/build/
+*.zip
+*.pdb
+*.exe
+*.obj
+*.o
+
+# recompiled code, derived from the game
+/generated/
+
+# user's own game files
+/assets/
+
+# private runtime data, generated code, artwork and local reports
+/releases/
+/reports/
+/captures/
+/art/
+/NOTAS.md
+/HANDOFF.md
+/ROADMAP.md
+/docs/extraction-manifest.json
+/docs/audio-signature-matches.json
+/docs/DECISIONS.md
+/docs/BUG-ANALYSIS-*.md
+/docs/experiments/
+/docs/palette-before-after.json
+/docs/xbe-identity.json
+/tools/clean-obsolete-versions.ps1
+/tools/add_playtest_trackers.py
+/tools/allow-qbittorrent-private.ps1
+/tools/inspect_playtest_seed.py
+/tools/make_playtest_torrent.py
+/tools/package_playtest_bundle.py
+/tools/playtest_bundle_install.ps1
+/tools/probe_torrent_metadata.py
+/tools/probe_torrent_transfer.py
+/tools/test_make_playtest_torrent.py
+/tools/configure-symbols.cmd
+/tools/probe-audio.cmd
+/compile-local.cmd
+/config/game.toml
+/src/common/ptbr_strings.private.h
+**/__pycache__/
+*.py[cod]
+*.bmp
+*.png
+*.ico
+*.iso
+*.xiso
+*.xbe
+*.dll
+*.lib
+*.sav
+*.save
+*.dmp
+*.tmp
+*.partial
+
+# runtime files
+settings.toml
+/logs/
+/hdd/
+/CrashDumps/
+
+# editors
+.vs/
+.vscode/
+.idea/
+
+# Local temporary folder
+.local
+
+# Previous private playtest distribution tooling
+/tools/package_playtest.py
+/tools/playtest_install.ps1
+/tools/test_package_playtest.py
+/docs/PLAYTEST-README.md
+/docs/PLAYTEST-ROADMAP.md

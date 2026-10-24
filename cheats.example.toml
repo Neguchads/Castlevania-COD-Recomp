@@ -1,0 +1,10 @@
+# Modelo sem cheats ativos. Valores abaixo sao comentarios, nao enderecos conhecidos.
+xbe_sha256 = "4bc21b87ce7bb39ec02beebf78fd2f5b59c234187fb9a62ac0a5ce4f8b0f9b7a"
+
+# Descomente apenas depois de validar o endereco e o valor desta versao Xbox.
+# [[cheats]]
+# name = "Nome do patch validado"
+# address = 0x00000000 # Substitua pelo endereco Xbox confirmado.
+# width = 4
+# expected = 0        # Valor que existe antes de ativar.
+# value = 0           # Novo valor.
