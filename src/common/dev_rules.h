@@ -1,0 +1,69 @@
+#pragma once
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <filesystem>
+#include <span>
+
+namespace dev_rules {
+struct MenuKeyPulse {
+    uint64_t until=0;
+    bool back=false;
+    void Press(uint64_t now,bool menu_visible) { until=now+100;back=menu_visible; }
+    bool Active(uint64_t now) const { return now<until; }
+    void Clear() { until=0; }
+};
+struct MenuChord {
+    static constexpr uint16_t mask = (1u << 6) | (1u << 7);
+    bool latched = false;
+    bool Update(uint16_t buttons) {
+        if (!(buttons & mask)) latched = false;
+        if (!latched && (buttons & mask) == mask) { latched = true; return true; }
+        return false;
+    }
+};
+struct ReleaseGate {
+    bool armed = false;
+    bool Filter(bool enabled, bool held) {
+        if (!enabled) { armed = false;return false; }
+        if (!held) armed = true;
+        return armed && held;
+    }
+};
+inline bool RelativeAsset(const std::filesystem::path& path) {
+    if (path.empty() || path.is_absolute() || path.has_root_name() || path.has_root_directory()) return false;
+    for (const auto& part : path)
+        if (part == ".." || part == "." || part.string().find(':') != std::string::npos) return false;
+    return true;
+}
+inline bool CheatAddress(uint32_t address, int width) {
+    return (width == 1 || width == 2 || width == 4) && address >= 0x10000 &&
+           uint64_t(address) + uint32_t(width) <= 0x04000000;
+}
+inline bool ReadOnlyGameOpen(uint32_t access, uint32_t disposition, uint32_t options) {
+    constexpr uint32_t mutations = 0x520D0116u;
+    return disposition == 1 && !(access & mutations) && !(options & 0x1000u);
+}
+inline uint32_t WidthMask(int width) {
+    return width == 1 ? 0xFFu : width == 2 ? 0xFFFFu : 0xFFFFFFFFu;
+}
+inline float AudioSample(float value, float gain) {
+    return std::isfinite(value) ? std::clamp(value * gain, -1.0f, 1.0f) : 0;
+}
+inline void MixAudio(std::span<float> frames, float gain, float balance, bool muted) {
+    const float level = muted ? 0 : std::clamp(gain, 0.0f, 1.0f);
+    const float left = level * (balance > 0 ? 1 - balance : 1);
+    const float right = level * (balance < 0 ? 1 + balance : 1);
+    for (size_t i = 0; i + 1 < frames.size(); i += 2) {
+        frames[i] = AudioSample(frames[i], left);
+        frames[i + 1] = AudioSample(frames[i + 1], right);
+    }
+}
+inline int16_t MoveAxis(bool positive, bool negative) {
+    return positive == negative ? 0 : positive ? 32767 : -32767;
+}
+inline int16_t MouseAxis(int delta, float sensitivity, bool invert) {
+    float value = std::clamp(float(delta) * sensitivity, -1.0f, 1.0f);
+    return int16_t(value * (invert ? -32767 : 32767));
+}
+}
