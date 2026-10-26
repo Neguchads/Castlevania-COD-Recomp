@@ -24,6 +24,8 @@ Mouse horizontal/vertical têm inversão separada. O padrão foi invertido em re
 
 Dificuldade > "Vida dos inimigos" (0,5x a 5x, chave `enemy_hp`) multiplica a vida máxima calculada pelo jogo para cada tipo de inimigo. Vale para inimigos que aparecem depois da mudança; troque de sala para ver.
 
+Mods > "Editor de inimigos" ajusta vida e tamanho por tipo de inimigo. Os ajustes ficam em `mods/Editor/enemies.toml` (`[enemy.N]` com `name`, `hp` de 0,5 a 5 e `scale` de 0,5 a 3) e só valem com o mod Editor ligado; nenhum arquivo do jogo muda. O tamanho é só visual: a área de acerto continua a original.
+
 A opção "inverter câmera" das Opções do jogo só inverte o eixo vertical, como no Xbox original. Para inverter o horizontal do analógico direito, ligue "Inverter camera horizontal (analogico direito)" em Controles > Controle (`invert_stick_x` em `settings.toml`).
 
 Godmode agora intercepta também o setter absoluto de HP, além do delta: ambos passaram pelos wrappers originais em teste isolado, preservando cura e outros personagens. O segundo bypass foi reproduzido antes da correção. Reteste em combate continua necessário.

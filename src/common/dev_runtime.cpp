@@ -21,6 +21,7 @@
 #include "translation_pack_rules.h"
 #include "presentation_math.h"
 #include "game_cheat_rules.h"
+#include "enemy_editor.h"
 #include "texture_lookup_rules.h"
 
 namespace kernel { bool VerifyReadOnlyOverlay(const std::string& path); }
@@ -424,6 +425,11 @@ bool VerifyProfileStorage() {
     LOGR("dev selftest: user profile save/serialization/no recursion=%d dev-profile texture reload=%d",ok&&rejected,dev_reload);
     return ok&&rejected&&dev_reload;
 }
+// Editor de inimigos segue o mod "Editor" (chamada com mods_lock tomado).
+static void RefreshEditorMod() {
+    const auto it = std::find_if(mods.begin(), mods.end(), [](const Mod& mod) { return mod.name == kEditorMod; });
+    RefreshEnemyEditor(it == mods.end() ? fs::path{} : it->root, it != mods.end() && it->enabled);
+}
 void ReloadMods() {
     std::lock_guard lock(mods_lock);
     mods.clear();
@@ -435,6 +441,7 @@ void ReloadMods() {
         mods.push_back({name, entry.path(), std::find(enabled_mods.begin(), enabled_mods.end(), name) != enabled_mods.end()});
     }
     std::sort(mods.begin(), mods.end(), [](const Mod& a, const Mod& b) { return a.name < b.name; });
+    RefreshEditorMod();
     texture_packs.store(std::any_of(mods.begin(),mods.end(),[](const Mod& mod){return mod.enabled;}));
     translation_textures.store(std::any_of(mods.begin(),mods.end(),[&](const Mod& mod){
         return mod.name==kTranslationTextureMod && fs::is_directory(mod.root/"textures",ec);
@@ -448,6 +455,7 @@ void EnableMod(size_t index, bool enabled) {
     mods[index].enabled = enabled;
     enabled_mods.clear();
     for (const auto& mod : mods) if (mod.enabled) enabled_mods.push_back(mod.name);
+    if (mods[index].name == kEditorMod) RefreshEditorMod();
     texture_packs.store(!enabled_mods.empty()); texture_generation.fetch_add(1);
 }
 std::optional<fs::path> ModTexture(uint64_t hash) {
@@ -878,6 +886,7 @@ void RunIntegrationChecks() {
     VerifyHudHooks();
     VerifyIndicatorHooks();
     VerifyCameraHooks();
+    VerifyEnemyEditorHooks();
     VerifyLanguageHooks();
     VerifyMenuBackground();
     LOGR("dev selftest: native character selection passed=%d",VerifyCharacterSelection());

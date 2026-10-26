@@ -80,6 +80,10 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 .local\test_enemy_probe.exe
 if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_enemy_editor.cpp -o .local\test_enemy_editor.exe
+if errorlevel 1 exit /b 1
+.local\test_enemy_editor.exe
+if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_economy_rules.cpp -o .local\test_economy_rules.exe
 if errorlevel 1 exit /b 1
 .local\test_economy_rules.exe
