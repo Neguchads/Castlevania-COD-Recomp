@@ -87,6 +87,7 @@ set_property(TARGET CastlevaniaCOD_code APPEND PROPERTY LINK_DEPENDS $<TARGET_FI
 add_custom_target(cod_modding_docs ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_CURRENT_SOURCE_DIR}/MODDING.md"
+        "${CMAKE_CURRENT_SOURCE_DIR}/MODDING.pt-BR.md"
         "${CMAKE_CURRENT_SOURCE_DIR}/cheats.example.toml"
         "$<TARGET_FILE_DIR:CastlevaniaCOD>"
     DEPENDS CastlevaniaCOD)
