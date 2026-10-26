@@ -6,6 +6,7 @@ Rodar de novo atualiza exe, dll, assets e mods. Saves (hdd) so sao copiados na p
 opcoes (settings.toml) so quando faltam: o que voce jogou ou apagou na pasta pronta fica assim.
 A pasta tem os arquivos do seu jogo: nao compartilhe.
 
+Prefira .\tools\release.ps1, que so chama este script depois do build e dos testes passarem.
 Uso (PowerShell, na pasta do projeto):  .\tools\make-portable.ps1 [-Destination <pasta>] [-DryRun]
 #>
 param(

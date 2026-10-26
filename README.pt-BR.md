@@ -57,12 +57,24 @@ Requisitos para compilar: Windows 10/11, Visual Studio 2022 com "Desenvolvimento
 2. Mantenha o checkout do `XboxXBERecomp` ao lado deste projeto. O fallback do SDK fica fixado no commit `e0de3e44d10443c1c9aad512f36baf133cdd4a60`.
 3. Rode `build.bat`. O primeiro build recompila o XBE (30 a 90 minutos).
 4. Abra `out\build\release\CastlevaniaCOD.exe`. **F1** ou **L3 + R3** abre o menu dev.
-5. Opcional: `.\tools\make-portable.ps1` monta uma pasta pronta para jogar, "Castlevania Curse of Darkness Recomp", na área de trabalho, com exe, dll, `assets`, mods, saves e opções. Ela funciona em qualquer disco. Ao rodar de novo, o script atualiza o jogo e os mods, mas não sobrescreve os saves nem as opções da pasta pronta. `-Destination` escolhe outro lugar e `-DryRun` só mostra o tamanho. A pasta precisa só do Visual C++ Redistributable 2015–2022 x64 e de uma placa com DirectX 12. Copie a pasta inteira e mantenha as datas dos arquivos: sem a pasta `compiler`, o jogo só usa a dll se ela for mais nova que o exe.
+5. Opcional: `.\tools\release.ps1 -Destination "<pasta de jogos>\Castlevania Curse of Darkness Recomp"` faz o build, roda os testes e só então atualiza a pasta de jogar e um atalho na área de trabalho; o destino fica guardado em `.local\release-destination.txt` e pastas extras de ferramentas (como o LLVM) vão uma por linha em `.local\tool-path.txt`. Por baixo, `.\tools\make-portable.ps1` monta uma pasta pronta para jogar, "Castlevania Curse of Darkness Recomp", na área de trabalho, com exe, dll, `assets`, mods, saves e opções. Ela funciona em qualquer disco. Ao rodar de novo, o script atualiza o jogo e os mods, mas não sobrescreve os saves nem as opções da pasta pronta. `-Destination` escolhe outro lugar e `-DryRun` só mostra o tamanho. A pasta precisa só do Visual C++ Redistributable 2015–2022 x64 e de uma placa com DirectX 12. Copie a pasta inteira e mantenha as datas dos arquivos: sem a pasta `compiler`, o jogo só usa a dll se ela for mais nova que o exe.
 6. Opcional: um `assets/icon.ico` seu vira o ícone do exe e da janela no próximo build (recurso `ICON 1`, compilado com `llvm-rc`). O arquivo fica fora do git.
 
 Antes de um commit ou PR, rode `tools\verify.cmd`: build, testes C++ e Python (`tools\test-local.cmd`) e varredura de segredos com gitleaks.
 
 Tradução, dublagem e o pacote 4K são gerados a partir das cópias do usuário; veja [TRANSLATION.pt-BR.md](docs/TRANSLATION.pt-BR.md) e [MODDING.pt-BR.md](MODDING.pt-BR.md).
+
+## Organização das pastas
+
+Mantenha três pastas separadas, para as ferramentas de build nunca irem parar na pasta de jogar:
+
+| Pasta | Para quê | O que tem |
+|---|---|---|
+| Código (este repositório) | Código e documentação que vão para o GitHub | `src/`, `tools/`, `docs/`, testes |
+| Pasta de build (um checkout com os seus `assets/`) | Montar e testar | `assets/`, ferramentas em `.local/`, `out/build/release` com a pasta `compiler`, capturas e relatos de teste |
+| Pasta de jogar (release) | Só jogar | exe, dll, `assets`, mods, saves, opções e guias; sem compilador |
+
+`tools\release.ps1` é o único caminho para a pasta de jogar: ele faz o build, roda `tools\test-local.cmd` e só então chama o `make-portable.ps1` e cria um atalho na área de trabalho. Se o build ou um teste falhar, a pasta de jogar não é tocada. Deixe a pasta de jogar num disco de dados (por exemplo uma pasta `Jogos`), não na área de trabalho: ela tem 6,6 GB.
 
 ## Demonstração
 

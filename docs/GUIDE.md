@@ -23,15 +23,15 @@ Linux: Direct3D 12 runs through Proton (vkd3d), but this was not tested.
 
 ## Install and launch
 
-**Ready-to-play folder:** in the project folder, run in PowerShell:
+**Play folder:** in the project folder, run in PowerShell:
 
 ```powershell
-.\tools\make-portable.ps1
+.\tools\release.ps1 -Destination "G:\Jogos\Castlevania Curse of Darkness Recomp"
 ```
 
-It creates "Castlevania Curse of Darkness Recomp" on the desktop, with the game, the mods, the saves and the settings. Double-click `CastlevaniaCOD.exe` to play.
+It builds, runs the tests and, only if everything passes, creates or updates the folder with the game, the mods, the saves and the settings, plus a "Castlevania Curse of Darkness Recomp" shortcut on the desktop. Use any folder on a data disk; the script remembers it, so next time `.\tools\release.ps1` is enough. Double-click the shortcut (or `CastlevaniaCOD.exe`) to play.
 
-- **Update:** run the script again after a build. It updates the game and the mods, but does not touch the folder's saves or settings.
+- **Update:** run `.\tools\release.ps1` again after changing the code. It updates the game and the mods, but does not touch the folder's saves or settings.
 - **Another disk or PC:** copy the whole folder with File Explorer, which keeps the file dates. The dll must stay newer than the exe; if it is not, the game looks for the `compiler` folder and stops.
 - **Start over:** delete the save folder in `hdd\E\UDATA\4b4e002d` (the one that contains `C2Save.dat`).
 - **Icon:** your own `assets\icon.ico` becomes the exe and window icon on the next build.
