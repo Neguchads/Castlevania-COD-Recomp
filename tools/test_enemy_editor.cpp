@@ -31,5 +31,8 @@ int main() {
     // Edicao padrao nao muda nada.
     const EnemyEdit neutral;
     if (!neutral.Neutral() || EnemyEdit{2, 1, {}}.Neutral() || EnemyEdit{1, 1.5f, {}}.Neutral()) return 10;
+    // Barra global de Dificuldade vezes o ajuste do tipo, limitado a 0,5x-3x no total.
+    if (CombinedEnemyScale(1, 1) != 1 || CombinedEnemyScale(2, 1.5f) != 3 || CombinedEnemyScale(2, .5f) != 1) return 11;
+    if (CombinedEnemyScale(3, 3) != kMaxEnemyScale || CombinedEnemyScale(.5f, .5f) != kMinEnemyScale || CombinedEnemyScale(NAN, 2) != 2) return 12;
     std::puts("Enemy editor: scale per actor without stacking, restore, game change, limits and neutral edit passed");
 }

@@ -13,6 +13,10 @@ inline constexpr float kMinEnemyScale = .5f, kMaxEnemyScale = 3.0f;
 inline float ClampEnemyScale(float factor) {
     return std::isfinite(factor) ? std::clamp(factor, kMinEnemyScale, kMaxEnemyScale) : 1.0f;
 }
+// Barra global de Dificuldade vezes o ajuste do tipo no mod Editor.
+inline float CombinedEnemyScale(float global, float edit) {
+    return ClampEnemyScale(ClampEnemyScale(global) * ClampEnemyScale(edit));
+}
 struct EnemyEdit {
     float hp = 1, scale = 1;
     std::string name;
