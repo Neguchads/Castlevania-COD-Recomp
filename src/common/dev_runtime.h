@@ -18,6 +18,8 @@ inline std::atomic<bool> minimap_enabled{true};
 inline std::atomic<bool> minimap_rotating{true};
 inline std::atomic<float> camera_heading{0};
 inline std::atomic<float> minimap_scale{1.0f},minimap_opacity{.8f};
+// Posicao do minimapa na tela, 0..1 em cada eixo (1,0 = canto superior direito)
+inline std::atomic<float> minimap_x{1.0f},minimap_y{0.0f};
 inline std::atomic<bool> hud_enabled{true},hud_quick_hide{false},hud_always_visible{false};
 inline std::atomic<float> hud_scale{.5f},hud_hide_delay{1.0f};
 inline std::atomic<float> game_menu_scale{1.0f};

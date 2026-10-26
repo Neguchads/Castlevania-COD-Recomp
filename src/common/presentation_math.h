@@ -9,6 +9,16 @@ inline float HudCoordinate(float value,float scale,bool horizontal) {
 }
 // Painel do inimigo (sub_00309010): nome e barra terminam em x=216 (0xD8), "Lv" em 240.
 // O ponto 216 vai para o centro da tela; a altura segue a ancora inferior do HUD.
+// Minimapa: posicao relativa 0..1 dentro da area livre da tela (1,0 = canto superior direito, o padrao);
+// a caixa nunca sai da tela, mesmo se a tela for menor que ela.
+struct Point2 { float x=0,y=0; };
+inline Point2 MinimapOrigin(Point2 display,Point2 size,float margin,float fx,float fy) {
+    auto axis=[&](float screen,float box,float f){
+        const float t=std::isfinite(f) ? std::clamp(f,0.0f,1.0f) : 0.0f;
+        return margin+t*std::max(0.0f,screen-box-2*margin);
+    };
+    return {axis(display.x,size.x,std::isfinite(fx) ? fx : 1.0f),axis(display.y,size.y,fy)};
+}
 inline float EnemyPanelCoordinate(float value,float scale) {
     return (value-216.0f)*scale;
 }

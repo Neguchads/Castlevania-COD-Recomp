@@ -168,6 +168,10 @@ void General() {
     ImGui::TextDisabled("Textos mudam na hora; imagens e vozes ja carregadas mudam ao reiniciar. Japones: Opcoes > Idioma no jogo.");
     Slider("Tamanho do minimapa",minimap_scale,.6f,1.6f,"%.2fx");
     Slider("Opacidade do minimapa",minimap_opacity,.2f,1.0f,"%.2f");
+    Slider("Posicao horizontal do minimapa",minimap_x,0,1,"%.2f");
+    Slider("Posicao vertical do minimapa",minimap_y,0,1,"%.2f");
+    if(ImGui::Button("Minimapa no canto superior direito",MenuSize(-1,30))) { minimap_x.store(1);minimap_y.store(0); }
+    ImGui::TextDisabled("0 = esquerda/topo, 1 = direita/base. Salvar opcoes grava a posicao.");
 }
 void DifficultyPage() {
     Heading("Dificuldade", "Multiplica o dano que o jogador e o Innocent Devil recebem.");
