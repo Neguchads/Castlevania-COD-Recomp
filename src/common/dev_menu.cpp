@@ -18,6 +18,8 @@
 #include "menu_nav.h"
 #include "game_cheat_rules.h"
 #include "enemy_editor.h"
+#include "menu_search.h"
+#include "menu_search_index.h"
 #include "presentation_math.h"
 #include "report_gallery.h"
 #include "translation_pack_rules.h"
@@ -43,6 +45,21 @@ void ShowPage(int target) {
     for(int tab=0;tab<int(std::size(kTabs));++tab)
         for(int title=0;title<kTabs[tab].count;++title)
             if(kTabs[tab].titles[title].page==target) { nav.tab=tab;EnterMenuOptions(nav,title);page=target;return; }
+}
+// Caminho "Aba > Pagina" mostrado nos resultados da busca.
+std::string PagePath(int target) {
+    for(const auto& tab:kTabs)
+        for(int title=0;title<tab.count;++title)
+            if(tab.titles[title].page==target) return std::string(tab.label)+" > "+tab.titles[title].label;
+    return {};
+}
+// Barra de filtro: texto digitado e a opcao escolhida nos resultados (a pagina rola ate ela).
+char search_text[64]{};
+std::string jump_label;
+void ScrollIfJumped(const char* label) {
+    if(jump_label.empty() || jump_label!=label) return;
+    ImGui::SetScrollHereY(.3f);
+    jump_label.clear();
 }
 char title[160] = {}, description[8192] = {};
 char profile_name[65] = "Meu perfil";
@@ -103,11 +120,13 @@ void Heading(const char* name, const char* subtitle) {
     ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 }
 bool Toggle(const char* label, std::atomic<bool>& setting) {
+    ScrollIfJumped(label);
     bool value = setting.load();
     if (!ImGui::Checkbox(label, &value)) return false;
     setting.store(value); return true;
 }
 bool Slider(const char* label, std::atomic<float>& setting, float minimum, float maximum, const char* format) {
+    ScrollIfJumped(label);
     float value = setting.load();
     ImGui::PushID(label);
     ImGui::TextUnformatted(label);
@@ -883,7 +902,33 @@ void Draw(double fps) {
                 nav.tab=i;nav.title=0;nav.level=MenuNav::Level::Titles;nav.focus=true;
             }
         }
+        // Filtro por texto (teclado; Ctrl+F foca). Fora da navegacao do controle, como as abas.
+        ImGui::SetNextItemWidth(-1);
+        if(ImGui::IsKeyChordPressed(ImGuiMod_Ctrl|ImGuiKey_F)) ImGui::SetKeyboardFocusHere();
+        const bool search_enter=ImGui::InputTextWithHint("##filtro","Filtrar opcoes (Ctrl+F): vida, camera, minimapa...",
+            search_text,sizeof(search_text),ImGuiInputTextFlags_EnterReturnsTrue);
         ImGui::PopItemFlag();
+        if(search_text[0]) {
+            ImGui::BeginChild("search",{0,-footer},ImGuiChildFlags_Border);
+            int found=0,target=-1;
+            const char* target_label=nullptr;
+            for(int i=0;i<int(std::size(kMenuSearchIndex));++i) {
+                const auto& entry=kMenuSearchIndex[i];
+                const std::string path=PagePath(entry.page),row=std::string(entry.label)+"   |   "+path;
+                if(path.empty() || !MenuSearchMatch(row,search_text)) continue;
+                ImGui::PushID(i);
+                const bool pick=ImGui::Selectable(row.c_str()) || (search_enter && !found);
+                ImGui::PopID();
+                if(pick && target<0) { target=entry.page;target_label=entry.label; }
+                ++found;
+            }
+            if(!found) ImGui::TextColored(muted_text,"Nada encontrado. Tente outra palavra, sem acento ou so o comeco.");
+            ImGui::EndChild();
+            if(target>=0) {
+                ShowPage(target);jump_label=target_label;search_text[0]=0;
+                LOGR("dev: menu search -> page %d '%s'",target,target_label);
+            }
+        } else {
         const auto& tab=kTabs[nav.tab];
         nav.title=std::clamp(nav.title,0,tab.count-1);
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,ImVec2{8*scale,4*scale});
@@ -905,6 +950,7 @@ void Draw(double fps) {
             case 16:DifficultyPage();break;case 17:EnemyEditorPage();break;
             case 18:EnemiesPage();break;case 19:EnemyRandomPage();break;}
         ImGui::PopItemWidth();ImGui::EndChild();
+        }
         ImGui::Separator();
         if(ImGui::Button("Salvar opcoes",{160*scale,32*scale})) app::Save();
         ImGui::SameLine();

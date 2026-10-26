@@ -28,6 +28,8 @@ Inimigos > Todos os inimigos > "Tamanho dos inimigos" (0,5x a 3x, chave `enemy_s
 
 Inimigos > Aleatório sorteia tamanho e vida de cada inimigo ao aparecer (`enemy_random`, faixas `enemy_random_scale_min/max` e `enemy_random_hp_min/max`). A chance de elite (`enemy_elite_chance`, 0 a 100) multiplica por cima com `enemy_elite_scale` e `enemy_elite_hp`. As camadas se multiplicam (todos x tipo x sorteio), com limite final de 0,5x a 3x no tamanho e 0,5x a 5x na vida. Os botões Original, Variados, Elites, Gigantes e Caotico preenchem tudo de uma vez. Trocar um tipo de inimigo por outro ainda está em pesquisa.
 
+O campo "Filtrar opções" no topo do menu dev (Ctrl+F) acha qualquer opção pelo nome, sem acento e em qualquer ordem de palavras; Enter abre a página dela.
+
 A opção "inverter câmera" das Opções do jogo só inverte o eixo vertical, como no Xbox original. Para inverter o horizontal do analógico direito, ligue "Inverter camera horizontal (analogico direito)" em Controles > Controle (`invert_stick_x` em `settings.toml`).
 
 Godmode agora intercepta também o setter absoluto de HP, além do delta: ambos passaram pelos wrappers originais em teste isolado, preservando cura e outros personagens. O segundo bypass foi reproduzido antes da correção. Reteste em combate continua necessário.
