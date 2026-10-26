@@ -30,6 +30,12 @@
 
 #include "app/app.h"
 #include "core/diag.h"
+#include "capture_path.h"
+#include "hud_render_rules.h"
+#include "final_copy_rules.h"
+#include "shadow_volume_rules.h"
+#include "multisample_rules.h"
+#include "texture_lookup_rules.h"
 #include "core/log.h"
 #include "gpu/backend.h"
 #include "gpu/ext.h"
@@ -37,6 +43,9 @@
 #include "gpu/texture.h"
 #include "gpu/vertex.h"
 #include "kernel/kernel.h"
+#include "report_gallery.h"
+#include <fstream>
+#include <iterator>
 
 using Microsoft::WRL::ComPtr;
 
@@ -45,6 +54,10 @@ namespace gpu {
 namespace {
 
 constexpr int kFrames = 3;
+// heap da UI: vaga 0 = fonte do ImGui; as demais giram para a previa da captura, assim nenhuma
+// vaga e reescrita enquanto um quadro ainda em voo na GPU a usa
+constexpr uint32_t kPreviewSlots = kFrames + 1;
+constexpr uint32_t kPreviewWidth = 1280;
 constexpr uint64_t kStaleFrames = 8;  // frames a target may go unused and still be read back
 constexpr uint64_t kUploadSize = 64ull << 20;
 // a draw starting with less than this left in the frame's ring waits for the GPU and starts the ring over
@@ -102,16 +115,6 @@ struct PerfScope {
     ~PerfScope() { acc += PerfMs(t); }
 };
 
-// F3 captures only with diag::CaptureDir set
-bool CaptureOn() {
-    if (diag::CaptureDir().empty()) {
-        LOG_FIRST(1, "capture: set XBE_CAPTURE_DIR");
-        dev::NotifyToast("F3: captura indisponivel; confira o log.");
-        return false;
-    }
-    return true;
-}
-
 const char* kBlitHlsl = R"(
 cbuffer B : register(b1) { float4 uvrect; float4 opts; float4 post; };
 Texture2D img : register(t0);
@@ -134,6 +137,10 @@ float4 psmain(O i) : SV_Target {
         for (int x = 0; x < n; x++) c += img.SampleLevel(ls, i.uv + px * ((float2(x, y) + 0.5) / n - 0.5), 0);
     c /= n * n;
     c.rgb *= opts.w;
+    if (any(post.yzw != 0)) {  // so o quadro final usa: as outras copias passam intactas
+        c.rgb = max((c.rgb - 0.5) * (1 + post.z) + 0.5 + post.y, 0);
+        c.rgb = max(lerp(dot(c.rgb, float3(.2126,.7152,.0722)).xxx, c.rgb, 1 + post.w), 0);
+    }
     if (post.x == 1) c.rgb = dot(c.rgb, float3(.2126,.7152,.0722)).xxx;
     if (post.x == 2) c.rgb *= .88 + .12 * cos(i.p.y * 3.14159265);
     if (opts.x > 0) c.rgb = float3(lut.Sample(ps, float2(c.r, 0.5)).r, lut.Sample(ps, float2(c.g, 0.5)).g, lut.Sample(ps, float2(c.b, 0.5)).b);
@@ -387,6 +394,7 @@ struct DrawTextures {
     bool rt[4] = {};            // stage samples a render target
     float k[4] = {1, 1, 1, 1};  // Extension::Sample's k
     float wide[4] = {};         // host texels per console texel of a target read into a smaller one, 0 otherwise
+    bool pack[4] = {};          // stage samples a texture pack replacement
 };
 
 // a draw's shaders: what they are made from, their cache keys, the hashes Compile returned and the compiled blobs
@@ -508,6 +516,7 @@ private:
     ID3D12Resource* BindGuestTexture(const State& s, int stage, const TextureDesc& d, const FormatInfo& fi,
                                      DrawTextures& stages);
     bool CreateTexture(Tex& tx, const TextureDesc& d, const FormatInfo& fi, uint64_t key);
+    bool CreatePackTexture(Tex& tx, const dev::TextureImage& image, uint64_t key);
     void UploadTexture(Tex& tx, const TextureDesc& d, const FormatInfo& fi, const uint8_t* p, const uint32_t* colours,
                        bool same);
     void UploadTextureLevel(Tex& tx, uint32_t f, uint32_t l, const std::vector<uint8_t>& px, uint32_t pitch);
@@ -532,10 +541,10 @@ private:
     void CaptureShader(const char* kind, uint64_t key, const std::string& src);
     void SetTextureViewsAndSamplers(const State& s, const Assembled& a, DrawTextures& stages);
     uint32_t EnsureStageSamplers(const State& s, const DrawTextures& stages);
-    void SetViewportScissor(const State& s, uint32_t gw);
+    void SetViewportScissor(const State& s, GuestExtent size);
     void SetBlendFactorStencilRef(const State& s);
-    void DrawGeometry(const Assembled& a);
-    void UploadVertexBuffers(const Assembled& a);
+    void DrawGeometry(const Assembled& a,bool repair_final_copy);
+    void UploadVertexBuffers(const Assembled& a,bool repair_final_copy);
     // visibility tests
     bool EnsureQueries();
     uint32_t BeginCountedDraw(const State& s);
@@ -565,6 +574,7 @@ private:
     void DrawFrame(Target* t, uint32_t bi);
     void BlitFrame(Target& t);
     void RenderUi();
+    void LoadReportPreview(const std::filesystem::path& bmp);
     void ReleaseOldTextures();
     void ResetFrame();
     void CountFps();
@@ -653,6 +663,8 @@ private:
     ComPtr<ID3D12DescriptorHeap> rtv_heap_;
     ComPtr<ID3D12DescriptorHeap> dsv_heap_;
     ComPtr<ID3D12DescriptorHeap> ui_heap_;
+    Tex preview_{};
+    uint32_t preview_slot_ = 0;
     uint32_t srv_inc_ = 0;
     uint32_t smp_inc_ = 0;
     uint32_t rtv_inc_ = 0;
@@ -668,6 +680,7 @@ private:
     std::unordered_map<uint64_t, Target> targets_;
     std::unordered_map<uint32_t, uint64_t> target_used_;  // target address to the frame it was last used
     std::unordered_map<uint64_t, Tex> textures_;  // by data address, a P8 texture's with its palette's above
+    texture_lookup::FrameMemo hd_hash_memo_;      // hash estavel dos pacotes HD, um por textura por quadro
     std::unordered_map<uint64_t, ComPtr<ID3D12PipelineState>> blit_psos_;
     Extension* ext_ = nullptr;
     // one frame capture: every draw in a text file, each target as the frame leaves it, the textures it read
@@ -691,6 +704,8 @@ private:
     bool ramp_dirty_ = false;
     bool gamma_ = false;
     int presentation_shader_ = 0;
+    // brilho (soma), contraste - 1 e saturacao - 1 so no quadro final: zero nao muda a imagem
+    float present_adjust_[3] = {};
     Target* bound_rt_ = nullptr;
     Target* bound_ds_ = nullptr;
     Target* draw_rt_ = nullptr;  // the draw's targets, the bound ones go when a texture's copy is drawn
@@ -835,7 +850,7 @@ void D3D12Backend::CreateHeaps() {
     smp_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, kSamplerCount, true, smp_heap_);
     rtv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kRtvCount + kFrames, false, rtv_heap_);
     dsv_inc_ = CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kDsvCount, false, dsv_heap_);
-    CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, true, ui_heap_);
+    CreateHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1 + kPreviewSlots, true, ui_heap_);
     for (uint32_t i = kRtvCount; i-- > 0;) free_rtv_.push_back(i);
     for (uint32_t i = kDsvCount; i-- > 0;) free_dsv_.push_back(i);
 }
@@ -1327,7 +1342,7 @@ void D3D12Backend::Blit(ID3D12Resource* src, DXGI_FORMAT fmt, const float uvrect
     Alloc cb = Upload(256, 256);
     float c[12] = {uvrect[0], uvrect[1], uvrect[2], uvrect[3],
                   o.gamma ? 1.0f : 0.0f, o.alpha ? 1.0f : 0.0f, float(o.taps), o.mul,
-                  float(presentation_shader_), 0, 0, 0};
+                  float(presentation_shader_), present_adjust_[0], present_adjust_[1], present_adjust_[2]};
     std::memcpy(cb.cpu, c, sizeof(c));
     DrawFullScreen(EnsureBlitPipeline(o.rtv, o.over), cb.gpu, slot, si);
 }
@@ -1518,7 +1533,8 @@ void D3D12Backend::FillPipelineDesc(const PsoKey& k, ID3DBlob* vs, ID3DBlob* ps,
     d.RasterizerState.FrontCounterClockwise = k.ccw;
     d.RasterizerState.DepthBias = k.zbias;
     d.RasterizerState.SlopeScaledDepthBias = k.zslope;
-    d.RasterizerState.DepthClipEnable = TRUE;
+    d.RasterizerState.DepthClipEnable = cod_graphics::DepthClip(k.sten,k.wmask,k.zwrite,k.zen,
+        k.topo==uint32_t(Topology::Triangles));
     FillDepthStencilDesc(k, d.DepthStencilState);
     d.PrimitiveTopologyType = TopologyType(k.topo);
     d.NumRenderTargets = k.has_rt ? 1 : 0;
@@ -1645,6 +1661,47 @@ bool D3D12Backend::CreateTexture(Tex& tx, const TextureDesc& d, const FormatInfo
     return true;
 }
 
+// textura de um pacote HD: BGRA8 (BMP) ou BC7 com mipmaps (DDS), enviada inteira uma vez
+bool D3D12Backend::CreatePackTexture(Tex& tx, const dev::TextureImage& image, uint64_t key) {
+    g_perf.newtex++;
+    if (tx.res) CurrentFrame().garbage.push_back(tx.res);
+    tx = Tex{};
+    const bool bc7 = image.format == dev::PackFormat::Bc7;
+    tx.fmt = bc7 ? DXGI_FORMAT_BC7_UNORM : DXGI_FORMAT_B8G8R8A8_UNORM;
+    tx.levels = image.levels;
+    tx.d.width = image.width;
+    tx.d.height = image.height;
+    tx.d.depth = 1;
+    tx.d.levels = image.levels;
+    D3D12_HEAP_PROPERTIES hp{D3D12_HEAP_TYPE_DEFAULT};
+    D3D12_RESOURCE_DESC td{};
+    td.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    // BC7 pede o nivel 0 em multiplos de 4; os niveis menores o D3D12 arredonda sozinho
+    td.Width = bc7 ? (image.width + 3) & ~3u : image.width;
+    td.Height = bc7 ? (image.height + 3) & ~3u : image.height;
+    td.DepthOrArraySize = 1;
+    td.MipLevels = UINT16(image.levels);
+    td.Format = tx.fmt;
+    td.SampleDesc.Count = 1;
+    if (FAILED(dev_->CreateCommittedResource(&hp, D3D12_HEAP_FLAG_NONE, &td, D3D12_RESOURCE_STATE_COPY_DEST, nullptr,
+                                             IID_PPV_ARGS(&tx.res)))) {
+        textures_.erase(key);
+        return false;
+    }
+    size_t offset = 0;
+    std::vector<uint8_t> level;
+    for (uint32_t l = 0; l < image.levels; l++) {
+        const uint32_t w = std::max(1u, image.width >> l), h = std::max(1u, image.height >> l);
+        const size_t size = size_t(dev::PackLevelSize(image.format, w, h));
+        level.assign(image.bgra.begin() + ptrdiff_t(offset), image.bgra.begin() + ptrdiff_t(offset + size));
+        UploadTextureLevel(tx, 0, l, level, uint32_t(dev::PackLevelPitch(image.format, w)));
+        offset += size;
+    }
+    D3D12_RESOURCE_STATES st = D3D12_RESOURCE_STATE_COPY_DEST;
+    Transition(tx.res.Get(), st, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+    return true;
+}
+
 void CopyLevelRows(uint8_t* out, const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& fp, UINT rows, UINT64 row_size,
                    const std::vector<uint8_t>& px, uint32_t pitch) {
     uint32_t slices = fp.Footprint.Depth;
@@ -1738,33 +1795,49 @@ ID3D12Resource* D3D12Backend::BindGuestTexture(const State& s, int stage, const 
     TexInfo& info = stages.info[stage];
     StagePalette palette;
     ReadStagePalette(s, stage, d, palette);
-    if ((dev::texture_packs || dev::texture_dump) && !d.cube && d.depth == 1 && TotalSize(d) <= 16u*1024u*1024u) {
+    if ((dev::HdTexturesActive() || dev::texture_dump) && !d.cube && d.depth == 1 && TotalSize(d) <= 16u*1024u*1024u) {
         const auto* original = static_cast<const uint8_t*>(kernel::HostPtr(d.data));
-        uint64_t stable = Hash(original, TotalSize(d));
-        stable = Hash(&d.format, sizeof(d.format), stable);
-        stable = Hash(&d.width, sizeof(d.width), stable);
-        stable = Hash(&d.height, sizeof(d.height), stable) ^ palette.hash;
-        if (dev::texture_dump && fi.host == Host::BGRA8) {
+        // bytes hasheados uma vez por textura por quadro, como a checagem de mudanca do caminho normal:
+        // a cada desenho custava ~4,6 ms por quadro na caverna da captura F3 203239 (544 binds, 31 texturas)
+        uint64_t memo_key = Hash(&d.data, sizeof(d.data), palette.hash);
+        memo_key = Hash(&d.format, sizeof(d.format), memo_key);
+        memo_key = Hash(&d.width, sizeof(d.width), memo_key);
+        memo_key = Hash(&d.height, sizeof(d.height), memo_key);
+        bool fresh = false;
+        const uint64_t stable = hd_hash_memo_.Get(memo_key, presents_, [&] {
+            fresh = true;
+            uint64_t h = Hash(original, TotalSize(d));
+            h = Hash(&d.format, sizeof(d.format), h);
+            h = Hash(&d.width, sizeof(d.width), h);
+            return Hash(&d.height, sizeof(d.height), h) ^ palette.hash;
+        });
+        if (dev::texture_dump && fresh && fi.host == Host::BGRA8) {
             std::vector<uint8_t> pixels;
             uint32_t pitch = 0;
             DecodeLevel(d, 0, 0, original, palette.va ? palette.colours : nullptr, pixels, pitch);
             dev::DumpTexture(stable, d.width, d.height, pixels);
         }
-        if (dev::texture_packs) if (auto replacement = dev::ReplacementTexture(stable)) {
-            TextureDesc hd = d;
-            hd.format = 0x12; hd.width = replacement->width; hd.height = replacement->height;
-            hd.pitch = hd.width * 4; hd.linear = true; hd.levels = 1;
-            const uint64_t hd_key = stable ^ 0x48445041434B0000ull;
+        const uint64_t hd_key = stable ^ 0x48445041434B0000ull;
+        const auto made = textures_.find(hd_key);
+        // geracao lida uma vez: recarga dos mods durante o upload nao marca a textura velha como atual
+        const uint64_t generation = dev::texture_generation.load() + 1ull;
+        // ja na placa e da carga atual dos mods: sem consultar o pacote de novo
+        const bool resident = made != textures_.end() && made->second.res && made->second.sig == generation;
+        std::shared_ptr<const dev::TextureImage> replacement;
+        if (dev::HdTexturesActive() && !resident) replacement = dev::ReplacementTexture(stable);
+        if (dev::HdTexturesActive() && (resident || replacement)) {
             Tex& tx = textures_[hd_key];
-            const bool same = SameTexture(tx, hd);
-            if (!same && !CreateTexture(tx, hd, Format(hd.format), hd_key)) return nullptr;
-            if (!same || tx.sig != dev::texture_generation.load() + 1ull) {
-                UploadTexture(tx, hd, Format(hd.format), replacement->bgra.data(), nullptr, same);
-                tx.sig = dev::texture_generation.load() + 1ull;
-                  LOG_FIRST(20, "mods: texture uploaded to GPU %016llX %ux%u", static_cast<unsigned long long>(stable), hd.width, hd.height);
+            // feita de novo quando os mods recarregam (outro arquivo pode ter outro tamanho ou formato)
+            if (!resident) {
+                if (!CreatePackTexture(tx, *replacement, hd_key)) return nullptr;
+                tx.sig = generation;
+                LOG_FIRST(20, "mods: texture uploaded to GPU %016llX %ux%u %s, %u levels",
+                          static_cast<unsigned long long>(stable), replacement->width, replacement->height,
+                          replacement->format == dev::PackFormat::Bc7 ? "BC7" : "BGRA8", replacement->levels);
             }
             tx.frame = presents_ + 1;
-            FillTextureView(tx, hd, stages.sv[stage]);
+            FillTextureView(tx, tx.d, stages.sv[stage]);
+            stages.pack[stage] = true;
             return tx.res.Get();
         }
     }
@@ -1803,6 +1876,7 @@ ID3D12Resource* D3D12Backend::BindTexture(const State& s, int stage, DrawTexture
     stages.rt[stage] = false;
     stages.k[stage] = 1;
     stages.wide[stage] = 0;
+    stages.pack[stage] = false;
     sv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     sv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
     sv.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
@@ -1835,6 +1909,9 @@ D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stage
     uint32_t min = t[kTssMinFilter];
     uint32_t mip = t[kTssMipFilter];
     auto lin = [](uint32_t f) { return f >= kTexfLinear; };
+    // pacote HD com mipmaps: o jogo amostrava um nivel so; filtrar entre niveis evita tremido ao reduzir 4K
+    const bool pack_mips = stages.pack[i] && lin(min) && stages.sv[i].Texture2D.MipLevels > 1;
+    if (pack_mips) mip = kTexfLinear;
     D3D12_FILTER_TYPE fmin = lin(min) ? D3D12_FILTER_TYPE_LINEAR : D3D12_FILTER_TYPE_POINT;
     D3D12_FILTER_TYPE fmag = lin(mag) ? D3D12_FILTER_TYPE_LINEAR : D3D12_FILTER_TYPE_POINT;
     D3D12_FILTER_TYPE fmip = mip == kTexfLinear ? D3D12_FILTER_TYPE_LINEAR : D3D12_FILTER_TYPE_POINT;
@@ -1852,7 +1929,7 @@ D3D12_SAMPLER_DESC StageSampler(const State& s, int i, const DrawTextures& stage
     sd.AddressV = Address(t[kTssAddressV]);
     sd.AddressW = Address(t[kTssAddressW]);
     sd.MipLODBias = Bits(t[kTssMipLodBias]);
-    sd.MinLOD = float(t[kTssMaxMipLevel]);
+    sd.MinLOD = pack_mips ? 0.0f : float(t[kTssMaxMipLevel]);
     sd.MaxLOD = mip ? D3D12_FLOAT32_MAX : sd.MinLOD;
     Color(t[kTssBorderColor], sd.BorderColor);
     if (stages.info[i].shadow) {
@@ -2217,10 +2294,26 @@ void FillLightConstants(const State& s, const FixedKey& fk, DrawConstants& c) {
     }
 }
 
+bool PetHighlightDraw(const State& s,const DrawShaders& sh) {
+    return cod_hud::PetHighlight(sh.vkey,sh.pkey,[&] {
+        TextureDesc noise{},mask{},colour{};
+        if(!s.textures[0] || !s.textures[1] || !s.textures[2] ||
+           !Describe(s.textures[0],noise) || !Describe(s.textures[1],mask) || !Describe(s.textures[2],colour))return true;
+        if(!cod_hud::PetTextureSet(noise.width,noise.height,mask.width,mask.height,mask.data,
+                                  colour.width,colour.height,colour.data))return true;
+        return dev::NativeMenuActive(kernel::g_base);
+    });
+}
+constexpr int kVsConstantBias = 96;
 void D3D12Backend::UploadConstants(const State& s, const DrawShaders& sh, const PsoKey& k, const DrawTextures& stages,
                                    GuestExtent size, DrawConstants& c) {
     Alloc vc = Upload(sizeof(s.vsc), 256);
     std::memcpy(vc.cpu, s.vsc.data(), sizeof(s.vsc));
+    if(PetHighlightDraw(s,sh)) {
+        auto* constants=reinterpret_cast<float(*)[4]>(vc.cpu);
+        cod_hud::ScaleHighlight(constants[94+kVsConstantBias],constants[95+kVsConstantBias],
+            dev::hud_scale.load(),float(size.h));
+    }
     Alloc dc = Upload(sizeof(DrawConstants), 256);
     FillSurfaceConstants(s, size, c);
     // points: host pixels per console pixel, also keeps them off the far edge pull out of screen passes
@@ -2256,7 +2349,6 @@ void D3D12Backend::CaptureTextures(const State& s, const DrawTextures& stages) {
 
 // s.vsc holds the 192 vertex shader constants in hardware order: D3D register + 96
 constexpr int kVsConstants = 192;
-constexpr int kVsConstantBias = 96;
 
 void D3D12Backend::CaptureInputs(const State& s, const Assembled& a, const DrawConstants& c) {
     fprintf(cap_, "\n     verts");
@@ -2311,12 +2403,16 @@ void D3D12Backend::CaptureDraw(const State& s, uint32_t prim, uint32_t count, co
             cap_i_++, s.rt.data, bound_ds_ ? s.zs.data : 0, prim, count, s.vs_handle, s.ps ? s.ps->handle : 0, k.blend,
             k.src, k.dst, k.zen, k.zfunc, k.zwrite, k.zbias, k.zslope, k.cull, k.wmask, c.pc[0][0], c.pc[0][1],
             c.pc[0][2], c.pc[0][3]);
+    fprintf(cap_," ccw=%u stencil=%u func=%X mask=%X writeMask=%X fail=%X zfail=%X pass=%X ref=%X depthClip=%u",
+        k.ccw,k.sten,k.sfunc,k.smask,k.swmask,k.sfail,k.szfail,k.spass,
+        SimpleState(s,kMStencilRef)&0xFF,unsigned(cod_graphics::DepthClip(k.sten,k.wmask,k.zwrite,k.zen,
+        k.topo==uint32_t(Topology::Triangles))));
     CaptureTextures(s, stages);
 }
 
 // small draws: their inputs and constants; then ends the draw's line
 void D3D12Backend::EndDrawCapture(const State& s, const Assembled& a, uint32_t count, const DrawConstants& c) {
-    if (count <= kQuadVertices) CaptureInputs(s, a, c);
+    if (count <= kQuadVertices || (s.rs[kRsStencilEnable] && SimpleState(s,kMColorWriteEnable)==0)) CaptureInputs(s, a, c);
     fputc('\n', cap_);
 }
 
@@ -2361,21 +2457,22 @@ void D3D12Backend::SetTextureViewsAndSamplers(const State& s, const Assembled&, 
 }
 
 // viewport covers the target, the guest viewport is in the shader; scissor clips to it
-void D3D12Backend::SetViewportScissor(const State& s, uint32_t gw) {
+void D3D12Backend::SetViewportScissor(const State& s, GuestExtent size) {
     float W = float(bound_rt_ ? bound_rt_->w : bound_ds_->w);
     float H = float(bound_rt_ ? bound_rt_->h : bound_ds_->h);
     D3D12_VIEWPORT vp{0, 0, W, H, 0, 1};
     cl_->RSSetViewports(1, &vp);
-    float sc = W / gw;
-    LONG x0 = LONG(s.viewport.x * sc);
-    LONG y0 = LONG(s.viewport.y * sc);
-    LONG x1 = LONG((s.viewport.x + s.viewport.w) * sc);
-    LONG y1 = LONG((s.viewport.y + s.viewport.h) * sc);
+    // por eixo: no modo multisample 2X so a largura logica encolhe
+    float sx = W / size.w, sy = H / size.h;
+    LONG x0 = LONG(s.viewport.x * sx);
+    LONG y0 = LONG(s.viewport.y * sy);
+    LONG x1 = LONG((s.viewport.x + s.viewport.w) * sx);
+    LONG y1 = LONG((s.viewport.y + s.viewport.h) * sy);
     if (s.scissor_count) {
-        x0 = std::max(x0, LONG(s.scissors[0] * sc));
-        y0 = std::max(y0, LONG(s.scissors[1] * sc));
-        x1 = std::min(x1, LONG(s.scissors[2] * sc));
-        y1 = std::min(y1, LONG(s.scissors[3] * sc));
+        x0 = std::max(x0, LONG(s.scissors[0] * sx));
+        y0 = std::max(y0, LONG(s.scissors[1] * sy));
+        x1 = std::min(x1, LONG(s.scissors[2] * sx));
+        y1 = std::min(y1, LONG(s.scissors[3] * sy));
     }
     D3D12_RECT rect{std::clamp<LONG>(x0, 0, LONG(W)), std::clamp<LONG>(y0, 0, LONG(H)),
                     std::clamp<LONG>(x1, 0, LONG(W)), std::clamp<LONG>(y1, 0, LONG(H))};
@@ -2397,19 +2494,27 @@ D3D_PRIMITIVE_TOPOLOGY PrimitiveTopology(const Assembled& a) {
     return a.strip ? D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP : D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 }
 
-void D3D12Backend::UploadVertexBuffers(const Assembled& a) {
+void D3D12Backend::UploadVertexBuffers(const Assembled& a,bool repair_final_copy) {
     D3D12_VERTEX_BUFFER_VIEW vbv[16];
     for (uint32_t i = 0; i < a.buffer_count; i++) {
         const VertexBuffer& b = a.buffers[i];
         Alloc vb = Upload(b.bytes, 16);
         std::memcpy(vb.cpu, b.src, b.bytes);
+        if(repair_final_copy && i==a.elements[2].buffer) {
+            const auto& p=a.buffers[a.elements[0].buffer];
+            if(p.src && cod_graphics::RepairFinalCopy({p.src,p.bytes},p.stride,a.elements[0].offset,
+                {static_cast<uint8_t*>(vb.cpu),b.bytes},b.stride,a.elements[2].offset)) {
+                LOG_FIRST(1,"graphics: final copy overscan UV corrected on host upload");
+                if(cap_)fprintf(cap_,"     correction: final-copy UV y=-16..496 -> 0..480 (host upload only)\n");
+            }
+        }
         vbv[i] = {vb.gpu, b.bytes, b.stride};
     }
     cl_->IASetVertexBuffers(0, a.buffer_count, vbv);
 }
 
-void D3D12Backend::DrawGeometry(const Assembled& a) {
-    UploadVertexBuffers(a);
+void D3D12Backend::DrawGeometry(const Assembled& a,bool repair_final_copy) {
+    UploadVertexBuffers(a,repair_final_copy);
     cl_->IASetPrimitiveTopology(PrimitiveTopology(a));
     if (a.index_count) {
         uint32_t ibytes = a.index_count * (a.index16 ? 2 : 4);
@@ -2531,6 +2636,7 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     pk.quad = sh.quad;
     sh.pkey = Hash(&pk, sizeof(pk));
     EnsurePixelShader(pk, sh);
+    if(!dev::hud_enabled && PetHighlightDraw(s,sh))return;
     if (!sh.vs_code || !sh.ps_code) { LOG_FIRST(8, "d3d12: draw rejected: shader bytecode vs %d ps %d", bool(sh.vs_code), bool(sh.ps_code)); return; }
 
     // pipeline
@@ -2543,6 +2649,15 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     // constants
     GuestExtent size;
     SurfaceSize(bound_rt_ ? s.rt : s.zs, size.w, size.h);
+    {
+        // modo multisample do XDK: posicoes chegam na grade logica menor e cobrem o alvo inteiro
+        const auto& target = bound_rt_ ? s.rt : s.zs;
+        const uint32_t mode = multisample_rules::EffectiveMode(target.header == multisample_rules::back_buffer.load(),
+            s.rs[kRsMultiSampleMode], s.rs[kRsMultiSampleRenderTargetMode]);
+        const auto factor = multisample_rules::ModeFactor(mode, gpu::Format((target.format >> 8) & 0xFF).swizzled);
+        size.w = multisample_rules::Logical(size.w, factor.x);
+        size.h = multisample_rules::Logical(size.h, factor.y);
+    }
     DrawConstants c{};
     UploadConstants(s, sh, k, stages, size, c);
 
@@ -2554,12 +2669,16 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
 
     // texture views and samplers, viewport and scissor, blend factor and stencil reference
     SetTextureViewsAndSamplers(s, a, stages);
-    SetViewportScissor(s, size.w);
+    SetViewportScissor(s, size);
     SetBlendFactorStencilRef(s);
 
     // geometry, counted while the title runs a visibility test
     uint32_t query = BeginCountedDraw(s);
-    DrawGeometry(a);
+    const bool repair_final_copy=cod_graphics::FinalCopy(sh.vkey,sh.pkey,stages.rt[0],size.w,size.h,
+        k.blend,k.zen,count) && a.vertex_count==4 && a.elements[0].format==DXGI_FORMAT_R32G32B32A32_FLOAT &&
+        a.elements[2].format==DXGI_FORMAT_R32G32_FLOAT && a.elements[0].buffer<a.buffer_count &&
+        a.elements[2].buffer<a.buffer_count;
+    DrawGeometry(a,repair_final_copy);
     EndCountedDraw(query);
 }
 
@@ -2845,7 +2964,7 @@ void D3D12Backend::StartCapture() {
     char stamp[32];
     snprintf(stamp, sizeof(stamp), "%02u%02u%02u", tm.wHour, tm.wMinute, tm.wSecond);
     std::error_code ec;
-    cap_dir_ = std::filesystem::weakly_canonical(app::ExeDir() / diag::CaptureDir() / stamp, ec);
+    cap_dir_ = std::filesystem::weakly_canonical(app::ExeDir() / cod_capture::Directory(diag::CaptureDir()) / stamp, ec);
     std::filesystem::create_directories(cap_dir_, ec);
     cap_ = _wfopen((cap_dir_ / "frame.txt").c_str(), L"w");
     cap_i_ = cap_rt_ = 0;
@@ -2895,12 +3014,38 @@ void D3D12Backend::BlitFrame(Target& t) {
     cl_->RSSetScissorRects(1, &scissor);
     Transition(t.res.Get(), t.state, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
     presentation_shader_ = dev::shader.load();
+    present_adjust_[0] = dev::brightness.load();
+    present_adjust_[1] = dev::contrast.load() - 1;
+    present_adjust_[2] = dev::saturation.load() - 1;
     Blit(t.res.Get(), t.fmt, uv, {.gamma = gamma_});
     presentation_shader_ = 0;
+    present_adjust_[0] = present_adjust_[1] = present_adjust_[2] = 0;
+}
+
+// captura salva em reports/: reduzida, enviada como textura BGRA8 e exposta ao ImGui pela vaga seguinte
+void D3D12Backend::LoadReportPreview(const std::filesystem::path& bmp) {
+    std::ifstream in(bmp, std::ios::binary);
+    const std::vector<uint8_t> bytes{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+    auto image = dev::DecodePackBmp(bytes);
+    constexpr uint64_t kPreviewKey = ~0ull;  // fora do mapa de texturas do jogo
+    if (!image || !CreatePackTexture(preview_, dev::ShrinkPreview(*image, kPreviewWidth), kPreviewKey)) {
+        LOGE("report preview: cannot load %s", bmp.string().c_str());
+        dev::SetReportPreview(bmp, 0, 0, 0);
+        return;
+    }
+    const uint32_t slot = 1 + preview_slot_++ % kPreviewSlots;
+    D3D12_SHADER_RESOURCE_VIEW_DESC sv{};
+    sv.Format = preview_.fmt;
+    sv.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    sv.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    sv.Texture2D.MipLevels = 1;
+    dev_->CreateShaderResourceView(preview_.res.Get(), &sv, Cpu(ui_heap_.Get(), slot, srv_inc_));
+    dev::SetReportPreview(bmp, Gpu(ui_heap_.Get(), slot, srv_inc_).ptr, preview_.d.width, preview_.d.height);
 }
 
 void D3D12Backend::RenderUi() {
     std::lock_guard lock(app::UiLock());
+    if (auto bmp = dev::TakeReportPreviewRequest()) LoadReportPreview(*bmp);
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     dev::UpdateUiInput();
@@ -2980,6 +3125,24 @@ void D3D12Backend::CountFps() {
 void LogPerf() {
     static PerfClock::time_point perf_start = PerfClock::now();
     static uint64_t perf_frames = 0;
+    // pior quadro e quadros lentos no segundo: a media esconde os travamentos curtos
+    static PerfClock::time_point last_frame = PerfClock::now();
+    static double worst_ms = 0;
+    static uint32_t slow_frames = 0;
+    static const bool started = (g_perf = Perf{}, true);  // contadores acumulados antes de ligar
+    (void)started;
+    const double frame_ms = PerfMs(last_frame);
+    last_frame = PerfClock::now();
+    if (frame_ms > 1000.0) {  // religado pelo menu depois de uma pausa: recomeça a contagem
+        g_perf = Perf{};
+        perf_start = last_frame;
+        perf_frames = 0;
+        worst_ms = 0;
+        slow_frames = 0;
+        return;
+    }
+    worst_ms = std::max(worst_ms, frame_ms);
+    if (frame_ms > 25.0) slow_frames++;
     perf_frames++;
     double el = PerfMs(perf_start);
     if (el >= 1000.0) {
@@ -3007,6 +3170,9 @@ void LogPerf() {
              p.sig_bytes / n / 1048576.0, p.texups / n, p.texup_bytes / n / 1048576.0, p.newtex / n,
              p.targets / n, p.rtups / n, p.shrinks / n, p.syncs / n, p.lates / n,
              (unsigned long long)p.shaders, (unsigned long long)p.psos);
+        LOGI("perf: worst frame %.1f ms, %u frames over 25 ms", worst_ms, slow_frames);
+        worst_ms = 0;
+        slow_frames = 0;
         g_perf = Perf{};
         perf_start = PerfClock::now();
         perf_frames = 0;
@@ -3017,7 +3183,7 @@ void D3D12Backend::Present(const Surface& front) {
     PerfScope perf_present{g_perf.present};
     if (cap_) {
         FinishCapture(front);
-    } else if (g_capture.exchange(false) && CaptureOn()) {
+    } else if (g_capture.exchange(false)) {
         StartCapture();
     }
     ResizeSwap();
@@ -3042,7 +3208,7 @@ void D3D12Backend::Present(const Surface& front) {
     ReleaseOldTextures();
     ResetFrame();
     CountFps();
-    if (diag::Perf()) LogPerf();
+    if (diag::Perf() || dev::perf_log.load()) LogPerf();
     ApplySettings();
 }
 

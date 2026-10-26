@@ -17,6 +17,7 @@
 #include "xdk/d3d8.h"
 #include "xdk/hle.h"
 #include "xdk/layout.h"
+#include "multisample_rules.h"
 
 using namespace kernel;
 
@@ -272,6 +273,7 @@ void SetFrameBuffers(const char* caller, uint32_t pp) {
     SetDev(kDevDepth, g_depth);
     SetDev(kDevBackBuffer, g_buffers[1]);
     SetDev(kDevFrontBuffer, g_buffers[1]);
+    multisample_rules::back_buffer.store(g_buffers[1]);  // MULTISAMPLEMODE vale so para ele
     float one = 1.0f, zs = g_depth && (R32(g_depth + 12) >> 8 & 0xFF) == 0x30 ? 65535.0f : 16777215.0f;
     std::memcpy(HostPtr(kDevice + kDevSuperX), &one, 4);
     std::memcpy(HostPtr(kDevice + kDevSuperY), &one, 4);
@@ -298,6 +300,7 @@ void VerticalBlank(X86Context& ctx) {
     for (;;) {
         next = std::max(next + std::chrono::nanoseconds(dev::RealWaitNanoseconds(16667000)), clock::now());
         std::this_thread::sleep_until(next);
+        if (dev::GamePaused()) continue;  // pausado pelo menu dev: sem vblank, o jogo nao conta quadros
         uint32_t count = Dev(XDK_CDevice_VBlankCount) + 1, swaps = Dev(kDevSwapCount);
         SetDev(XDK_CDevice_VBlankCount, count);
         ObjectRef event = FromPointer(kDevice + XDK_CDevice_VBlankEvent);
@@ -584,6 +587,20 @@ HLE_STDCALL(D3DDevice_Swap, 1) {
             if (g_backend) g_backend->Flush();
         }
         app::FinishHandover();
+    }
+    // menu dev aberto: o jogo para nesta troca de quadro; o quadro pronto continua na tela com o menu por cima
+    if (dev::GamePaused()) {
+        dev::PauseClock(true);
+        auto next = std::chrono::steady_clock::now();
+        while (dev::GamePaused()) {
+            {
+                std::lock_guard<std::recursive_mutex> lock(g_lock);
+                if (g_backend) g_backend->Present(SurfaceOf(g_buffers[1]));
+            }
+            next = std::max(next + std::chrono::microseconds(16667), std::chrono::steady_clock::now());
+            std::this_thread::sleep_until(next);
+        }
+        dev::PauseClock(false);
     }
     std::lock_guard<std::recursive_mutex> lock(g_lock);
     g_presents++;
