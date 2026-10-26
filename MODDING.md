@@ -10,13 +10,13 @@ Dificuldade (Jogabilidade > Dificuldade): presets Fácil, Normal, Difícil, Muit
 
 Pacotes de textura: os nomes dos arquivos (`<hash de 16 hex>.dds` ou `.bmp`) são lidos uma vez ao carregar os mods ou trocar o idioma. Arquivo novo copiado com o jogo aberto só aparece depois de recarregar os mods.
 
-Cheats: além de godmode e speedhack, "Vida cheia" (não revive), "Ouro maximo" (9.999.999), "Ganho de ouro" e "Ganho de EXP" (1x a 10x) e "Compras nao gastam ouro". Ficam salvos nas opções. Códigos de nome do jogo: @CRAZY (modo Crazy) e @TREVOR (jogar com Trevor), segundo guias; não testados nesta versão.
+Cheats: além de godmode e speedhack, "Vida cheia" (não revive), "MP cheio", "MP infinito" (só o Hector; o jogo não tem corações, as habilidades dos Devils gastam MP), "Ouro maximo" (9.999.999), "Ganho de ouro" e "Ganho de EXP" (1x a 10x) e "Compras nao gastam ouro". Ficam salvos nas opções. Códigos de nome do jogo: @CRAZY (modo Crazy) e @TREVOR (jogar com Trevor), segundo guias; não testados nesta versão.
 
 Save de Lament of Innocence: no PS2, ter o save de LoI no memory card libera a estátua Moai. Em Cheats, "Simular save de Lament of Innocence" faz o jogo achar esse save; ligue antes de começar um jogo novo ou carregar. O bônus fica gravado no save ao salvar.
 
 Botões de PlayStation: ligue o mod **PS2-Botoes** (Mods) para ver ✕ ○ □ △ L1 L2 R1 R2 no lugar de A B X Y L preto R branco, e em Controles > Controle aperte **Layout PS2** para L1/R1 virarem os gatilhos e L2/R2 o preto/branco, como no PS2. **Layout Xbox** volta ao padrão; a linha "Layout atual" mostra Xbox, PS2 ou personalizado. Para gerar o pack de novo: `python tools\hd_pack_match.py buttons --pack <pasta replacements do 4K PS2>`.
 
-Gráficos também têm brilho, contraste e saturação; Áudio tem "Silenciar quando a janela perde o foco". O cabeçalho mostra os IDs internos de mapa/sala; nomes das áreas ainda não foram identificados.
+Gráficos também têm brilho, contraste e saturação; Áudio tem "Silenciar quando a janela perde o foco". O cabeçalho e o Diagnóstico mostram o nome da área (tirado dos teleportes do jogo) com os IDs de mapa/sala; os mapas 0, 1, 7 e 12 ainda aparecem só com o ID. Em Suporte > Diagnóstico, "Pesquisar vida dos inimigos (log)" registra os campos do inimigo alvo que caem a cada golpe: ligue, mate 2 ou 3 inimigos e salve um relato.
 
 Mouse horizontal/vertical têm inversão separada. O padrão foi invertido em relação ao build anterior por pedido do usuário. WASD movimenta, setas controlam câmera; os dois grupos podem ser remapeados. Restaurar controles padrão repõe as teclas do port.
 
