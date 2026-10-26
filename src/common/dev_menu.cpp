@@ -349,13 +349,16 @@ void RestorePage(int target) {
         case 15: CancelControllerCapture();SetControllerMapping(IdentityControllerMap());break;
         case 6: SetSpeed(1.0f);for(auto& cheat:Cheats()) if(cheat.enabled) ToggleCheat(cheat,false);break;
         case 7: menu_preferences=MenuPreferences{};menu_geometry_reset=true;break;
+        // Os presets de Todos os inimigos tambem ligam o sorteio e as elites (pagina Aleatorio).
+        case 18: PageDefaults(19).Apply();break;
         case 17: for(const auto& row:EnemyEditorRows()) SetEnemyEdit(row.type,1,1);break;
         default: break;
     }
     LOGR("dev: page %d restored to default",target);
 }
+// Fora: Por tipo (17) e o mod Editor; zerar na memoria e depois "Salvar edicoes" apagaria o enemies.toml.
 void RestoreAllPages() {
-    for(int target=0;target<kMenuPageCount;++target) if(PageRestorable(target)) RestorePage(target);
+    for(int target=0;target<kMenuPageCount;++target) if(target!=17 && PageRestorable(target)) RestorePage(target);
     app::Save();
     LOGR("dev: all menu options restored to default");
     NotifyToast("Todas as opcoes do menu voltaram ao padrao.");
@@ -1081,7 +1084,8 @@ void Draw(double fps) {
         if(ImGui::Button(Tr("Restaurar padroes"),{190*scale,32*scale})) ImGui::OpenPopup("###confirm_defaults");
         if(ImGui::BeginPopupModal((std::string(Tr("Restaurar todos os padroes"))+"###confirm_defaults").c_str(),nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::TextUnformatted(Tr("Todas as opcoes do menu voltam ao padrao e sao salvas."));
-            ImGui::TextUnformatted(Tr("Ficam como estao: idioma do jogo e do menu, mods ligados, perfis e saves."));
+            ImGui::TextUnformatted(Tr("Inclui tela e resolucao, teclas, mapa do controle, cores e posicao do menu, cheats e velocidade."));
+            ImGui::TextUnformatted(Tr("Ficam como estao: idioma do jogo e do menu, mods ligados, edicoes por tipo, perfis e saves."));
             if(ImGui::Button(Tr("Restaurar tudo"),MenuSize(180,30))) { RestoreAllPages();ImGui::CloseCurrentPopup(); }
             ImGui::SameLine();
             if(ImGui::Button(Tr("Cancelar"),MenuSize(140,30))) ImGui::CloseCurrentPopup();
