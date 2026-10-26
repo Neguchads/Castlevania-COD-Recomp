@@ -2,8 +2,9 @@
 Monta uma pasta pronta para jogar: exe, dll, jogo (assets), mods, saves e opcoes.
 Padrao: "Castlevania Curse of Darkness Recomp" na area de trabalho. So clicar em CastlevaniaCOD.exe.
 
-Rodar de novo atualiza exe, dll, assets e mods. Saves (hdd) e opcoes (settings.toml) da pasta pronta
-nunca sao sobrescritos: o que voce jogou nela fica. A pasta tem os arquivos do seu jogo: nao compartilhe.
+Rodar de novo atualiza exe, dll, assets e mods. Saves (hdd) so sao copiados na primeira montagem e
+opcoes (settings.toml) so quando faltam: o que voce jogou ou apagou na pasta pronta fica assim.
+A pasta tem os arquivos do seu jogo: nao compartilhe.
 
 Uso (PowerShell, na pasta do projeto):  .\tools\make-portable.ps1 [-Destination <pasta>] [-DryRun]
 #>
@@ -56,9 +57,14 @@ if (-not (Test-DllCurrent $Destination)) { throw 'A copia perdeu a data da dll; 
 Copy-Tree $assets (Join-Path $Destination 'assets') @('/XF', '*.private.h')
 'Copiando mods (HD4K, PT-BR...)...'
 Copy-Tree (Join-Path $release 'mods') (Join-Path $Destination 'mods')
-# Saves e opcoes: so o que ainda nao existe no destino (/XC /XN /XO nao sobrescrevem nada).
-'Copiando saves e opcoes (sem sobrescrever os da pasta pronta)...'
-Copy-Tree (Join-Path $release 'hdd') (Join-Path $Destination 'hdd') @('/XC', '/XN', '/XO')
+# Saves: so na primeira montagem. Depois a pasta hdd e da pasta pronta (jogo novo, saves apagados de proposito).
+$saves = Join-Path $Destination 'hdd'
+if (-not (Test-Path $saves)) {
+    'Copiando saves do projeto (primeira montagem)...'
+    Copy-Tree (Join-Path $release 'hdd') $saves
+} else {
+    'Saves da pasta pronta mantidos como estao.'
+}
 foreach ($name in @('settings.toml', 'cheats.toml')) {
     $from = Join-Path $release $name; $to = Join-Path $Destination $name
     if ((Test-Path $from) -and -not (Test-Path $to)) { Copy-Item $from $to }
@@ -68,7 +74,8 @@ $readme = @'
 Castlevania: Curse of Darkness Recomp
 Para jogar: clique duas vezes em CastlevaniaCOD.exe.
 Menu de ferramentas: L3 + R3 no controle ou F1 no teclado.
-Saves ficam em hdd\E; opcoes em settings.toml. Nao apague essas duas coisas.
+Saves ficam em hdd\E\UDATA; opcoes em settings.toml. Para comecar do zero, apague a pasta
+do save dentro de hdd\E\UDATA\4b4e002d (a que tem C2Save.dat).
 Pastas: assets = arquivos do jogo, mods = texturas HD e traducao PT-BR.
 Se o Windows reclamar de MSVCP140.dll ou VCRUNTIME140.dll, instale o
 "Microsoft Visual C++ Redistributable 2015-2022 x64".
