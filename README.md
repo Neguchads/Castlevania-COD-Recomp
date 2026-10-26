@@ -76,6 +76,6 @@ This repository does not distribute ISO/XBE files, extracted files, the game's g
 
 The Brazilian Portuguese translation and dub are by HNNEWGAMES, STR Brasil, MATTH dubs and Os Aristocratas do Giz Vermelho. The 4K texture pack is by PlatinumMimic. Authors, roles and links are in [CREDITS.md](docs/CREDITS.md).
 
-The port is experimental and the full campaign has not been validated. Enemy HP works (validated in game); enemy and item size was fixed but still needs confirmation in game. Four maps without teleporters still have no name.
+The port is experimental and the full campaign has not been validated. What is validated in game, what only passed tests and what is experimental by design is listed in [Experimental features and status](docs/GUIDE.md#experimental-features-and-status). Four maps without teleporters still have no name.
 
 No license has been chosen yet for this project's changes: the code is visible, but that does not grant permission to reuse it. Runtime parts derived from XboxXBERecomp follow the MIT notice in [LICENSES/XboxXBERecomp-MIT.txt](LICENSES/XboxXBERecomp-MIT.txt); the SDK and the other dependencies keep their own licenses.

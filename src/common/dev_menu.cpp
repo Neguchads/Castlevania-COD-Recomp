@@ -16,6 +16,7 @@
 #include "dev_runtime.h"
 #include "menu_input.h"
 #include "menu_language.h"
+#include "menu_language_ui.h"
 #include "menu_nav.h"
 #include "game_cheat_rules.h"
 #include "drop_rules.h"
@@ -30,7 +31,7 @@ namespace dev {
 namespace {
 int page = 0;
 MenuNav nav;
-// Texto do menu no idioma escolhido (rodape ou Menu > Aparencia); o portugues do codigo e a chave.
+// Texto do menu no idioma escolhido (botoes no canto superior direito ou Menu > Aparencia); o portugues do codigo e a chave.
 const char* Tr(const char* pt) { return MenuText(pt,menu_english.load()); }
 void SetMenuEnglish(bool english) {
     menu_english.store(english);
@@ -691,7 +692,7 @@ void Appearance() {
     int menu_language=menu_english.load() ? 1 : 0;
     const char* menu_languages[]{"Português (Brasil)","English"};
     if(ImGui::Combo(Tr("Idioma do menu"),&menu_language,menu_languages,2)) SetMenuEnglish(menu_language==1);
-    ImGui::TextColored(muted_text,"%s",Tr("Muda so o texto destas ferramentas. Os botoes PT-BR e English no rodape fazem o mesmo."));
+    ImGui::TextColored(muted_text,"%s",Tr("Muda so o texto destas ferramentas. Os botoes PT-BR e EN no canto superior direito fazem o mesmo."));
     Toggle("Pausar o jogo com o menu aberto",pause_with_menu);
     ImGui::TextColored(muted_text,"%s",Tr("Desligado (padrao): o jogo continua rodando; os analogicos andam e giram a camera e os botoes ficam com o menu."));
     ImGui::SliderFloat(Tr("Opacidade do painel"),&menu_preferences.opacity,.25f,1,"%.2f");
@@ -925,8 +926,12 @@ void Draw(double fps) {
         ImGui::PushFont(brand_font);ImGui::TextColored(gold,"Castlevania");ImGui::PopFont();
         ImGui::SameLine();ImGui::PushFont(section_font);ImGui::TextColored(crimson,"Curse of Darkness");ImGui::PopFont();
         char status[64];std::snprintf(status,sizeof(status),"%.0f FPS  |  %.2fx",fps,speed.load());
-        ImGui::SameLine(std::max(ImGui::GetCursorPosX(),size.x-ImGui::CalcTextSize(status).x-24*scale));
+        // Canto superior direito: FPS/velocidade e os botoes de idioma do menu (PT-BR / EN), que trocam na hora.
+        const float languages=LanguageButtonsWidth(scale);
+        ImGui::SameLine(std::max(ImGui::GetCursorPosX(),size.x-ImGui::CalcTextSize(status).x-languages-40*scale));
         ImGui::TextColored(muted_text,"%s",status);
+        ImGui::SameLine(std::max(ImGui::GetCursorPosX(),size.x-languages-24*scale));
+        if(bool english=menu_english.load();LanguageButtons(english,scale)) SetMenuEnglish(english);
         if(kernel::g_base) {
             const int stage=static_cast<int8_t>(kernel::g_base[0xB234F4]),room=static_cast<int8_t>(kernel::g_base[0xB234F5]);
             if(const char* area=AreaName(stage)) ImGui::TextColored(muted_text,Tr("%s  /  Mapa %d  /  Sala %d"),area,stage,room);
@@ -1041,14 +1046,6 @@ void Draw(double fps) {
         if(ImGui::Button(Tr("Salvar opcoes"),{160*scale,32*scale})) app::Save();
         ImGui::SameLine();
         if(ImGui::Button(Tr("Voltar ao jogo"),{170*scale,32*scale})) open=false;
-        // Idioma do menu dev (so a interface das ferramentas; o idioma do jogo fica em Jogabilidade).
-        for(const bool english:{false,true}) {
-            ImGui::SameLine();
-            const bool current=menu_english.load()==english;
-            if(current) ImGui::PushStyleColor(ImGuiCol_Button,ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
-            if(ImGui::Button(english ? "English" : "PT-BR",{110*scale,32*scale}) && !current) SetMenuEnglish(english);
-            if(current) ImGui::PopStyleColor();
-        }
         ImGui::TextDisabled("%s",Tr("L1/R1: aba | Direcional: navegar | A: entrar/ajustar | B: voltar | L3+R3 ou F1: fechar"));
     }
     ImGui::End();

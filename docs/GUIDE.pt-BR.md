@@ -4,7 +4,7 @@
 
 Este guia explica como instalar, jogar e configurar tudo o que o port oferece. A parte técnica de mods (formato dos arquivos, packs de textura, `cheats.toml`) fica em [MODDING.pt-BR.md](../MODDING.pt-BR.md).
 
-O menu de ferramentas começa em português. O botão **English** no rodapé dele passa para inglês (**PT-BR** volta); no controle, use Menu > Aparência > "Idioma do menu". A escolha fica salva em `settings.toml` (`menu_language`). Isso muda só o texto das ferramentas; o idioma do jogo é outra opção.
+O menu de ferramentas começa em português. Os botões **PT-BR** e **EN** no canto superior direito trocam na hora; no controle, use Menu > Aparência > "Idioma do menu". A escolha fica salva em `settings.toml` (`menu_language`). Isso muda só o texto das ferramentas; o idioma do jogo é outra opção.
 
 ## Requisitos de PC
 
@@ -139,10 +139,50 @@ Os mods nunca alteram os arquivos originais do jogo: substituem só na memória.
 - **Jogabilidade:** dificuldade por dano; vida, tamanho, sorteio e elites de inimigos; taxa de drops, cristais e itens aleatórios; cheats de vida, MP, ouro e EXP; bônus Moai sem o save do PS2.
 - **Suporte:** relato de bug com captura e log, registro de desempenho e dumps de travamento.
 
-## Limites conhecidos
+## Recursos experimentais e estado
 
-- **Tamanho de inimigos e itens:** corrigido em 26/10 para manter o tamanho quando o jogo reescala o inimigo. Ainda falta confirmar no jogo.
-- **Sombra:** ainda aparece errada em alguns lugares. Envie um F3 quando acontecer.
+"Validado no jogo" quer dizer que alguém jogou e viu funcionar. "Testado" quer dizer que os testes automáticos ou o autoteste do runtime passaram, mas ninguém confirmou jogando. Relate qualquer coisa estranha com F8.
+
+### Funciona, validado no jogo
+
+| Recurso | Observação |
+|---|---|
+| Texto, imagens e dublagem em português | Troca de idioma durante o jogo; imagens e vozes já carregadas mudam ao reiniciar. |
+| Pacote HD4K e HD da tela de título | Texturas pareadas carregam sem queda de FPS. |
+| Vida dos inimigos (todos) | 0,5x–5x pela fórmula de vida máxima do próprio jogo (185 → 925 com 5x). |
+| Voltar ao título (Start + Back + LT + RT) | O progresso não salvo se perde. |
+
+### Feito e testado, falta confirmar no jogo
+
+| Recurso | O que ainda não se sabe |
+|---|---|
+| Tamanho dos inimigos (todos, por tipo, sorteio, elites) | Corrigido em 26/10 para sobreviver à reescala do próprio jogo; ainda não foi visto funcionando. O tamanho é só visual. |
+| Sorteio e elites de inimigos | Igual ao tamanho; a vida sorteada usa o retorno nativo da vida máxima. |
+| Taxa de drop e cristais dos Innocent Devils | Só as 5 checagens de drop da rotina de morte do inimigo mudam. |
+| Itens aleatórios nos drops | O log mostra trocas (`drops: random item 230 -> 242`), mas o jogador ainda não percebeu. |
+| Tamanho dos itens no chão | Só visual; a área de pegar continua a original. |
+| Busca do menu com teclado na tela | Ctrl+F e Y; Enter ou "Abrir 1o" abre o primeiro resultado. |
+| Menu de ferramentas em inglês (botões PT-BR / EN, canto superior direito) | 402 textos; um teste sem janela clica nos botões. Alguns textos longos em inglês podem ficar cortados em botões de largura fixa. |
+| Godmode | Dano bloqueado numa arena isolada com as rotinas originais; mortes por roteiro não foram comprovadas. |
+| Speedhack 0,5x–2x | Relógios e timers medidos; a campanha inteira em cada velocidade, não. |
+| Bônus do save de *Lament of Innocence* | O objeto do bônus é liberado, mas a sala onde ele aparece não foi identificada. |
+
+### Experimental por natureza
+
+| Recurso | Limites |
+|---|---|
+| Câmeras Cinemática, Próxima e Personalizada | Só perfis de enquadramento; ângulos grandes entortam o movimento e algumas cenas podem ser afetadas. |
+| Câmera Livre | Sem colisão; o personagem fica parado enquanto ela está ligada. |
+| Câmera Orbital | Colisão nativa testada num único triângulo; cantos e salas apertadas não foram testados. |
+| Escala do HUD e ocultação rápida | Inventário e menus originais não mudam de escala; cobertura visual completa pendente. |
+| Minimapa | Mostra salas ainda não exploradas; sem ícones de porta, save ou teleporte. |
+| Perfis próprios em `cheats.toml` | Só com endereços que você mesmo validou; endereço errado pode estragar o estado do jogo. |
+
+### Problemas conhecidos e o que ainda não existe
+
+- **Sombra do personagem:** corrigida para o modo multisample 4X, mas ainda aparece errada em alguns lugares. Envie uma captura F3 quando acontecer.
 - **Quedas de FPS ocasionais:** em investigação; ligue o registro de desempenho e envie um relato.
-- **Em pesquisa, ainda não existem:** trocar tipos de inimigo, mais inimigos por sala e mover inimigos.
-- **Não testados nesta versão:** códigos de nome @CRAZY e @TREVOR, savestate e troca de personagem no meio da campanha.
+- **Áudio:** só estéreo; os efeitos DSP do Xbox são reproduzidos em parte.
+- **Em pesquisa:** trocar tipos de inimigo, mais inimigos por sala e mover inimigos.
+- **Não existe:** savestate.
+- **Não testados nesta versão:** códigos de nome @CRAZY e @TREVOR e troca de personagem no meio da campanha.

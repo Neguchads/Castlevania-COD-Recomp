@@ -120,6 +120,10 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 .local\test_menu_nav.exe
 if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -I"out\build\release\_deps\imgui-src" tools\test_menu_language_ui.cpp out\build\release\_deps\imgui-src\imgui.cpp out\build\release\_deps\imgui-src\imgui_draw.cpp out\build\release\_deps\imgui-src\imgui_tables.cpp out\build\release\_deps\imgui-src\imgui_widgets.cpp -o .local\test_menu_language_ui.exe
+if errorlevel 1 exit /b 1
+.local\test_menu_language_ui.exe
+if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_minimap.cpp -o .local\test_minimap.exe
 if errorlevel 1 exit /b 1
 .local\test_minimap.exe
