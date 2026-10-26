@@ -12,8 +12,28 @@ if not defined CLANGXX set "CLANGXX=clang++"
 if exist "%CLANGXX%" goto :clangfound
 where "%CLANGXX%" >nul 2>nul || goto :noclang
 :clangfound
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_translation_pack.cpp -o .local\test_translation_pack.exe
+if errorlevel 1 exit /b 1
+.local\test_translation_pack.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_shadow_volume.cpp -o .local\test_shadow_volume.exe -ld3d12 -ldxgi -ld3dcompiler
+if errorlevel 1 exit /b 1
+.local\test_shadow_volume.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_final_copy.cpp -o .local\test_final_copy.exe
+if errorlevel 1 exit /b 1
+.local\test_final_copy.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_hud_render.cpp -o .local\test_hud_render.exe
+if errorlevel 1 exit /b 1
+.local\test_hud_render.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_capture_path.cpp -o .local\test_capture_path.exe
+if errorlevel 1 exit /b 1
+.local\test_capture_path.exe
+if errorlevel 1 exit /b 1
 set "PYTHONPATH=%CD%\tools;%PYTHONPATH%"
-python -m unittest tools.test_extract_xiso tools.test_game_features tools.test_graphics_signature tools.test_pitch_signature tools.test_ptbr tools.test_public_hygiene
+python -m unittest tools.test_extract_xiso tools.test_game_features tools.test_graphics_signature tools.test_pitch_signature tools.test_ptbr tools.test_ps2_ptbr_import tools.test_ps2_movie_dub tools.test_ps2_voice_dub tools.test_ps2_texture_import tools.test_dar_texture tools.test_hd_pack_match tools.test_public_hygiene
 if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_audio_math.cpp -o .local\test_audio_math.exe
 if errorlevel 1 exit /b 1
@@ -31,6 +51,30 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 .local\test_texture_pack.exe
 if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_report_gallery.cpp -o .local\test_report_gallery.exe
+if errorlevel 1 exit /b 1
+.local\test_report_gallery.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror -I"..\XboxXBERecomp\runtime" tools\test_controller_map.cpp -o .local\test_controller_map.exe
+if errorlevel 1 exit /b 1
+.local\test_controller_map.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_damage_rules.cpp -o .local\test_damage_rules.exe
+if errorlevel 1 exit /b 1
+.local\test_damage_rules.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_texture_lookup.cpp -o .local\test_texture_lookup.exe
+if errorlevel 1 exit /b 1
+.local\test_texture_lookup.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_multisample_rules.cpp -o .local\test_multisample_rules.exe
+if errorlevel 1 exit /b 1
+.local\test_multisample_rules.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_economy_rules.cpp -o .local\test_economy_rules.exe
+if errorlevel 1 exit /b 1
+.local\test_economy_rules.exe
+if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_scaled_clock.cpp -o .local\test_scaled_clock.exe
 if errorlevel 1 exit /b 1
 .local\test_scaled_clock.exe
@@ -46,6 +90,10 @@ if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -I"..\XboxXBERecomp\runtime" -I"out\build\release\_deps\imgui-src" tools\test_menu_input.cpp out\build\release\_deps\imgui-src\imgui.cpp out\build\release\_deps\imgui-src\imgui_draw.cpp out\build\release\_deps\imgui-src\imgui_tables.cpp out\build\release\_deps\imgui-src\imgui_widgets.cpp -o .local\test_menu_input.exe
 if errorlevel 1 exit /b 1
 .local\test_menu_input.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -I"..\XboxXBERecomp\runtime" -I"out\build\release\_deps\imgui-src" tools\test_menu_nav.cpp out\build\release\_deps\imgui-src\imgui.cpp out\build\release\_deps\imgui-src\imgui_draw.cpp out\build\release\_deps\imgui-src\imgui_tables.cpp out\build\release\_deps\imgui-src\imgui_widgets.cpp -o .local\test_menu_nav.exe
+if errorlevel 1 exit /b 1
+.local\test_menu_nav.exe
 if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_minimap.cpp -o .local\test_minimap.exe
 if errorlevel 1 exit /b 1

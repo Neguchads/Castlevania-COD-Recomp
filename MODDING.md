@@ -2,7 +2,21 @@
 
 ## Personalização do painel
 
-Navegação em seis seções superiores: Jogo, Imagem, Som, Controles, Mods e cheats, Sistema. Esquerda/direita ou L1/R1 muda a seção; cima/baixo navega, A ajusta/confirma e B sai do ajuste ou volta. F1 abre/fecha o painel. Esc opera o menu original. O cabeçalho mostra os IDs internos de mapa/sala; nomes das áreas ainda não foram identificados.
+Oito abas no topo: Jogabilidade (jogo e minimapa, dificuldade, HUD e pets, câmera, saves), Gráficos, Áudio, Controles, Mods, Cheats, Suporte (relatar bug, diagnóstico) e Menu (aparência, perfis). L1/R1 ou clique trocam de aba. O direcional escolhe um título na coluna esquerda; A entra nas opções dele. Numa barra, A entra no ajuste: direcional ou analógico esquerdo arrasta, B sai do ajuste. B volta das opções para os títulos e nunca fecha o painel; só **L3 + R3** ou **F1** fecham. No teclado: setas, Enter e Esc fazem o mesmo. Com o painel aberto o jogo continua rodando: os analógicos andam e giram a câmera (também na Livre e na Orbital) e os botões ficam com o painel; enquanto uma barra é ajustada, o analógico esquerdo só mexe a barra. Para pausar tudo (jogo, relógio, vblank e som), ligue "Pausar o jogo com o menu aberto" em Menu > Aparência.
+
+Idioma: Jogabilidade > Jogo e minimapa > Idioma do jogo troca entre English e Português (Brasil). Textos mudam na hora; imagens e vozes já carregadas, ao reiniciar. Japonês continua em Opções > Idioma no jogo.
+
+Dificuldade (Jogabilidade > Dificuldade): presets Fácil, Normal, Difícil, Muito difícil e Pesadelo, ou as barras "Dano recebido pelo jogador" e "Dano recebido pelo Innocent Devil" (0,25x a 4x). O golpe final e mortes por roteiro continuam matando. Vida e dano dos inimigos ainda não: a vida deles fica fora da tabela de atributos do grupo.
+
+Pacotes de textura: os nomes dos arquivos (`<hash de 16 hex>.dds` ou `.bmp`) são lidos uma vez ao carregar os mods ou trocar o idioma. Arquivo novo copiado com o jogo aberto só aparece depois de recarregar os mods.
+
+Cheats: além de godmode e speedhack, "Vida cheia" (não revive), "Ouro maximo" (9.999.999), "Ganho de ouro" e "Ganho de EXP" (1x a 10x) e "Compras nao gastam ouro". Ficam salvos nas opções. Códigos de nome do jogo: @CRAZY (modo Crazy) e @TREVOR (jogar com Trevor), segundo guias; não testados nesta versão.
+
+Save de Lament of Innocence: no PS2, ter o save de LoI no memory card libera a estátua Moai. Em Cheats, "Simular save de Lament of Innocence" faz o jogo achar esse save; ligue antes de começar um jogo novo ou carregar. O bônus fica gravado no save ao salvar.
+
+Botões de PlayStation: ligue o mod **PS2-Botoes** (Mods) para ver ✕ ○ □ △ L1 L2 R1 R2 no lugar de A B X Y L preto R branco, e em Controles > Controle aperte **Layout PS2** para L1/R1 virarem os gatilhos e L2/R2 o preto/branco, como no PS2. **Layout Xbox** volta ao padrão; a linha "Layout atual" mostra Xbox, PS2 ou personalizado. Para gerar o pack de novo: `python tools\hd_pack_match.py buttons --pack <pasta replacements do 4K PS2>`.
+
+Gráficos também têm brilho, contraste e saturação; Áudio tem "Silenciar quando a janela perde o foco". O cabeçalho mostra os IDs internos de mapa/sala; nomes das áreas ainda não foram identificados.
 
 Mouse horizontal/vertical têm inversão separada. O padrão foi invertido em relação ao build anterior por pedido do usuário. WASD movimenta, setas controlam câmera; os dois grupos podem ser remapeados. Restaurar controles padrão repõe as teclas do port.
 
@@ -14,9 +28,9 @@ Salvar opções grava as preferências em settings.toml. Fechar o painel grava t
 
 Saves e sessão lista apenas nomes/tamanhos dos arquivos de progresso. Reiniciar no título pede confirmação da perda de progresso não salvo e usa o reinício nativo do runtime; carregue um slot pelo Load Game original. Não restaura nem substitui arquivos de save enquanto o jogo roda.
 
-Pausa completa, savestate, troca de personagem no meio da campanha e novos presets de cheats ainda não foram validados. O mundo continua rodando ao abrir este build do painel.
+Savestate, troca de personagem no meio da campanha e novos presets de cheats ainda não foram validados.
 
-Abra o jogo pelo atalho **Castlevania COD Recomp**. **F1** ou **L3 + R3** abre/fecha o menu, **F3** captura print e diagnóstico gráfico e salva um relatório automático, **F8** abre o formulário de relato escrito e **F9** liga/desliga o som. L3/R3 são os cliques nos analógicos esquerdo/direito. Solte os botões antes de repetir o atalho.
+Abra o jogo pelo atalho **Castlevania COD Recomp**. **F1** ou **L3 + R3** abre/fecha o menu, **F3** captura print e diagnóstico gráfico e salva um relatório automático, **F8** abre o formulário de relato escrito e **F9** liga/desliga o som. L3/R3 são os cliques nos analógicos esquerdo/direito. Solte os botões antes de repetir o atalho. Para voltar ao título e carregar outro save, segure **Start + Back + LT + RT** por 2 segundos (o jogo reinicia; progresso não salvo é perdido).
 
 O menu usa preto, vermelho profundo e dourado, fontes do Windows renderizadas em resolução maior e escala automática. No controle, cima/baixo navega, esquerda/direita ou L1/R1 troca de seção, A/cruz ajusta/confirma e B/círculo sai do ajuste ou volta. A combinação para abrir pode ser desativada em Controles.
 
@@ -30,27 +44,43 @@ F3 salva a imagem e o relatório depois que a captura gráfica termina. A confir
 
 ## Relatar problemas
 
-1. Pressione F8 quando o problema aparecer.
-2. Escreva título e descrição na aba Relatar bug.
+1. Pressione Print Screen ou F8 quando o problema aparecer. O painel abre em Suporte > Relatar bug com a imagem capturada.
+2. Escreva título e descrição.
 3. Clique em Salvar relato local.
 
 Cada pasta `reports/data-hora-identificador` contém `screenshot.bmp`, `report.txt` e `runtime.log`. A captura vem do quadro do jogo, sem o menu de ferramentas nem a Área de Trabalho. Nenhum arquivo é enviado automaticamente. O log corresponde ao momento em que você salva o relato. Capturas durante carregamento podem registrar um quadro preto; use Nova captura quando a imagem desejada estiver visível.
+
+Outras páginas da aba Suporte:
+
+- **Capturas salvas**: as 12 mais novas. Passe o direcional pela lista para ver a imagem; Abrir pasta e Copiar relato agem sobre a selecionada.
+- **Logs e travamentos**: últimas 200 linhas do log desta sessão (Copiar log, Abrir pasta do log). Cada travamento grava `CrashDumps/<data>.dmp` e uma cópia do log com o mesmo nome; abra o item para ver as últimas linhas.
+
+No Windows 11, se a opção "Usar a tecla Print Screen para abrir a captura de tela" estiver ligada, a Ferramenta de Captura pode abrir junto. Desligue a opção em Configurações > Acessibilidade > Teclado ou use F8.
+
+## Mapeamento do controle
+
+Em F1 > Controles > Controle, selecione um botão do jogo, aperte A (ou clique) e pressione o botão físico que deve acioná-lo. O botão que já usava esse físico fica com o antigo, então nenhum comando some. Esc cancela; sem resposta em 6 s, a captura desiste. "Trocar A e B" e "Restaurar padrão" fazem o que dizem. Salvar opções grava o mapa (chave `controller_map`), e os perfis salvos o levam junto.
+
+O menu dev, L3 + R3 e Start + Back + LT + RT usam sempre os botões físicos. Só vale para o jogador 1 e só para botões; os analógicos não mudam.
 
 ## Teclado e mouse
 
 | Comando | Padrão |
 |---|---|
-| Movimento | WASD ou setas |
+| Movimento | WASD |
 | Câmera | Mouse, simulando o analógico direito |
+| Direcional (navega nos menus do jogo) | Setas |
+| Abrir menu do jogo / voltar dentro dele | Esc |
+| A, confirmar no menu | Enter |
 | A, confirmar/pular | Espaço |
 | B, voltar/esquivar | E |
 | X, ataque | Clique esquerdo |
 | Y, ataque especial | Clique direito |
 | Preto / branco | Q / R |
 | Gatilhos esquerdo / direito | Shift / Ctrl |
-| Start / Back | Enter / Tab |
+| Start / Back | P / Tab |
 
-Na aba Controles, clique na tecla de uma ação e pressione a nova tecla ou botão do mouse. F1/F8/F9/Esc são reservados. WASD e setas são fixos nesta versão. A câmera conserva as limitações e inversões do analógico original do jogo. F1 e a perda de foco liberam o cursor. O controle físico continua disponível; quando houver movimento de mouse, ele controla a câmera.
+Na aba Controles, clique na tecla de uma ação e pressione a nova tecla ou botão do mouse. F1/F8/F9/Esc são reservados. Configuração salva antes desta versão com Enter no Start passa o Start para P. A câmera conserva as limitações e inversões do analógico original do jogo. F1 e a perda de foco liberam o cursor. O controle físico continua disponível; quando houver movimento de mouse, ele controla a câmera.
 
 ## Mods de arquivos
 
@@ -68,7 +98,13 @@ Se dois mods oferecerem o mesmo arquivo, o nome em ordem alfabética mais alta v
 4. Coloque-o em `mods/MeuPack/textures/0123456789ABCDEF.bmp`.
 5. Recarregue a lista, ative o pack e salve. Reinicie se o conteúdo já estava em cache.
 
-Aceita BMP sem compressão, 24 ou 32 bits, até 4096×4096. Use 32 bits para manter o canal alpha das transparências. O identificador depende do conteúdo original, formato, dimensões e paleta, não do endereço temporário na memória. Texturas de cubo, volume e render targets ficam fora da substituição. A exportação atende formatos convertidos pelo backend para BGRA8. Mipmaps e PNG/DDS não são suportados nesta versão.
+Aceita BMP sem compressão, 24 ou 32 bits, até 16384×16384. Também aceita `<hash>.dds` em BC7_UNORM (com ou sem mipmaps), que ocupa 1/4 da memória de vídeo; quando os dois existem, o DDS vence. Texturas em `mods/PTBR-PS2/textures` valem só com o idioma Português, mesmo com os packs desligados.
+
+Pacote 4K do PS2 (PlatinumMimic, ver [CREDITOS.md](docs/CREDITOS.md)): `python tools/hd_pack_match.py --pack <pasta replacements>` pareia as imagens com as texturas do Xbox; `... build --pack <pasta>` gera `mods/HD4K/textures` em DDS BC7 (precisa de `.local/build-tools/texconv.exe`); `... near --pack <pasta>` aproveita as quase iguais (detalhe do 4K onde a imagem bate, original ampliada onde difere; `--dry-run --preview <pasta>` para conferir antes); `... ptbr --pack <pasta>` monta as texturas traduzidas em alta. Depois ligue `HD4K` em F1 > Mods. Use 32 bits para manter o canal alpha das transparências. O identificador depende do conteúdo original, formato, dimensões e paleta, não do endereço temporário na memória. Texturas de cubo, volume e render targets ficam fora da substituição. A exportação atende formatos convertidos pelo backend para BGRA8. Packs aceitam BMP 24/32 bits e DDS BC7 com mipmaps; PNG não é lido pelo jogo (converta com a ferramenta).
+
+O mod `PTBR-PS2` não tem checkbox próprio: ele liga com **Opções → Idioma →
+Português (Brasil)** no jogo e não desliga outros mods.
+Veja [TRADUCAO.md](docs/TRADUCAO.md) para montagem local e limites de cobertura.
 
 Filtro anisotrópico e resolução interna estão em Gráficos. Eles melhoram a amostragem; detalhes HD exigem arquivos de um pack. Os shaders disponíveis são Original, Escala de cinza e CRT leve, aplicados à apresentação final.
 
@@ -112,7 +148,9 @@ Em Jogo → Opções de jogo: minimapa, Mostrar HUD original, escala0,35–1,0×
 
 F1 ou L3+R3 abre/fecha o painel dev. Esc envia Start ao jogo e B quando o gerenciador modal/pausa está aberto, para sair/voltar no menu original. Esc não alterna o painel dev.
 
-Câmera: Original; Cinemática inspirada em Lords of Shadow1; Próxima inspirada em Lords of Shadow2; Personalizada; Livre. Os perfis aproximam enquadramento e não reproduzem os sistemas desses jogos. Personalizada ajusta distância, altura e campo de visão relativo; não há conversão validada para graus.
+Câmera: Original; Cinemática inspirada em Lords of Shadow1; Próxima inspirada em Lords of Shadow2; Personalizada; Livre. Os perfis aproximam enquadramento e não reproduzem os sistemas desses jogos. Personalizada ajusta distância, altura e campo de visão relativo. Personalizada e Livre têm ainda ângulo horizontal (±180°), inclinação (±60°) e rotação do horizonte (±45°), somados aos ângulos do próprio jogo; "Zerar" volta ao normal. Na Personalizada, ângulos horizontais grandes deixam o analógico no referencial antigo.
+
+FPS na tela: F1 > Gráficos > Mostrar FPS na tela (escolha o canto). Verde a partir de 55, amarelo de 30 a 55, vermelho abaixo. Quedas de FPS: em F1 > Suporte > Diagnóstico, ligue "Registrar desempenho no log", jogue o trecho lento por 1 minuto e salve um relato; o log com pior quadro e quadros lentos vai junto.
 
 Câmera livre: fechar painel, WASD move, Q/E desce/sobe e mouse olha. Controle: analógico esquerdo move, direito olha e LT/RT descem/sobem. Velocidade no menu. Enquanto ativa na partida, os comandos deixam de mover o personagem; o mundo continua rodando. No título e na seleção de personagem os comandos nativos permanecem disponíveis. Voltar a Original restaura o sistema nativo.
 
@@ -125,4 +163,4 @@ Menus nativos permanecem100% após relato de desalinhamento em40%. A redução e
 
 Em Jogo: Girar minimapa conforme câmera liga/desliga a rotação. Câmera → Orbital em terceira pessoa ativa free look e acompanhamento suave, com consulta nativa de colisão. Colisão foi testada em triângulo isolado; cantos, áreas e movimento relativo precisam teste emgameplay. Original restaura câmera nativa.
 
-Português(Brasil) parcial traduz102textos ASCII, preserva tokens e não altera assets. Semacentos por enquanto, títulos em textura permanecemEN. Há um seletor no dev e integração experimental na tela nativa; a linha Spoken ainda exige separar idioma dasvozes e textos. Cancelamento/aplicação do idioma precisa refinamento. Progresso e limites em HANDOFF.md.
+Português (Brasil): escolha em **Opções → Idioma** no jogo. Liga o catálogo de 2479 textos da ISO PS2 traduzida e o mod `PTBR-PS2` (imagens e dublagem). Detalhes em [TRADUCAO.md](docs/TRADUCAO.md); progresso e limites em HANDOFF.md.

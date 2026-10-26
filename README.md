@@ -1,23 +1,60 @@
 # Castlevania: Curse of Darkness Recomp
 
-Port experimental para Windows baseado no XboxXBERecomp. O executável hospedeiro adapta serviços do Xbox ao Windows; o código recompilado e os arquivos do jogo são preparados localmente a partir de uma imagem USA compatível fornecida pelo usuário.
+Port experimental de *Castlevania: Curse of Darkness* (Xbox, 2005) para Windows, por recompilação estática. O código x86 do XBE original vira C++ nativo, e um runtime próprio substitui os serviços do Xbox: Direct3D 8 sobre Direct3D 12, áudio em XAudio2, controle por SDL3 e arquivos no disco local.
 
-## O projeto inclui
+## Problema que resolve
 
-- Menu de desenvolvimento com configurações de vídeo, áudio, controles, minimapa, câmera, cheats e relatórios locais.
-- Hooks experimentais para HUD, velocidade, localização no mapa e seleção de idioma.
-- Código-fonte do runtime, documentação e testes focados. A configuração gerada pelo XBE é criada localmente e não fica versionada.
+O jogo só roda em Xbox original ou em emulador. Emulação de Xbox é pesada e ainda tem falhas gráficas neste título. A versão PS2 tem tradução e dublagem em português feitas por fãs e um pacote de texturas 4K, mas a versão Xbox, com sombras e texturas melhores, não tinha nada disso. Este projeto:
+
+- roda o jogo nativo no Windows, em qualquer resolução, sem emulador;
+- traz para o Xbox a tradução PT-BR, a dublagem e o pacote 4K do PS2, convertidos a partir das cópias do próprio usuário;
+- adiciona um menu de desenvolvimento com opções que o original não tem (câmera livre, dificuldade, cheats, mapeamento de controle, relato de bugs).
+
+## Tecnologias e por quê
+
+| Peça | Por quê |
+|---|---|
+| [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp) (recompilação estática x86) | Gera C++ do XBE uma vez; o jogo roda em velocidade nativa, sem interpretar instruções. |
+| C++20 + Clang + CMake/Ninja | É o toolchain exigido pelo SDK de recompilação; o mesmo compilador serve para o código gerado e para o runtime. |
+| Direct3D 12 | Traduz o pipeline fixo e os shaders do D3D8 do Xbox para uma API atual. No Linux, o Proton roda o D3D12 sobre Vulkan. |
+| Dear ImGui | Menu dev dentro do jogo, navegável por controle e teclado, sem dependência de janela externa. |
+| SDL3 | Controles de Xbox, PlayStation e genéricos com um código só. |
+| Python (Pillow, NumPy) | Ferramentas offline: conversão de texturas e áudio do PS2, pareamento do pacote 4K com as texturas do Xbox. |
+| texconv (DirectXTex) | Comprime as texturas HD em BC7 com mipmaps, que a placa de vídeo lê direto. |
+
+## Destaques técnicos
+
+- **Hooks em funções recompiladas:** cada função do jogo pode ser substituída mantendo a original. Godmode, dificuldade e economia (ouro/EXP) passam pelo setter de atributos do próprio jogo, e o bônus do save de *Lament of Innocence* (estátua Moai) é liberado respondendo uma flag no leitor de flags.
+- **Sombra corrigida:** o volume de sombra usa o modo multisample 4X do XDK, em que o hardware expande uma grade lógica 2×2. O port ignorava isso e desenhava a sombra num quarto da tela. Veja `src/common/multisample_rules.h`.
+- **Texturas HD sem queda de FPS:** o hash da textura é guardado por quadro (antes eram 4,6 ms por quadro medidos) e o pacote é indexado uma vez, sem consultar o disco na thread de render.
+- **Pacote 4K do PS2 no Xbox:** `tools/hd_pack_match.py` compara cada PNG do pacote com as texturas do Xbox por assinatura de cor e aceita só pares com folga para o segundo colocado. Texturas quase iguais recebem só o detalhe fino do 4K. São 2739 texturas pareadas.
+- **Testes:** regras puras (dano, economia, controle, navegação do menu, multisample, índice de texturas) têm testes C++, as ferramentas têm testes Python, e as funções do jogo são exercitadas numa memória isolada no autoteste do runtime.
+
+## Como instalar e rodar
+
+Requisitos: Windows 10/11, Visual Studio 2022 com "Desenvolvimento para desktop com C++" e "C++ Clang tools", Git, Python 3.12, e sua própria cópia de *Curse of Darkness* para Xbox (USA).
+
+1. Coloque `default.xbe` e as pastas do jogo em `assets/`.
+2. Mantenha o checkout do `XboxXBERecomp` ao lado deste projeto. O fallback do SDK fica fixado no commit `e0de3e44d10443c1c9aad512f36baf133cdd4a60`.
+3. Rode `build.bat`. O primeiro build recompila o XBE (30 a 90 minutos).
+4. Abra `out\build\release\CastlevaniaCOD.exe`. **F1** ou **L3 + R3** abre o menu dev.
+
+Antes de um commit ou PR, rode `tools\verify.cmd`: build, testes C++ e Python (`tools\test-local.cmd`) e varredura de segredos com gitleaks.
+
+Tradução, dublagem e o pacote 4K são gerados a partir das cópias do usuário; veja [TRADUCAO.md](docs/TRADUCAO.md) e [MODDING.md](MODDING.md).
+
+## Demonstração
+
+Capturas e vídeo ainda vão entrar aqui. No jogo: menu dev (F1), câmera livre e orbital, idioma English/Português na pausa, pacote HD4K e PS2-Botoes na aba Mods.
 
 ## Não inclui
 
-Este repositório não distribui ISO/XBE, assets extraídos, código C++ gerado da imagem do jogo, DLL recompilada, saves ou capturas. O catálogo PT-BR derivado dos textos do jogo também fica fora. Forneça sua própria edição Xbox USA; o runtime valida o XBE e prepara a recompilação localmente.
+Este repositório não distribui ISO/XBE, arquivos extraídos, o código C++ gerado do jogo, a DLL recompilada, saves, capturas, o catálogo de textos PT-BR nem os arquivos da tradução, da dublagem ou do pacote 4K. Tudo isso é gerado localmente a partir das cópias do usuário.
 
-## Desenvolvimento
+## Créditos e estado
 
-Coloque `default.xbe` e os arquivos extraídos da sua cópia em `assets/`, mantenha o checkout `XboxXBERecomp` ao lado deste projeto e execute `build.bat`. O SDK usado como fallback fica fixado no commit `e0de3e44d10443c1c9aad512f36baf133cdd4a60`. O primeiro build gera localmente a configuração e o código recompilado. Os arquivos do jogo e o catálogo privado de tradução ficam ignorados pelo Git. Os scripts Python usam somente a biblioteca padrão.
+A tradução e a dublagem PT-BR são de HNNEWGAMES, STR Brasil, MATTH dubs e Os Aristocratas do Giz Vermelho. O pacote de texturas 4K é de PlatinumMimic. Autores, funções e links estão em [CREDITOS.md](docs/CREDITOS.md).
 
-Depois do primeiro build, execute `tools/test-local.cmd` para rodar os testes Python e C++.
+O port é experimental e a campanha inteira não foi validada. A vida dos inimigos (para a dificuldade completa), o atributo de MP/corações e os nomes das áreas seguem em pesquisa.
 
-O port é experimental e a campanha inteira não foi validada. Permanecem pendentes as faixas horizontais de textura, a tradução completa e a redução da seta de localização para salas de save. Veja [MODDING.md](MODDING.md).
-
-Ainda não foi escolhida uma licença para as alterações deste projeto. Tornar o repositório público permite visualizar o código, mas não concede automaticamente permissão de reutilização. Partes do runtime derivadas de XboxXBERecomp seguem o aviso MIT em [LICENSES/XboxXBERecomp-MIT.txt](LICENSES/XboxXBERecomp-MIT.txt); o SDK e as demais dependências mantêm suas licenças próprias.
+Ainda não foi escolhida uma licença para as alterações deste projeto: o código fica visível, mas isso não concede permissão de reutilização. Partes do runtime derivadas do XboxXBERecomp seguem o aviso MIT em [LICENSES/XboxXBERecomp-MIT.txt](LICENSES/XboxXBERecomp-MIT.txt); o SDK e as demais dependências mantêm suas licenças próprias.
