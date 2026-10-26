@@ -13,6 +13,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 MENU = ROOT / "src/common/dev_menu.cpp"
+# Abas e paginas ficam num header proprio (testado sem ImGui); entram como parte do menu.
+LAYOUT = ROOT / "src/common/menu_layout.h"
+
+
+def menu_source():
+    return MENU.read_text(encoding="utf-8") + "\n" + LAYOUT.read_text(encoding="utf-8")
 TABLE = ROOT / "src/common/menu_strings_en.h"
 # Avisos e estados mostrados pelo menu que nascem em outros arquivos.
 OTHER = [ROOT / "src/common/dev_runtime.cpp", ROOT / "src/common/dev_controller.cpp",
@@ -97,7 +103,7 @@ def problems(menu, others, pairs):
 
 
 def main():
-    menu = MENU.read_text(encoding="utf-8")
+    menu = menu_source()
     others = [p.read_text(encoding="utf-8") for p in OTHER if p.exists()]
     pairs = table(TABLE.read_text(encoding="utf-8")) if TABLE.exists() else {}
     if "--missing" in sys.argv:
