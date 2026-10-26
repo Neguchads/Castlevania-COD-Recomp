@@ -643,7 +643,8 @@ bool SaveReport(const std::string& title, const std::string& text) {
         << " | aniso: " << app::Get().aniso << " | vsync: " << app::Get().vsync << "\n"
         << "Menu: " << menu_preferences.width << "x" << menu_preferences.height
         << " at " << menu_preferences.x << "," << menu_preferences.y
-        << " | opacity: " << menu_preferences.opacity << "\n";
+        << " | opacity: " << menu_preferences.opacity << "\n"
+        << CrystalDiagnosticReport() << "\n";
     out.close();
     if (!out) { report_status = "Falha ao salvar o relato"; return false; }
     logx::Flush();
@@ -688,7 +689,8 @@ std::optional<fs::path> SaveF3Report(const fs::path& capture_dir) {
         << " | shader: " << shader.load() << " | speed: " << speed.load() << "x"
         << " | godmode: " << godmode.load() << "\n"
         << "Output: " << app::Get().width << "x" << app::Get().height
-        << " | aniso: " << app::Get().aniso << " | vsync: " << app::Get().vsync << "\n";
+        << " | aniso: " << app::Get().aniso << " | vsync: " << app::Get().vsync << "\n"
+        << CrystalDiagnosticReport() << "\n";
     out.close();
     if(!out) {
         LOGE("F3 report: failed writing report.txt under %s",directory.string().c_str());

@@ -83,6 +83,9 @@ inline std::atomic<float> enemy_elite_chance{0.0f},enemy_elite_scale{2.0f},enemy
 inline std::atomic<float> drop_rate{1.0f},crystal_rate{1.0f},crystal_amount{1.0f},item_scale{1.0f};
 inline std::atomic<bool> random_drops{false};
 bool VerifyDropHooks();
+// Diagnostico do cristal (drop_edits.cpp): gravacoes dos atributos 73/29 e resumo para o report.txt.
+void NoteCrystalAttributeWrite(uint32_t root, uint32_t id, uint32_t stat, int32_t value, bool absolute);
+std::string CrystalDiagnosticReport();
 // Economia: multiplicador do ganho de ouro (stat 111) e EXP (stat 3); compras sem gastar ouro
 inline std::atomic<float> gold_gain{1.0f},exp_gain{1.0f};
 inline std::atomic<bool> free_shopping{false};
