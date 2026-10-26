@@ -30,6 +30,8 @@ Inimigos > Aleatório sorteia tamanho e vida de cada inimigo ao aparecer (`enemy
 
 O campo "Filtrar opções" no topo do menu dev (Ctrl+F) acha qualquer opção pelo nome, sem acento e em qualquer ordem de palavras; Enter abre a página dela.
 
+Jogabilidade > Drops e itens: "Taxa de drop de itens" (`drop_rate`, 0x a 10x) multiplica a chance de cada item do inimigo; "Chance de cristais dos Innocent Devils" (`crystal_rate`) e "Cristais por drop" (`crystal_amount`, 1x a 5x, no máximo 4 cristais por drop) cuidam dos cristais de evolução; "Itens aleatórios nos drops" (`random_drops`) troca o item por outro da tabela de drops do jogo; "Tamanho dos itens no chão" (`item_scale`, 0,25x a 2x) muda só o visual dos itens que caem.
+
 A opção "inverter câmera" das Opções do jogo só inverte o eixo vertical, como no Xbox original. Para inverter o horizontal do analógico direito, ligue "Inverter camera horizontal (analogico direito)" em Controles > Controle (`invert_stick_x` em `settings.toml`).
 
 Godmode agora intercepta também o setter absoluto de HP, além do delta: ambos passaram pelos wrappers originais em teste isolado, preservando cura e outros personagens. O segundo bypass foi reproduzido antes da correção. Reteste em combate continua necessário.
