@@ -183,7 +183,7 @@ void GameHacks() {
     ImGui::TextWrapped("%s",Tr("No PS2, ter o save de Lament of Innocence no memory card libera a estatua Moai (vale 5000 de ouro). Ligue antes de comecar um jogo novo ou carregar; o bonus fica gravado no save quando voce salvar e nao sai desligando a opcao."));
 }
 void General() {
-    Heading("Jogo", "Idioma do jogo. Inimigos, drops, pets e cheats ficam nas abas proprias.");
+    Heading("Jogo", "Idioma do jogo. Inimigos, drops, pets, camera e minimapa ficam nesta aba; cheats tem aba propria.");
     int language=ptbr_enabled.load() ? 1 : 0;
     const char* languages[]{"English","Português (Brasil)"};
     if(ImGui::Combo(Tr("Idioma do jogo"),&language,languages,2)) SelectTextLanguage(language==1 ? 2 : 1);
@@ -215,9 +215,9 @@ void DifficultyPage() {
     Slider("Dano recebido pelo jogador",damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     Slider("Dano recebido pelo Innocent Devil",devil_damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     ImGui::TextWrapped("%s",Tr("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto."));
-    ImGui::TextColored(muted_text,"%s",Tr("Vida, tamanho, sorteio e elites dos inimigos: aba Inimigos."));
+    ImGui::TextColored(muted_text,"%s",Tr("Vida, tamanho, sorteio e elites dos inimigos: Jogabilidade > Todos os inimigos."));
 }
-// Combinacoes prontas da aba Inimigos: global, sorteio por inimigo e elite juntos.
+// Combinacoes prontas de Todos os inimigos: global, sorteio por inimigo e elite juntos.
 struct EnemyPreset {const char* name;float hp,scale;bool random;float scale_min,scale_max,hp_min,hp_max,elite;};
 constexpr EnemyPreset kEnemyPresets[]{
     {"Original",1,1,false,.8f,1.3f,1,1.5f,0},
@@ -257,7 +257,7 @@ void DropsPage() {
     Heading("Drops e itens","Chance e quantidade do que os inimigos soltam ao morrer, e tamanho dos itens no chao. So na memoria.");
     Slider("Taxa de drop de itens",drop_rate,0,kMaxDropFactor,"%.2fx");
     ImGui::TextColored(muted_text,"%s",Tr("Multiplica a chance de cada item (a sorte do personagem continua contando). 0x desliga os itens."));
-    ImGui::TextColored(muted_text,"%s",Tr("Cristais de evolucao dos Innocent Devils: aba Pets."));
+    ImGui::TextColored(muted_text,"%s",Tr("Cristais de evolucao dos Innocent Devils: Jogabilidade > Innocent Devils."));
     Toggle("Itens aleatorios nos drops",random_drops);
     ImGui::TextColored(muted_text,"%s",Tr("Troca o item que o inimigo soltaria por outro da tabela de drops do proprio jogo."));
     Slider("Tamanho dos itens no chao",item_scale,kMinItemScale,kMaxItemScale,"%.2fx");
@@ -980,7 +980,7 @@ void Draw(double fps) {
         StepMenuNav(nav,{.tab_step=step,.back=back && !close_keys,.busy=was_editing || popup || ControllerCaptureTarget()>=0},tab_count);
         // Abas no topo: L1/R1 ou clique; o direcional fica nos titulos e opcoes.
         ImGui::PushItemFlag(ImGuiItemFlags_NoNav,true);
-        // 11 abas: quebra a linha quando a proxima nao cabe na largura da janela.
+        // abas: quebra a linha quando a proxima nao cabe na largura da janela.
         for(int i=0;i<tab_count;++i) {
             const ImVec2 size{ImGui::CalcTextSize(Tr(kTabs[i].label)).x+20*scale,28*scale};
             if(i) {

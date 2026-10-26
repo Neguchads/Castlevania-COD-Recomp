@@ -4,7 +4,7 @@ English · [Português (Brasil)](GUIDE.pt-BR.md)
 
 This guide explains how to install, play and configure everything the port offers. The technical side of mods (file format, texture packs, `cheats.toml`) is in [MODDING.md](../MODDING.md).
 
-The tools menu starts in Brazilian Portuguese. Switch it with the **PT-BR** and **EN** buttons in its top-right corner (it changes immediately), or in Menu > Aparência > "Idioma do menu" with the controller. The choice is saved in `settings.toml` (`menu_language`). Option names below appear as they do in the Portuguese menu, with the English menu name in parentheses.
+The tools menu starts in Brazilian Portuguese. Switch it with the **PT-BR** and **EN** buttons in its top-right corner (it changes immediately), or in Suporte e menu > Aparência do menu > "Idioma do menu" with the controller. The choice is saved in `settings.toml` (`menu_language`). Option names below appear as they do in the Portuguese menu, with the English menu name in parentheses.
 
 ## PC requirements
 
@@ -71,7 +71,7 @@ The tools menu, L3 + R3 and Start + Back + LT + RT always use the physical butto
 
 ## Tools menu
 
-The menu opens over the game, and the game keeps running: the sticks move the character and the camera, and the buttons go to the menu. To pause everything, turn on "Pausar o jogo com o menu aberto" (pause the game while the menu is open) in Menu > Aparência (appearance).
+The menu opens over the game, and the game keeps running: the sticks move the character and the camera, and the buttons go to the menu. To pause everything, turn on "Pausar o jogo com o menu aberto" (pause the game while the menu is open) in Suporte e menu > Aparência do menu (menu appearance).
 
 Navigation:
 - L1/R1 switch tabs.
@@ -88,44 +88,53 @@ Navigation:
 
 | Page | What it has |
 |---|---|
-| Jogo e minimapa (game and minimap) | Game language (English / Português); minimap (on/off, rotate with the camera, size 0.6–1.6x, opacity, horizontal and vertical position, "top-right corner" button) |
+| Jogo (game) | Game language (English / Português) |
 | Dificuldade (difficulty) | Presets Fácil, Normal, Difícil, Muito difícil and Pesadelo (easy to nightmare); sliders for damage taken by the player and by the Innocent Devil. The finishing blow and scripted deaths still kill. |
-| Inimigos: todos (enemies: all) | Enemy HP (0.5x–5x) and size (0.5x–3x); presets Original, Variados (varied), Elites, Gigantes (giants) and Caotico (chaotic); "Restaurar padrão dos inimigos" (reset enemy options) button |
-| Inimigos: aleatório (enemies: random) | Each enemy rolls its size and HP when it spawns, within the minimum and maximum ranges. The elite chance (0–100%) and the extra elite size and HP multiply on top. "Trocar tipos de inimigo" (swap enemy types) is still being researched. |
-| Inimigos: por tipo (enemies: per type) | HP and size for each enemy type already seen, saved as a mod in `mods/Editor/enemies.toml`; they apply with "Aplicar edições" (apply edits) on. Includes "Voltar ao original" (reset this type) and "Voltar todos os tipos ao original" (reset all types). |
-| Drops e itens (drops and items) | Item drop rate (0x–10x); Innocent Devil crystal chance (0x–10x) and crystals per drop (1x–5x, at most 4 per drop); random items taken from the game's own drop table; size of items on the ground (0.25x–2x, "Itens pela metade" (half-size items) button) |
-| Cheats | Godmode; speedhack (0.5x–2x); full HP; full MP; infinite MP; max gold; gold and EXP gain (1x–10x); purchases cost no gold; "Simular save de Lament of Innocence" (simulate a *Lament of Innocence* save, unlocks the Moai statue); custom `cheats.toml` |
-| HUD e pets | Show the original HUD; HP and MP always visible; HUD scale; hide faster outside combat and the delay |
+| Todos os inimigos (all enemies) | Enemy HP (0.5x–5x) and size (0.5x–3x); presets Original, Variados (varied), Elites, Gigantes (giants) and Caotico (chaotic); "Restaurar padrão dos inimigos" (reset enemy options) button |
+| Inimigos aleatórios (random enemies) | Each enemy rolls its size and HP when it spawns, within the minimum and maximum ranges. The elite chance (0–100%) and the extra elite size and HP multiply on top. "Trocar tipos de inimigo" (swap enemy types) is still being researched. |
+| Inimigos por tipo (enemies by type) | HP and size for each enemy type already seen, saved as a mod in `mods/Editor/enemies.toml`; they apply with "Aplicar edições" (apply edits) on. Includes "Voltar ao original" (reset this type) and "Voltar todos os tipos ao original" (reset all types). |
+| Drops e itens (drops and items) | Item drop rate (0x–10x); random items taken from the game's own drop table; size of items on the ground (0.25x–2x, "Itens pela metade" (half-size items) button) |
+| Innocent Devils | Innocent Devil crystal chance (0x–10x) and crystals per drop (1x–5x, at most 4 per drop); live diagnostic of the crystal roll. The Devil's Bestiary, Gráfico (chart) and Linha evolutiva (evolution line) pages only show up after opening the right chests (original game). |
 | Câmera (camera) | Modes Original, Cinemática (cinematic), Próxima (close), Personalizada (custom), Livre (free) and Orbital. Distance, height, field of view, horizontal angle, tilt and horizon roll, plus smooth follow and free-camera speed. |
+| Minimapa e HUD (minimap and HUD) | Minimap (on/off, rotate with the camera, size 0.6–1.6x, opacity, horizontal and vertical position, "top-right corner" button). HUD: Show the original HUD; HP and MP always visible; HUD scale; hide faster outside combat and the delay |
 | Saves e sessão (saves and session) | Lists the save files; "Reiniciar no título" (restart at title) to load another save. The menu does not delete or replace saves. |
 
 The enemy layers multiply: all × type × roll. Size and smaller items are visual only; the hit area and the pickup area stay the original ones. HP applies to enemies that spawn after the change, so change rooms to see it.
 
-### Gráficos (graphics), Áudio (audio) and Controles (controls)
+Every page with options has "Restaurar padrões desta página" (restore this page's defaults); the footer has "Restaurar padrões" (restore defaults) next to "Voltar ao jogo" (back to game), with a confirmation.
 
-| Tab | What it has |
+### Vídeo e áudio (video and audio)
+
+| Page | What it has |
 |---|---|
 | Gráficos | Fullscreen or window; resolution; internal resolution; anisotropic filtering; FPS cap; vsync; presentation shader (Original, grayscale, light CRT); brightness, contrast and saturation; on-screen FPS, with a choice of corner; character shadow (off by default) |
 | Áudio | Master volume; left/right balance; mute (F9); mute when the window loses focus |
-| Controles > Controle (controller) | Remap each game button (press A on the button, then press the new physical button); Xbox and PS2 layouts; swap A and B; invert the right stick's horizontal camera (the game's own option only inverts the vertical axis); disable the L3 + R3 shortcut |
-| Controles > Teclado e mouse (keyboard and mouse) | Remap keys; enable the keyboard; mouse as camera; invert the mouse on each axis; sensitivity; reset to default |
 
-### Mods, Suporte (support) and Menu
+### Controles (controls)
+
+| Page | What it has |
+|---|---|
+| Controle (controller) | Remap each game button (press A on the button, then press the new physical button); Xbox and PS2 layouts; swap A and B; invert the right stick's horizontal camera (the game's own option only inverts the vertical axis); disable the L3 + R3 shortcut |
+| Teclado e mouse (keyboard and mouse) | Remap keys; enable the keyboard; mouse as camera; invert the mouse on each axis; sensitivity; reset to default |
+
+### Cheats, Mods and Suporte e menu (support and menu)
 
 | Tab | What it has |
 |---|---|
+| Cheats | Godmode; speedhack (0.5x–2x); full HP; full MP; infinite MP; max gold; gold and EXP gain (1x–10x); purchases cost no gold; "Simular save de Lament of Innocence" (simulate a *Lament of Innocence* save, unlocks the Moai statue); custom `cheats.toml` |
 | Mods | Lists the mods in `mods/`, with a checkbox for each; reload the list; export textures to build an HD pack |
-| Suporte | **Relatar bug** (report a bug): game frame capture, title and text, saved in `reports/`. **Capturas salvas** (saved captures): the 12 newest. **Logs e travamentos** (logs and crashes): last log lines and crash dumps. **Diagnóstico** (diagnostics): performance logging, enemy HP probe, current area and room. Nothing is sent to the internet. |
-| Menu | **Aparência** (appearance): menu language, opacity, colors, pause while the menu is open. **Perfis** (profiles): save and apply sets of options, Dev profile and vanilla defaults. |
+| Suporte e menu | **Relatar bug** (report a bug): game frame capture, title and text, saved in `reports/`. **Capturas salvas** (saved captures): the 12 newest. **Logs e travamentos** (logs and crashes): last log lines and crash dumps. **Diagnóstico** (diagnostics): performance logging, enemy HP probe, current area and room. Nothing is sent to the internet. |
+| Suporte e menu > Aparência do menu (menu appearance) | Menu language, opacity, colors, pause while the menu is open. |
+| Suporte e menu > Perfis (profiles) | Save and apply sets of options, Dev profile and vanilla defaults. |
 
 ## Bundled mods
 
 | Mod | What it does | How to enable |
 |---|---|---|
-| PTBR-PS2 | Brazilian Portuguese translation of 2479 texts, images and dub, taken from the fans' PS2 ISO | Options > Language > Português in the game (also in Jogabilidade > Jogo e minimapa) |
+| PTBR-PS2 | Brazilian Portuguese translation of 2479 texts, images and dub, taken from the fans' PS2 ISO | Options > Language > Português in the game (also in Jogabilidade > Jogo) |
 | HD4K | 2739 4K textures from the PS2 pack (PlatinumMimic), matched to the Xbox ones | Mods tab |
 | PS2-Botoes | ✕ ○ □ △ L1 L2 R1 R2 icons instead of the Xbox buttons | Mods tab; for the triggers, also use Controles > Layout PS2 |
-| Editor | Per-type enemy HP and size | Jogabilidade > Inimigos: por tipo > "Aplicar edições" |
+| Editor | Per-type enemy HP and size | Jogabilidade > Inimigos por tipo > "Aplicar edições" |
 
 Mods never change the original game files: they replace them in memory only. To make your own, see [MODDING.md](../MODDING.md). Credits for third-party material are in [CREDITS.md](CREDITS.md).
 
@@ -136,7 +145,7 @@ Mods never change the original game files: they replace them in memory only. To 
 - **Textures:** 4K pack and PS2 button icons.
 - **Controls:** keyboard and mouse; Xbox, PlayStation and generic controllers (SDL3); remapping; horizontal camera inversion.
 - **Tools:** developer menu with search, alternative cameras and an on-screen minimap.
-- **Gameplay:** damage-based difficulty; enemy HP, size, random rolls and elites; drop rate, crystals and random items; HP, MP, gold and EXP cheats; Moai bonus without the PS2 save.
+- **Gameplay:** damage-based difficulty; enemy HP, size, random rolls and elites; drop rate, crystals and random items; HP, MP, gold and EXP cheats (own tab); Moai bonus without the PS2 save.
 - **Support:** bug report with capture and log, performance logging and crash dumps.
 
 ## Experimental features and status

@@ -20,14 +20,15 @@ int main() {
             if (tab.titles[i].page < 0 || tab.titles[i].page >= kMenuPageCount) return 2;   // pagina nova sem kMenuPageCount
         }
     }
-    // Estrutura pedida: camera e minimapa/HUD em Graficos; Cheats fora de Mods; inimigos juntos;
-    // Drops e itens e Pets em abas proprias.
-    const int graphics = TabOfPage(2), enemies = TabOfPage(18), cheats = TabOfPage(6);
-    if (TabOfPage(11) != graphics || TabOfPage(10) != graphics) return 3;
+    // Estrutura pedida em 26/10 (2a versao): inimigos, drops, pets, camera e minimapa/HUD dentro de
+    // Jogabilidade; Graficos e Audio juntos; Cheats fora de Mods; Suporte e Menu juntos.
+    const int gameplay = TabOfPage(0), video = TabOfPage(2), cheats = TabOfPage(6), support = TabOfPage(1);
+    for (int page : {16, 18, 19, 17, 20, 21, 11, 10, 8}) if (TabOfPage(page) != gameplay) return 3;
     if (cheats == TabOfPage(5) || kTabs[cheats].count != 1) return 4;
-    if (TabOfPage(17) != enemies || TabOfPage(19) != enemies || kTabs[enemies].count != 3) return 5;
-    if (TabOfPage(20) == TabOfPage(21) || kTabs[TabOfPage(20)].count != 1 || kTabs[TabOfPage(21)].count != 1) return 6;
-    if (TabOfPage(0) != TabOfPage(16) || TabOfPage(0) == enemies) return 7;
+    if (TabOfPage(3) != video || video == gameplay) return 5;
+    for (int page : {13, 14, 12, 7, 9}) if (TabOfPage(page) != support) return 6;
+    if (kTabCount != 6 || gameplay != 0) return 7;
+    if (TabOfPage(15) != TabOfPage(4) || kTabs[TabOfPage(5)].count != 1) return 17;
     if (TabOfPage(99) != -1) return 8;
 
     // Padroes: iguais aos valores iniciais de dev_runtime.h, cada opcao em uma so pagina.

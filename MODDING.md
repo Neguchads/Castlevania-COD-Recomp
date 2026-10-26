@@ -2,13 +2,13 @@
 
 English · [Português (Brasil)](MODDING.pt-BR.md)
 
-The tools menu starts in Brazilian Portuguese; the **PT-BR** / **EN** buttons in its top-right corner (or Menu > Aparência > "Idioma do menu") switch its language, saved as `menu_language` in `settings.toml`. Option names appear below as they do in the Portuguese menu, with an English translation in parentheses where it helps. The English text lives in `src/common/menu_strings_en.h`, keyed by the Portuguese text; `python tools/menu_strings.py` fails when a menu string has no translation or a translation changes the printf format.
+The tools menu starts in Brazilian Portuguese; the **PT-BR** / **EN** buttons in its top-right corner (or Suporte e menu > Aparência do menu > "Idioma do menu") switch its language, saved as `menu_language` in `settings.toml`. Option names appear below as they do in the Portuguese menu, with an English translation in parentheses where it helps. The English text lives in `src/common/menu_strings_en.h`, keyed by the Portuguese text; `python tools/menu_strings.py` fails when a menu string has no translation or a translation changes the printf format.
 
 ## Panel customization
 
-The player guide, with every tab and option, is in [docs/GUIDE.md](docs/GUIDE.md). There are seven tabs at the top: Jogabilidade (gameplay: game and minimap, difficulty, enemies, drops and items, cheats, HUD and pets, camera, saves), Gráficos (graphics), Áudio (audio), Controles (controls), Mods, Suporte (support: bug report, diagnostics) and Menu (appearance, profiles). The magnifier field at the top searches any option by name: Ctrl+F on the keyboard, or Y on the controller, which opens an on-screen keyboard. L1/R1 or a click switch tabs. The d-pad picks a title in the left column; A enters its options. On a slider, A starts adjusting: the d-pad or the left stick drags it, and B stops adjusting. B goes back from the options to the titles and never closes the panel; only **L3 + R3** or **F1** close it. On the keyboard, arrows, Enter and Esc do the same. With the panel open the game keeps running: the sticks move the character and turn the camera (also in the Livre and Orbital cameras) and the buttons go to the panel; while a slider is being adjusted, the left stick only moves the slider. To pause everything (game, clock, vblank and sound), turn on "Pausar o jogo com o menu aberto" in Menu > Aparência.
+The player guide, with every tab and option, is in [docs/GUIDE.md](docs/GUIDE.md). There are six tabs at the top: Jogabilidade (gameplay: game, difficulty, enemies, drops and items, Innocent Devils, camera, minimap and HUD, saves), Vídeo e áudio (graphics, audio), Controles (controls), Cheats, Mods and Suporte e menu (support and menu: bug report, diagnostics, menu appearance, profiles). The magnifier field at the top searches any option by name: Ctrl+F on the keyboard, or Y on the controller, which opens an on-screen keyboard. L1/R1 or a click switch tabs. The d-pad picks a title in the left column; A enters its options. On a slider, A starts adjusting: the d-pad or the left stick drags it, and B stops adjusting. B goes back from the options to the titles and never closes the panel; only **L3 + R3** or **F1** close it. On the keyboard, arrows, Enter and Esc do the same. With the panel open the game keeps running: the sticks move the character and turn the camera (also in the Livre and Orbital cameras) and the buttons go to the panel; while a slider is being adjusted, the left stick only moves the slider. To pause everything (game, clock, vblank and sound), turn on "Pausar o jogo com o menu aberto" in Suporte e menu > Aparência do menu.
 
-Language: Jogabilidade > Jogo e minimapa > Idioma do jogo switches between English and Português (Brasil). Texts change immediately; images and voices already loaded change after a restart. Japanese is still in the game's Options > Language.
+Language: Jogabilidade > Jogo > Idioma do jogo switches between English and Português (Brasil). Texts change immediately; images and voices already loaded change after a restart. Japanese is still in the game's Options > Language.
 
 Difficulty (Jogabilidade > Dificuldade): presets Fácil, Normal, Difícil, Muito difícil and Pesadelo, or the sliders "Dano recebido pelo jogador" (damage taken by the player) and "Dano recebido pelo Innocent Devil" (damage taken by the Innocent Devil), 0.25x to 4x. The finishing blow and scripted deaths still kill. Enemy HP is under Jogabilidade > Inimigos (below).
 
@@ -18,7 +18,7 @@ Cheats: besides godmode and speedhack, "Vida cheia" (full HP, does not revive), 
 
 *Lament of Innocence* save: on PS2, having the LoI save on the memory card unlocks the Moai statue. In Cheats, "Simular save de Lament of Innocence" makes the game find that save; turn it on, save the settings, and only then load a save or start a new game from the title screen (the log shows `cheat: Lament of Innocence save simulated`). The bonus is written into the save when you save. According to the code, it unlocks an object in a room (it does not go straight to the inventory); the room has not been identified yet.
 
-Minimap: in Jogabilidade > Jogo e minimapa, "Posição horizontal/vertical do minimapa" (0 = left/top, 1 = right/bottom) and the button that returns it to the top-right corner. Salvar opções stores the position.
+Minimap: in Jogabilidade > Minimapa e HUD, "Posição horizontal/vertical do minimapa" (0 = left/top, 1 = right/bottom) and the button that returns it to the top-right corner. Salvar opções stores the position.
 
 PlayStation buttons: turn on the **PS2-Botoes** mod (Mods) to see ✕ ○ □ △ L1 L2 R1 R2 instead of A B X Y L black R white, and in Controles > Controle press **Layout PS2** so L1/R1 become the triggers and L2/R2 black/white, as on PS2. **Layout Xbox** goes back to the default; the "Layout atual" (current layout) line shows Xbox, PS2 or custom. To rebuild the pack: `python tools\hd_pack_match.py buttons --pack <PS2 4K replacements folder>`.
 
@@ -26,11 +26,11 @@ Gráficos also has brightness, contrast and saturation; Áudio has "Silenciar qu
 
 Mouse horizontal and vertical inversion are separate. The default was inverted compared to the previous build at the user's request. WASD moves, the arrows control the camera; both groups can be remapped. Restoring the default controls brings back the port's keys.
 
-Jogabilidade > Inimigos: todos > "Vida dos inimigos" (enemy HP, 0.5x to 5x, key `enemy_hp`) multiplies the max HP the game computes for each enemy type. It applies to enemies that spawn after the change; change rooms to see it.
+Jogabilidade > Todos os inimigos > "Vida dos inimigos" (enemy HP, 0.5x to 5x, key `enemy_hp`) multiplies the max HP the game computes for each enemy type. It applies to enemies that spawn after the change; change rooms to see it.
 
-Jogabilidade > Inimigos: todos > "Tamanho dos inimigos" (enemy size, 0.5x to 3x, key `enemy_scale`) changes the size of all enemies; the per-type setting multiplies on top. Jogabilidade > Inimigos: por tipo sets HP and size per enemy type. The settings live in `mods/Editor/enemies.toml` (`[enemy.N]` with `name`, `hp` from 0.5 to 5 and `scale` from 0.5 to 3) and only apply with the Editor mod on; no game file changes. Size is visual only: the hit area stays the original one. The game rescales the enemy after it spawns; since 2026-10-26 the port reapplies the factor on that rescale. This fix has not been confirmed in game yet. HP works.
+Jogabilidade > Todos os inimigos > "Tamanho dos inimigos" (enemy size, 0.5x to 3x, key `enemy_scale`) changes the size of all enemies; the per-type setting multiplies on top. Jogabilidade > Inimigos por tipo sets HP and size per enemy type. The settings live in `mods/Editor/enemies.toml` (`[enemy.N]` with `name`, `hp` from 0.5 to 5 and `scale` from 0.5 to 3) and only apply with the Editor mod on; no game file changes. Size is visual only: the hit area stays the original one. The game rescales the enemy after it spawns; since 2026-10-26 the port reapplies the factor on that rescale. This fix has not been confirmed in game yet. HP works.
 
-Jogabilidade > Inimigos: aleatório rolls the size and HP of each enemy when it spawns (`enemy_random`, ranges `enemy_random_scale_min/max` and `enemy_random_hp_min/max`). The elite chance (`enemy_elite_chance`, 0 to 100) multiplies on top with `enemy_elite_scale` and `enemy_elite_hp`. The layers multiply (all x type x roll), with a final limit of 0.5x to 3x for size and 0.5x to 5x for HP. The Original, Variados, Elites, Gigantes and Caotico buttons fill everything at once. Swapping one enemy type for another is still being researched.
+Jogabilidade > Inimigos aleatórios rolls the size and HP of each enemy when it spawns (`enemy_random`, ranges `enemy_random_scale_min/max` and `enemy_random_hp_min/max`). The elite chance (`enemy_elite_chance`, 0 to 100) multiplies on top with `enemy_elite_scale` and `enemy_elite_hp`. The layers multiply (all x type x roll), with a final limit of 0.5x to 3x for size and 0.5x to 5x for HP. The Original, Variados, Elites, Gigantes and Caotico buttons fill everything at once. Swapping one enemy type for another is still being researched.
 
 The "Filtrar opções" (filter options) field at the top of the tools menu (Ctrl+F) finds any option by name, ignoring accents and word order; Enter opens its page.
 
@@ -40,7 +40,7 @@ The game's "invert camera" option only inverts the vertical axis, as on the orig
 
 Godmode now also intercepts the absolute HP setter, not only the delta: both went through the original wrappers in an isolated test, keeping healing and other characters intact. The second bypass was reproduced before the fix. A combat retest is still needed.
 
-The panel can be moved by its title bar and resized by the bottom-right corner. The Aparência tab sets opacity, background, selection and focus. The numeric position/size controls also accept controller navigation. Restoring the default appearance resets the window and the black/red/gold palette; it does not delete saves or remaps.
+The panel can be moved by its title bar and resized by the bottom-right corner. Suporte e menu > Aparência do menu sets opacity, background, selection and focus. The numeric position/size controls also accept controller navigation. Restoring the default appearance resets the window and the black/red/gold palette; it does not delete saves or remaps.
 
 Salvar opções writes the preferences to settings.toml. Closing the panel also saves its geometry. The Controles tab shows the Xbox reference, the action and the key in separate columns.
 
@@ -68,7 +68,7 @@ F3 saves the image and the report after the graphics capture finishes. The confi
 
 Each `reports/date-time-id` folder contains `screenshot.bmp`, `report.txt` and `runtime.log`. The capture comes from the game frame, without the tools menu or the desktop. No file is sent automatically. The log matches the moment you save the report. Captures during loading may record a black frame; use "Nova captura" (new capture) when the image you want is visible.
 
-Other pages of the Suporte tab:
+Other pages of the Suporte e menu tab:
 
 - **Capturas salvas** (saved captures): the 12 newest. Move the d-pad through the list to see the image; "Abrir pasta" (open folder) and "Copiar relato" (copy report) act on the selected one.
 - **Logs e travamentos** (logs and crashes): the last 200 lines of this session's log ("Copiar log", "Abrir pasta do log"). Each crash writes `CrashDumps/<date>.dmp` and a copy of the log with the same name; open the item to see the last lines.
