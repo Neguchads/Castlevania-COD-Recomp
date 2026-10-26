@@ -16,7 +16,7 @@ DEFINITION = re.compile(r"^(?:static\s+)?(?:void|bool|int)\s+(\w+)\([^)]*\)\s*\{
 PAGE = re.compile(r"case\s+(\d+)\s*:\s*(\w+)\(")
 LABEL = re.compile(
     r"\b(?:Toggle|Slider|Heading|ImGui::(?:Checkbox|Button|SliderFloat|SliderInt|Combo|SeparatorText|Selectable))"
-    r"\(\s*\"((?:[^\"\\]|\\.)*)\"")
+    r"\(\s*(?:Tr\(\s*)?\"((?:[^\"\\]|\\.)*)\"")
 CALL = re.compile(r"\b(\w+)\(")
 
 

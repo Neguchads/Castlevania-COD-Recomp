@@ -15,6 +15,7 @@
 #include "area_names.h"
 #include "dev_runtime.h"
 #include "menu_input.h"
+#include "menu_language.h"
 #include "menu_nav.h"
 #include "game_cheat_rules.h"
 #include "drop_rules.h"
@@ -29,6 +30,13 @@ namespace dev {
 namespace {
 int page = 0;
 MenuNav nav;
+// Texto do menu no idioma escolhido (rodape ou Menu > Aparencia); o portugues do codigo e a chave.
+const char* Tr(const char* pt) { return MenuText(pt,menu_english.load()); }
+void SetMenuEnglish(bool english) {
+    menu_english.store(english);
+    LOGR("dev: menu language %s",MenuLanguageKey(english));
+    app::Save();
+}
 struct MenuTitleEntry {const char* label;int page;};
 struct MenuTabEntry {const char* label;MenuTitleEntry titles[12];int count;};
 // Tudo que muda a partida fica em Jogabilidade (inimigos, drops e cheats inclusos).
@@ -51,7 +59,7 @@ void ShowPage(int target) {
 std::string PagePath(int target) {
     for(const auto& tab:kTabs)
         for(int title=0;title<tab.count;++title)
-            if(tab.titles[title].page==target) return std::string(tab.label)+" > "+tab.titles[title].label;
+            if(tab.titles[title].page==target) return std::string(Tr(tab.label))+" > "+Tr(tab.titles[title].label);
     return {};
 }
 // Barra de filtro: texto digitado e a opcao escolhida nos resultados (a pagina rola ate ela).
@@ -74,7 +82,7 @@ ImVec2 MenuSize(float width,float height) {
     return {width>0 ? width*scale : width,height>0 ? height*scale : height};
 }
 void DrawToast() {
-    const std::string message=ToastMessage();
+    const std::string message=Tr(ToastMessage().c_str());
     if(message.empty())return;
     const auto& io=ImGui::GetIO();
     const float scale=std::clamp(std::min(io.DisplaySize.x/1920.0f,io.DisplaySize.y/1080.0f),.65f,1.5f);
@@ -113,25 +121,27 @@ void DrawFps(double fps) {
 
 void Heading(const char* name, const char* subtitle) {
     ImGui::PushFont(section_font);
-    ImGui::TextColored(gold, "%s", name);
+    ImGui::TextColored(gold, "%s", Tr(name));
     ImGui::PopFont();
     ImGui::Spacing();
     ImGui::PushStyleColor(ImGuiCol_Text,muted_text);
-    ImGui::TextWrapped("%s", subtitle);
+    ImGui::TextWrapped("%s", Tr(subtitle));
     ImGui::PopStyleColor();
     ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 }
 bool Toggle(const char* label, std::atomic<bool>& setting) {
     ScrollIfJumped(label);
     bool value = setting.load();
-    if (!ImGui::Checkbox(label, &value)) return false;
+    // ### deixa o ID do item igual nos dois idiomas
+    char id[512];std::snprintf(id,sizeof(id),"%s###%s",Tr(label),label);
+    if (!ImGui::Checkbox(id, &value)) return false;
     setting.store(value); return true;
 }
 bool Slider(const char* label, std::atomic<float>& setting, float minimum, float maximum, const char* format) {
     ScrollIfJumped(label);
     float value = setting.load();
     ImGui::PushID(label);
-    ImGui::TextUnformatted(label);
+    ImGui::TextUnformatted(Tr(label));
     ImGui::SetNextItemWidth(-1);
     const bool changed=ImGui::SliderFloat("##value", &value, minimum, maximum, format);
     ImGui::PopID();
@@ -143,58 +153,58 @@ void GameHacks() {
     if (Toggle("Godmode: proteger a vida do jogador",godmode))
         LOGR("dev: godmode %s",godmode.load() ? "enabled" : "disabled");
     ImGui::EndDisabled();
-    if (!godmode_ready) ImGui::TextColored(crimson,"A assinatura desta versao do jogo ainda nao foi confirmada.");
-    else ImGui::TextColored(muted_text,"Danos bloqueados nesta sessao: %u",prevented_damage.load());
-    ImGui::TextWrapped("Preserva cura e outros personagens. Impactos e animacoes continuam; nao reverte morte ja iniciada.");
+    if (!godmode_ready) ImGui::TextColored(crimson,"%s",Tr("A assinatura desta versao do jogo ainda nao foi confirmada."));
+    else ImGui::TextColored(muted_text,Tr("Danos bloqueados nesta sessao: %u"),prevented_damage.load());
+    ImGui::TextWrapped("%s",Tr("Preserva cura e outros personagens. Impactos e animacoes continuam; nao reverte morte ja iniciada."));
     ImGui::Spacing();
     float factor = speed.load();
     if(ImGui::SliderFloat("Speedhack",&factor,.5f,2.0f,"%.2fx")) SetSpeed(factor,false);
     if(ImGui::IsItemDeactivatedAfterEdit()) LOGR("dev: guest speed %.2fx (clock, waits, vblank, audio)",speed.load());
     const float factors[]{.5f,1,1.5f,2};
-    const char* labels[]{"0.5x","Normal","1.5x","2x"};
+    const char* labels[]{"0.5x",Tr("Normal"),"1.5x","2x"};
     for(int i=0;i<4;i++) {
         if(i) ImGui::SameLine();
         if(ImGui::Button(labels[i],MenuSize(82,30))) SetSpeed(factors[i]);
     }
-    ImGui::TextWrapped("Escala os relogios do Xbox, timers, quadros e audio. O tom do som acompanha a velocidade. Vsync volta a valer em 1x.");
+    ImGui::TextWrapped("%s",Tr("Escala os relogios do Xbox, timers, quadros e audio. O tom do som acompanha a velocidade. Vsync volta a valer em 1x."));
     ImGui::Spacing();ImGui::Separator();ImGui::Spacing();
     ImGui::BeginDisabled(!godmode_ready);
     static const char* action_status="";
-    if(ImGui::Button("Vida cheia",MenuSize(150,30))) action_status=RefillPlayerHp() ? "Vida restaurada." : "Vida ja cheia ou jogador fora de partida.";
+    if(ImGui::Button(Tr("Vida cheia"),MenuSize(150,30))) action_status=RefillPlayerHp() ? "Vida restaurada." : "Vida ja cheia ou jogador fora de partida.";
     ImGui::SameLine();
-    if(ImGui::Button("MP cheio",MenuSize(150,30))) action_status=RefillPlayerMp() ? "MP restaurado." : "MP ja cheio ou jogador fora de partida.";
+    if(ImGui::Button(Tr("MP cheio"),MenuSize(150,30))) action_status=RefillPlayerMp() ? "MP restaurado." : "MP ja cheio ou jogador fora de partida.";
     ImGui::SameLine();
-    if(ImGui::Button("Ouro maximo",MenuSize(150,30))) action_status=MaxPlayerGold() ? "Ouro em 9.999.999." : "Memoria do ouro indisponivel.";
-    if(*action_status) ImGui::TextColored(muted_text,"%s",action_status);
+    if(ImGui::Button(Tr("Ouro maximo"),MenuSize(150,30))) action_status=MaxPlayerGold() ? "Ouro em 9.999.999." : "Memoria do ouro indisponivel.";
+    if(*action_status) ImGui::TextColored(muted_text,"%s",Tr(action_status));
     Slider("Ganho de ouro",gold_gain,kMinGainFactor,kMaxGainFactor,"%.1fx");
     Slider("Ganho de EXP",exp_gain,kMinGainFactor,kMaxGainFactor,"%.1fx");
     Toggle("Compras nao gastam ouro",free_shopping);
     Toggle("MP infinito",infinite_mp);
     ImGui::EndDisabled();
-    ImGui::TextWrapped("Ouro e EXP passam pelo setter original do jogo (limite de 9.999.999 e nivel 99 mantidos). Vida cheia nao revive.");
+    ImGui::TextWrapped("%s",Tr("Ouro e EXP passam pelo setter original do jogo (limite de 9.999.999 e nivel 99 mantidos). Vida cheia nao revive."));
     ImGui::Spacing();
-    ImGui::TextColored(gold,"Codigos de nome do jogo");
-    ImGui::TextWrapped("Ao criar o save, use o nome @CRAZY (modo Crazy, mais dificil) ou @TREVOR (jogar com Trevor). Fonte: guias do jogo; em algumas versoes exige ter zerado. Nao testado nesta versao.");
+    ImGui::TextColored(gold,"%s",Tr("Codigos de nome do jogo"));
+    ImGui::TextWrapped("%s",Tr("Ao criar o save, use o nome @CRAZY (modo Crazy, mais dificil) ou @TREVOR (jogar com Trevor). Fonte: guias do jogo; em algumas versoes exige ter zerado. Nao testado nesta versao."));
     ImGui::Spacing();
-    ImGui::TextColored(gold,"Bonus do save de Lament of Innocence");
+    ImGui::TextColored(gold,"%s",Tr("Bonus do save de Lament of Innocence"));
     Toggle("Simular save de Lament of Innocence",lament_save);
-    ImGui::TextWrapped("No PS2, ter o save de Lament of Innocence no memory card libera a estatua Moai (vale 5000 de ouro). Ligue antes de comecar um jogo novo ou carregar; o bonus fica gravado no save quando voce salvar e nao sai desligando a opcao.");
+    ImGui::TextWrapped("%s",Tr("No PS2, ter o save de Lament of Innocence no memory card libera a estatua Moai (vale 5000 de ouro). Ligue antes de comecar um jogo novo ou carregar; o bonus fica gravado no save quando voce salvar e nao sai desligando a opcao."));
 }
 void General() {
     Heading("Opcoes de jogo", "Minimapa, interface e ferramentas da partida.");
     Toggle("Mostrar minimapa",minimap_enabled);
     Toggle("Girar minimapa conforme a camera",minimap_rotating);
-    ImGui::TextDisabled("Menus originais: escala 100%%. Reducao inteligente adiada.");
+    ImGui::TextDisabled("%s",Tr("Menus originais: escala 100%. Reducao inteligente adiada."));
     int language=ptbr_enabled.load() ? 1 : 0;
     const char* languages[]{"English","Português (Brasil)"};
-    if(ImGui::Combo("Idioma do jogo",&language,languages,2)) SelectTextLanguage(language==1 ? 2 : 1);
-    ImGui::TextDisabled("Textos mudam na hora; imagens e vozes ja carregadas mudam ao reiniciar. Japones: Opcoes > Idioma no jogo.");
+    if(ImGui::Combo(Tr("Idioma do jogo"),&language,languages,2)) SelectTextLanguage(language==1 ? 2 : 1);
+    ImGui::TextDisabled("%s",Tr("Textos mudam na hora; imagens e vozes ja carregadas mudam ao reiniciar. Japones: Opcoes > Idioma no jogo."));
     Slider("Tamanho do minimapa",minimap_scale,.6f,1.6f,"%.2fx");
     Slider("Opacidade do minimapa",minimap_opacity,.2f,1.0f,"%.2f");
     Slider("Posicao horizontal do minimapa",minimap_x,0,1,"%.2f");
     Slider("Posicao vertical do minimapa",minimap_y,0,1,"%.2f");
-    if(ImGui::Button("Minimapa no canto superior direito",MenuSize(-1,30))) { minimap_x.store(1);minimap_y.store(0); }
-    ImGui::TextDisabled("0 = esquerda/topo, 1 = direita/base. Salvar opcoes grava a posicao.");
+    if(ImGui::Button(Tr("Minimapa no canto superior direito"),MenuSize(-1,30))) { minimap_x.store(1);minimap_y.store(0); }
+    ImGui::TextDisabled("%s",Tr("0 = esquerda/topo, 1 = direita/base. Salvar opcoes grava a posicao."));
 }
 void DifficultyPage() {
     Heading("Dificuldade", "Multiplica o dano que o jogador e o Innocent Devil recebem.");
@@ -204,13 +214,13 @@ void DifficultyPage() {
         if(i) ImGui::SameLine();
         const bool current=damage_taken.load()==presets[i].taken && devil_damage_taken.load()==presets[i].devil;
         if(current) ImGui::PushStyleColor(ImGuiCol_Button,ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
-        if(ImGui::Button(presets[i].name,MenuSize(0,30))) { damage_taken.store(presets[i].taken);devil_damage_taken.store(presets[i].devil); }
+        if(ImGui::Button(Tr(presets[i].name),MenuSize(0,30))) { damage_taken.store(presets[i].taken);devil_damage_taken.store(presets[i].devil); }
         if(current) ImGui::PopStyleColor();
     }
     Slider("Dano recebido pelo jogador",damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     Slider("Dano recebido pelo Innocent Devil",devil_damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
-    ImGui::TextWrapped("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto.");
-    ImGui::TextColored(muted_text,"Vida, tamanho, sorteio e elites dos inimigos: Jogabilidade > Inimigos.");
+    ImGui::TextWrapped("%s",Tr("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto."));
+    ImGui::TextColored(muted_text,"%s",Tr("Vida, tamanho, sorteio e elites dos inimigos: Jogabilidade > Inimigos."));
 }
 // Combinacoes prontas da aba Inimigos: global, sorteio por inimigo e elite juntos.
 struct EnemyPreset {const char* name;float hp,scale;bool random;float scale_min,scale_max,hp_min,hp_max,elite;};
@@ -235,7 +245,7 @@ void ResetEnemyOptions() {
     LOGR("dev: enemy options reset to default");
 }
 void ResetEnemyButton() {
-    if(ImGui::Button("Restaurar padrao dos inimigos",MenuSize(280,30))) ResetEnemyOptions();
+    if(ImGui::Button(Tr("Restaurar padrao dos inimigos"),MenuSize(280,30))) ResetEnemyOptions();
 }
 void ApplyPreset(const EnemyPreset& p) {
     enemy_hp.store(p.hp);enemy_scale.store(p.scale);enemy_random.store(p.random);
@@ -250,50 +260,50 @@ void EnemiesPage() {
         if(i) ImGui::SameLine();
         const bool current=PresetActive(kEnemyPresets[i]);
         if(current) ImGui::PushStyleColor(ImGuiCol_Button,ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
-        if(ImGui::Button(kEnemyPresets[i].name,MenuSize(0,30))) ApplyPreset(kEnemyPresets[i]);
+        if(ImGui::Button(Tr(kEnemyPresets[i].name),MenuSize(0,30))) ApplyPreset(kEnemyPresets[i]);
         if(current) ImGui::PopStyleColor();
     }
-    ImGui::TextColored(muted_text,"Variados e Caotico sorteiam cada inimigo; Elites deixa 15%% deles com 2x tamanho e 3x vida.");
+    ImGui::TextColored(muted_text,"%s",Tr("Variados e Caotico sorteiam cada inimigo; Elites deixa 15% deles com 2x tamanho e 3x vida."));
     Slider("Vida dos inimigos",enemy_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
     Slider("Tamanho dos inimigos",enemy_scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
-    ImGui::TextWrapped("As camadas se multiplicam: todos x tipo (Por tipo) x sorteio (Aleatorio). Limites finais: tamanho 0,5x a 3x, vida 0,5x a 5x.");
-    ImGui::TextColored(muted_text,"Tamanho e so visual: a area de acerto continua a original. Vida vale para quem aparece depois: troque de sala.");
+    ImGui::TextWrapped("%s",Tr("As camadas se multiplicam: todos x tipo (Por tipo) x sorteio (Aleatorio). Limites finais: tamanho 0,5x a 3x, vida 0,5x a 5x."));
+    ImGui::TextColored(muted_text,"%s",Tr("Tamanho e so visual: a area de acerto continua a original. Vida vale para quem aparece depois: troque de sala."));
     ResetEnemyButton();
 }
 void DropsPage() {
     Heading("Drops e itens","Chance e quantidade do que os inimigos soltam ao morrer, e tamanho dos itens no chao. So na memoria.");
     Slider("Taxa de drop de itens",drop_rate,0,kMaxDropFactor,"%.2fx");
-    ImGui::TextColored(muted_text,"Multiplica a chance de cada item (a sorte do personagem continua contando). 0x desliga os itens.");
+    ImGui::TextColored(muted_text,"%s",Tr("Multiplica a chance de cada item (a sorte do personagem continua contando). 0x desliga os itens."));
     Slider("Chance de cristais dos Innocent Devils",crystal_rate,0,kMaxDropFactor,"%.2fx");
     Slider("Cristais por drop",crystal_amount,1,kMaxCrystalAmount,"%.2fx");
-    ImGui::TextColored(muted_text,"Cristais de evolucao so caem com um Innocent Devil em campo. O jogo junta no maximo 4 cristais por drop.");
+    ImGui::TextColored(muted_text,"%s",Tr("Cristais de evolucao so caem com um Innocent Devil em campo. O jogo junta no maximo 4 cristais por drop."));
     Toggle("Itens aleatorios nos drops",random_drops);
-    ImGui::TextColored(muted_text,"Troca o item que o inimigo soltaria por outro da tabela de drops do proprio jogo.");
+    ImGui::TextColored(muted_text,"%s",Tr("Troca o item que o inimigo soltaria por outro da tabela de drops do proprio jogo."));
     Slider("Tamanho dos itens no chao",item_scale,kMinItemScale,kMaxItemScale,"%.2fx");
-    if(ImGui::Button("Itens pela metade",MenuSize(200,30))) item_scale.store(.5f);
+    if(ImGui::Button(Tr("Itens pela metade"),MenuSize(200,30))) item_scale.store(.5f);
     ImGui::SameLine();
-    if(ImGui::Button("Tamanho original",MenuSize(200,30))) item_scale.store(1);
-    ImGui::TextColored(muted_text,"So o visual muda: a area de pegar continua a original. Vale para itens que caem depois da mudanca.");
-    ImGui::TextWrapped("Valem para inimigos que morrem depois da mudanca. Salvar opcoes grava tudo.");
+    if(ImGui::Button(Tr("Tamanho original"),MenuSize(200,30))) item_scale.store(1);
+    ImGui::TextColored(muted_text,"%s",Tr("So o visual muda: a area de pegar continua a original. Vale para itens que caem depois da mudanca."));
+    ImGui::TextWrapped("%s",Tr("Valem para inimigos que morrem depois da mudanca. Salvar opcoes grava tudo."));
 }
 void EnemyRandomPage() {
     Heading("Aleatorio","Cada inimigo sorteia tamanho e vida ao aparecer e mantem o sorteio ate sumir.");
     Toggle("Sortear tamanho e vida de cada inimigo",enemy_random);
     ImGui::BeginDisabled(!enemy_random.load());
-    ImGui::SeparatorText("Faixas do sorteio");
+    ImGui::SeparatorText(Tr("Faixas do sorteio"));
     Slider("Tamanho minimo",enemy_random_scale_min,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
     Slider("Tamanho maximo",enemy_random_scale_max,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
     Slider("Vida minima",enemy_random_hp_min,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
     Slider("Vida maxima",enemy_random_hp_max,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
-    ImGui::SeparatorText("Elites");
+    ImGui::SeparatorText(Tr("Elites"));
     Slider("Chance de elite",enemy_elite_chance,0,100,"%.0f%%");
     Slider("Tamanho extra da elite",enemy_elite_scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
     Slider("Vida extra da elite",enemy_elite_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
     ImGui::EndDisabled();
-    ImGui::TextWrapped("Minimo maior que maximo e trocado sozinho. Elite multiplica por cima do sorteio. Vale para inimigos que aparecem depois da mudanca.");
+    ImGui::TextWrapped("%s",Tr("Minimo maior que maximo e trocado sozinho. Elite multiplica por cima do sorteio. Vale para inimigos que aparecem depois da mudanca."));
     ResetEnemyButton();
-    ImGui::SeparatorText("Trocar tipos de inimigo");
-    ImGui::TextColored(muted_text,"Em pesquisa: trocar um inimigo por outro exige carregar modelos que a sala nao tem, com risco de travar. Vem depois do estudo das posicoes.");
+    ImGui::SeparatorText(Tr("Trocar tipos de inimigo"));
+    ImGui::TextColored(muted_text,"%s",Tr("Em pesquisa: trocar um inimigo por outro exige carregar modelos que a sala nao tem, com risco de travar. Vem depois do estudo das posicoes."));
 }
 // Liga ou desliga o mod Editor; cria a pasta na primeira vez.
 void SetEditorMod(bool enabled) {
@@ -304,30 +314,30 @@ void SetEditorMod(bool enabled) {
 void EnemyEditorPage() {
     Heading("Por tipo","Vida e tamanho por tipo de inimigo, como mod: so na memoria, gravado em mods/Editor/enemies.toml. Desligar o mod volta ao jogo original.");
     bool on=EnemyEditorActive();
-    if(ImGui::Checkbox("Aplicar edicoes (mod Editor)",&on)) SetEditorMod(on);
+    if(ImGui::Checkbox(Tr("Aplicar edicoes (mod Editor)"),&on)) SetEditorMod(on);
     ImGui::SameLine();
-    if(ImGui::Button("Salvar edicoes",MenuSize(160,0)) && SaveEnemyEdits()) {
+    if(ImGui::Button(Tr("Salvar edicoes"),MenuSize(160,0)) && SaveEnemyEdits()) {
         ReloadMods();NotifyToast("Edicoes dos inimigos salvas em mods/Editor/enemies.toml.");
     }
-    ImGui::TextWrapped("A lista mostra os inimigos que ja apareceram nesta sessao e os salvos no mod. Tamanho muda na hora; vida vale para quem nasce depois (troque de sala). So o visual cresce: a area de acerto e a colisao continuam as originais.");
-    if(!on) ImGui::TextColored(crimson,"Mod Editor desligado: os ajustes abaixo ficam guardados, mas o jogo usa os valores originais.");
+    ImGui::TextWrapped("%s",Tr("A lista mostra os inimigos que ja apareceram nesta sessao e os salvos no mod. Tamanho muda na hora; vida vale para quem nasce depois (troque de sala). So o visual cresce: a area de acerto e a colisao continuam as originais."));
+    if(!on) ImGui::TextColored(crimson,"%s",Tr("Mod Editor desligado: os ajustes abaixo ficam guardados, mas o jogo usa os valores originais."));
     const auto rows=EnemyEditorRows();
-    if(rows.empty()) ImGui::TextColored(muted_text,"Nenhum inimigo visto ainda: entre numa sala com inimigos.");
-    else if(ImGui::Button("Voltar todos os tipos ao original",MenuSize(300,30)))
+    if(rows.empty()) ImGui::TextColored(muted_text,"%s",Tr("Nenhum inimigo visto ainda: entre numa sala com inimigos."));
+    else if(ImGui::Button(Tr("Voltar todos os tipos ao original"),MenuSize(300,30)))
         for(const auto& row:rows) SetEnemyEdit(row.type,1,1);
     for(const auto& row:rows) {
         ImGui::PushID(int(row.type));
         char header[96];
-        std::snprintf(header,sizeof(header),"%s (tipo %u)%s",row.edit.name.empty() ? "Inimigo" : row.edit.name.c_str(),row.type,
-            row.seen ? "" : " - salvo, nao visto nesta sessao");
+        std::snprintf(header,sizeof(header),Tr("%s (tipo %u)%s"),row.edit.name.empty() ? Tr("Inimigo") : row.edit.name.c_str(),row.type,
+            row.seen ? "" : Tr(" - salvo, nao visto nesta sessao"));
         ImGui::SeparatorText(header);
         float hp=row.edit.hp,scale=row.edit.scale;
-        ImGui::TextUnformatted("Vida");ImGui::SetNextItemWidth(-1);
+        ImGui::TextUnformatted(Tr("Vida"));ImGui::SetNextItemWidth(-1);
         bool changed=ImGui::SliderFloat("##hp",&hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
-        ImGui::TextUnformatted("Tamanho");ImGui::SetNextItemWidth(-1);
+        ImGui::TextUnformatted(Tr("Tamanho"));ImGui::SetNextItemWidth(-1);
         changed|=ImGui::SliderFloat("##scale",&scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
         if(changed) SetEnemyEdit(row.type,hp,scale);
-        if(!row.edit.Neutral() && ImGui::Button("Voltar ao original",MenuSize(200,0))) SetEnemyEdit(row.type,1,1);
+        if(!row.edit.Neutral() && ImGui::Button(Tr("Voltar ao original"),MenuSize(200,0))) SetEnemyEdit(row.type,1,1);
         ImGui::PopID();
     }
 }
@@ -335,67 +345,67 @@ void HudPage() {
     Heading("HUD e pets", "Tamanho e visibilidade da interface original.");
     Toggle("Mostrar HUD original do jogo",hud_enabled);
     Toggle("Manter vida/MP sempre visiveis",hud_always_visible);
-    if(hud_always_visible)ImGui::TextWrapped("Mantem as barras visiveis fora de combate. Desative para voltar ao temporizador original.");
+    if(hud_always_visible)ImGui::TextWrapped("%s",Tr("Mantem as barras visiveis fora de combate. Desative para voltar ao temporizador original."));
     Slider("Escala do HUD e molduras",hud_scale,.35f,1.0f,"%.2fx");
-    if(ImGui::Button("Usar HUD em 50%")) hud_scale.store(.5f);
+    if(ImGui::Button(Tr("Usar HUD em 50%"))) hud_scale.store(.5f);
     ImGui::BeginDisabled(hud_always_visible.load());
     Toggle("Ocultar HUD mais rapido fora de combate",hud_quick_hide);
     if(hud_quick_hide) Slider("Espera para ocultar HUD",hud_hide_delay,.2f,5.0f,"%.1f s");
     ImGui::EndDisabled();
-    ImGui::TextWrapped("Usa o temporizador original do jogo; dano e outros eventos continuam exibindo a interface.");
+    ImGui::TextWrapped("%s",Tr("Usa o temporizador original do jogo; dano e outros eventos continuam exibindo a interface."));
 }
 void CameraPage() {
     Heading("Camera", "Enquadramento, camera livre e orbital experimental.");
     int camera=camera_mode.load();
-    const char* cameras[]{"Original","Cinematica (inspirada em Lords of Shadow 1)","Proxima (inspirada em Lords of Shadow 2)","Personalizada","Livre","Orbital em terceira pessoa"};
-    if(ImGui::Combo("Camera",&camera,cameras,6)) camera_mode.store(camera);
+    const char* cameras[]{Tr("Original"),Tr("Cinematica (inspirada em Lords of Shadow 1)"),Tr("Proxima (inspirada em Lords of Shadow 2)"),Tr("Personalizada"),Tr("Livre"),Tr("Orbital em terceira pessoa")};
+    if(ImGui::Combo(Tr("Camera"),&camera,cameras,6)) camera_mode.store(camera);
     if(camera==3 || camera==5) {
         Slider("Distancia da camera",camera_distance,.5f,2.5f,"%.2fx");
         Slider("Altura da camera",camera_height,-200,300,"%.0f");
     }
     if(camera>=3) Slider("Campo de visao relativo",camera_field,.65f,1.5f,"%.2fx");
     if(camera==3 || camera==4) {
-        Slider("Angulo horizontal",camera_yaw,-cod_view::kMaxCameraYaw,cod_view::kMaxCameraYaw,"%.0f graus");
-        Slider("Inclinacao",camera_pitch,-cod_view::kMaxCameraPitch,cod_view::kMaxCameraPitch,"%.0f graus");
-        Slider("Rotacao do horizonte",camera_roll,-cod_view::kMaxCameraRoll,cod_view::kMaxCameraRoll,"%.0f graus");
-        if(ImGui::Button("Zerar angulo, inclinacao e rotacao")) { camera_yaw=0;camera_pitch=0;camera_roll=0; }
-        ImGui::TextWrapped(camera==3 ? "Angulo e inclinacao giram a camera em volta do personagem; rotacao inclina o horizonte. O controle continua no referencial original, entao angulos grandes deixam o movimento torto."
-                                     : "Somados ao olhar da camera livre; rotacao inclina o horizonte.");
+        Slider("Angulo horizontal",camera_yaw,-cod_view::kMaxCameraYaw,cod_view::kMaxCameraYaw,Tr("%.0f graus"));
+        Slider("Inclinacao",camera_pitch,-cod_view::kMaxCameraPitch,cod_view::kMaxCameraPitch,Tr("%.0f graus"));
+        Slider("Rotacao do horizonte",camera_roll,-cod_view::kMaxCameraRoll,cod_view::kMaxCameraRoll,Tr("%.0f graus"));
+        if(ImGui::Button(Tr("Zerar angulo, inclinacao e rotacao"))) { camera_yaw=0;camera_pitch=0;camera_roll=0; }
+        ImGui::TextWrapped("%s",Tr(camera==3 ? "Angulo e inclinacao giram a camera em volta do personagem; rotacao inclina o horizonte. O controle continua no referencial original, entao angulos grandes deixam o movimento torto."
+                                     : "Somados ao olhar da camera livre; rotacao inclina o horizonte."));
     }
     if(camera==5) {
         Slider("Acompanhamento suave",orbit_smoothing,1,20,"%.1f");
-        ImGui::TextWrapped("Mouse / analogico direito: olhar independente. Apos 1,5 s sem olhar manual, volta suavemente para tras do personagem. WASD / analogico esquerdo: movimento. Usa colisao nativa para encurtar a distancia junto a paredes.");
+        ImGui::TextWrapped("%s",Tr("Mouse / analogico direito: olhar independente. Apos 1,5 s sem olhar manual, volta suavemente para tras do personagem. WASD / analogico esquerdo: movimento. Usa colisao nativa para encurtar a distancia junto a paredes."));
     }
     if(camera==4) {
         Slider("Velocidade da camera livre",camera_fly_speed,100,2000,"%.0f");
-        ImGui::TextWrapped("Feche o painel: WASD move, Q/E desce/sobe, mouse olha. Controle: analogicos movem/olham, LT/RT descem/sobem. O personagem fica sem comandos; o mundo continua rodando.");
+        ImGui::TextWrapped("%s",Tr("Feche o painel: WASD move, Q/E desce/sobe, mouse olha. Controle: analogicos movem/olham, LT/RT descem/sobem. O personagem fica sem comandos; o mundo continua rodando."));
     }
-    if(camera) ImGui::TextWrapped("Experimental: perfis de enquadramento, sem copiar o sistema dos outros jogos. Pode afetar cenas com camera ativa e atravessar paredes. Original restaura o comportamento nativo.");
+    if(camera) ImGui::TextWrapped("%s",Tr("Experimental: perfis de enquadramento, sem copiar o sistema dos outros jogos. Pode afetar cenas com camera ativa e atravessar paredes. Original restaura o comportamento nativo."));
 }
 void Diagnostics(double fps) {
     Heading("Diagnostico", "Informacoes da partida e captura de problemas.");
-    ImGui::Text("Desempenho: %.0f FPS",fps);
+    ImGui::Text(Tr("Desempenho: %.0f FPS"),fps);
     if(kernel::g_base) {
         const auto stage=static_cast<int8_t>(kernel::g_base[0xB234F4]);
         const auto room=static_cast<int8_t>(kernel::g_base[0xB234F5]);
         const char* area=AreaName(stage);
-        ImGui::TextColored(gold,"%s    Mapa ID %d    Sala ID %d",area ? area : "Area sem nome",int(stage),int(room));
-        ImGui::TextColored(muted_text,"Nomes vindos dos teleportes do jogo; mapas sem teleporte mostram so o ID.");
+        ImGui::TextColored(gold,Tr("%s    Mapa ID %d    Sala ID %d"),area ? area : Tr("Area sem nome"),int(stage),int(room));
+        ImGui::TextColored(muted_text,"%s",Tr("Nomes vindos dos teleportes do jogo; mapas sem teleporte mostram so o ID."));
     }
     Toggle("Registrar desempenho no log (1 vez por segundo)",perf_log);
-    ImGui::TextColored(muted_text,"Ligue, jogue o trecho que trava por 1 minuto e salve um relato: o log vai junto. So vale nesta sessao.");
+    ImGui::TextColored(muted_text,"%s",Tr("Ligue, jogue o trecho que trava por 1 minuto e salve um relato: o log vai junto. So vale nesta sessao."));
     Toggle("Pesquisar vida dos inimigos (log)",enemy_probe);
-    ImGui::TextColored(muted_text,"Ligue, bata em 2 ou 3 inimigos ate morrerem e salve um relato. O log mostra quais campos do alvo caem a cada golpe.");
+    ImGui::TextColored(muted_text,"%s",Tr("Ligue, bata em 2 ou 3 inimigos ate morrerem e salve um relato. O log mostra quais campos do alvo caem a cada golpe."));
     ImGui::Spacing();ImGui::Separator();ImGui::Spacing();
-    if (ImGui::Button("Capturar e relatar bug  [F8 / Print Screen]", MenuSize(-1,36))) { CaptureBug(); ShowPage(1); }
-    ImGui::TextColored(muted_text,"O mundo continua rodando. Pause pelo jogo antes de abrir as ferramentas.");
+    if (ImGui::Button(Tr("Capturar e relatar bug  [F8 / Print Screen]"), MenuSize(-1,36))) { CaptureBug(); ShowPage(1); }
+    ImGui::TextColored(muted_text,"%s",Tr("O mundo continua rodando. Pause pelo jogo antes de abrir as ferramentas."));
 }
 // Captura salva (BMP) cabendo na largura disponivel e na altura maxima pedida.
 void DrawPreview(const std::filesystem::path& bmp, float max_height) {
     RequestReportPreview(bmp);
     const auto preview=CurrentReportPreview();
-    if(preview.path!=bmp) { ImGui::TextDisabled("Carregando a previa..."); return; }
-    if(!preview.texture || !preview.width || !preview.height) { ImGui::TextColored(crimson,"Nao foi possivel abrir a captura."); return; }
+    if(preview.path!=bmp) { ImGui::TextDisabled("%s",Tr("Carregando a previa...")); return; }
+    if(!preview.texture || !preview.width || !preview.height) { ImGui::TextColored(crimson,"%s",Tr("Nao foi possivel abrir a captura.")); return; }
     const float aspect=float(preview.height)/float(preview.width);
     float width=ImGui::GetContentRegionAvail().x,height=width*aspect;
     if(height>max_height) { height=std::max(40.0f,max_height);width=height/aspect; }
@@ -426,19 +436,19 @@ void ReportsGallery() {
     static double refreshed=-10;
     static std::string selected,selected_text;
     if(ImGui::GetTime()-refreshed>2) { reports=ListReports(Root()/"reports",12);refreshed=ImGui::GetTime(); }
-    if(reports.empty()) { ImGui::TextDisabled("Nenhuma captura ainda."); return; }
+    if(reports.empty()) { ImGui::TextDisabled("%s",Tr("Nenhuma captura ainda.")); return; }
     auto current=std::find_if(reports.begin(),reports.end(),[](const ReportEntry& entry) { return entry.folder==selected; });
     if(current==reports.end()) { current=reports.begin();selected=current->folder;selected_text.clear(); }
     const auto folder=Root()/"reports"/selected;
     if(selected_text.empty()) selected_text=ReadText(folder/"report.txt",16384);
     if(current->screenshot) DrawPreview(folder/"screenshot.bmp",ImGui::GetContentRegionAvail().y*.42f);
-    else ImGui::TextDisabled("Este relato nao tem imagem.");
+    else ImGui::TextDisabled("%s",Tr("Este relato nao tem imagem."));
     ImGui::TextColored(gold,"%s",current->title.c_str());
     ImGui::TextColored(muted_text,"reports/%s",selected.c_str());
-    if(ImGui::Button("Abrir pasta",MenuSize(140,30))) OpenFolder(folder);
+    if(ImGui::Button(Tr("Abrir pasta"),MenuSize(140,30))) OpenFolder(folder);
     ImGui::SameLine();
-    if(ImGui::Button("Copiar relato",MenuSize(160,30))) ImGui::SetClipboardText(selected_text.c_str());
-    if(ImGui::TreeNode("Texto do relato")) { ImGui::TextWrapped("%s",selected_text.empty() ? "(sem report.txt)" : selected_text.c_str());ImGui::TreePop(); }
+    if(ImGui::Button(Tr("Copiar relato"),MenuSize(160,30))) ImGui::SetClipboardText(selected_text.c_str());
+    if(ImGui::TreeNode(Tr("Texto do relato"))) { ImGui::TextWrapped("%s",selected_text.empty() ? Tr("(sem report.txt)") : selected_text.c_str());ImGui::TreePop(); }
     ImGui::Separator();
     for(const auto& entry:reports) {
         char label[256];
@@ -454,7 +464,7 @@ void LogsPage() {
     static std::unordered_map<std::string,std::string> crash_logs;
     static double refreshed=-10;
     const auto crash_dir=Root()/"CrashDumps";
-    const bool refresh=ImGui::Button("Atualizar",MenuSize(130,30));
+    const bool refresh=ImGui::Button(Tr("Atualizar"),MenuSize(130,30));
     if(refresh || ImGui::GetTime()-refreshed>3) {
         logx::Flush();
         tail=LogTail(logx::Path(),200);
@@ -462,17 +472,17 @@ void LogsPage() {
         refreshed=ImGui::GetTime();
     }
     ImGui::SameLine();
-    if(ImGui::Button("Copiar log",MenuSize(140,30))) ImGui::SetClipboardText(tail.c_str());
+    if(ImGui::Button(Tr("Copiar log"),MenuSize(140,30))) ImGui::SetClipboardText(tail.c_str());
     ImGui::SameLine();
-    if(ImGui::Button("Abrir pasta do log",MenuSize(190,30))) OpenFolder(std::filesystem::path(logx::Path()).parent_path());
-    ImGui::TextColored(muted_text,"%s (ultimas 200 linhas)",logx::Path().c_str());
+    if(ImGui::Button(Tr("Abrir pasta do log"),MenuSize(190,30))) OpenFolder(std::filesystem::path(logx::Path()).parent_path());
+    ImGui::TextColored(muted_text,Tr("%s (ultimas 200 linhas)"),logx::Path().c_str());
     const float scale=ImGui::GetIO().FontGlobalScale;
     ImGui::InputTextMultiline("##log",tail.data(),tail.size()+1,{-1,std::max(120.0f*scale,ImGui::GetContentRegionAvail().y*.45f)},ImGuiInputTextFlags_ReadOnly);
     ImGui::Spacing();
-    ImGui::TextColored(gold,"Travamentos");
+    ImGui::TextColored(gold,"%s",Tr("Travamentos"));
     ImGui::SameLine();
-    if(ImGui::SmallButton("Abrir CrashDumps")) OpenFolder(crash_dir);
-    if(crashes.empty()) ImGui::TextDisabled("Nenhum travamento registrado.");
+    if(ImGui::SmallButton(Tr("Abrir CrashDumps"))) OpenFolder(crash_dir);
+    if(crashes.empty()) ImGui::TextDisabled("%s",Tr("Nenhum travamento registrado."));
     for(const auto& crash:crashes) {
         char label[192];
         std::snprintf(label,sizeof(label),"%s  (%.1f MB)%s",crash.name.c_str(),double(crash.bytes)/1048576.0,crash.log ? "  + log" : "");
@@ -480,29 +490,29 @@ void LogsPage() {
         if(!ImGui::TreeNode(crash.name.c_str(),"%s",label)) continue;
         auto& text=crash_logs[crash.name];
         if(text.empty()) text=LogTail(crash_dir/(crash.name+".log"),40);
-        if(ImGui::SmallButton("Copiar este log")) ImGui::SetClipboardText(text.c_str());
+        if(ImGui::SmallButton(Tr("Copiar este log"))) ImGui::SetClipboardText(text.c_str());
         ImGui::TextWrapped("%s",text.c_str());
         ImGui::TreePop();
     }
 }
 void Reports() {
     Heading("Relatar bug", "Capture o quadro do jogo (Print Screen ou F8), descreva o problema e salve tudo nesta maquina.");
-    if (ImGui::Button("Nova captura", MenuSize(160,30))) CaptureBug();
+    if (ImGui::Button(Tr("Nova captura"), MenuSize(160,30))) CaptureBug();
     ImGui::SameLine();
     ImGui::BeginDisabled(CurrentReport().empty() || !description[0]);
-    if (ImGui::Button("Salvar relato local", MenuSize(200,30))) SaveReport(title, description);
+    if (ImGui::Button(Tr("Salvar relato local"), MenuSize(200,30))) SaveReport(title, description);
     ImGui::EndDisabled();
-    ImGui::TextWrapped("%s", ReportStatus().c_str());
+    ImGui::TextWrapped("%s", Tr(ReportStatus().c_str()));
     std::error_code ec;
     const auto shot=CurrentReport()/"screenshot.bmp";
     if (!CurrentReport().empty() && std::filesystem::is_regular_file(shot,ec)) DrawPreview(shot,ImGui::GetContentRegionAvail().y*.35f);
     ImGui::SetNextItemWidth(-1);
-    ImGui::InputTextWithHint("##title", "Titulo curto do problema", title, sizeof(title));
-    ImGui::TextUnformatted("Descreva o problema e como reproduzir:");
+    ImGui::InputTextWithHint("##title", Tr("Titulo curto do problema"), title, sizeof(title));
+    ImGui::TextUnformatted(Tr("Descreva o problema e como reproduzir:"));
     const float scale=ImGui::GetIO().FontGlobalScale;
     ImGui::InputTextMultiline("##description", description, sizeof(description), {-1,std::max(90.0f*scale,ImGui::GetContentRegionAvail().y-70*scale)});
-    if (!CurrentReport().empty()) ImGui::TextWrapped("Pasta: reports/%s", CurrentReport().filename().string().c_str());
-    ImGui::TextColored(muted_text, "Nenhum arquivo e enviado automaticamente.");
+    if (!CurrentReport().empty()) ImGui::TextWrapped(Tr("Pasta: reports/%s"), CurrentReport().filename().string().c_str());
+    ImGui::TextColored(muted_text,"%s",Tr("Nenhum arquivo e enviado automaticamente."));
 }
 bool DrawCharacterSelection() {
     static bool armed=false;
@@ -518,9 +528,9 @@ bool DrawCharacterSelection() {
     ImGui::PushStyleColor(ImGuiCol_Button,ImVec4{.30f,.07f,.10f,1});
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered,ImVec4{.48f,.13f,.17f,1});
     ImGui::PushStyleColor(ImGuiCol_Text,ImVec4{.96f,.92f,.85f,1});
-    ImGui::Begin("Novo jogo - personagem",nullptr,ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoMove);
+    ImGui::Begin((std::string(Tr("Novo jogo - personagem"))+"###new_game").c_str(),nullptr,ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoMove);
     Heading("Prepare sua partida", "Escolha o personagem. O nome escolhido será mantido.");
-    ImGui::TextUnformatted("Escolha seu personagem");
+    ImGui::TextUnformatted(Tr("Escolha seu personagem"));
     ImGui::Spacing();
     ImGui::BeginDisabled(!armed);
     auto choose=[&](int character){
@@ -535,9 +545,9 @@ bool DrawCharacterSelection() {
     if (ImGui::Button("Trevor Belmont",{(width-50)*.5f,62})) choose(2);
     ImGui::EndDisabled();
     ImGui::Spacing();
-    ImGui::TextWrapped("Hector: campanha original e Innocent Devils. Trevor: chicote e subarmas do modo Trevor.");
-    ImGui::TextColored(gold,"Controle: direcional e A/cruz. Teclado: Tab e Enter. Mouse: clique.");
-    ImGui::TextWrapped("A selecao vale apenas para este Novo Jogo. Use um slot vazio para salvar o novo progresso.");
+    ImGui::TextWrapped("%s",Tr("Hector: campanha original e Innocent Devils. Trevor: chicote e subarmas do modo Trevor."));
+    ImGui::TextColored(gold,"%s",Tr("Controle: direcional e A/cruz. Teclado: Tab e Enter. Mouse: clique."));
+    ImGui::TextWrapped("%s",Tr("A selecao vale apenas para este Novo Jogo. Use um slot vazio para salvar o novo progresso."));
     ImGui::End();ImGui::PopStyleColor(4);
     return true;
 }
@@ -546,91 +556,91 @@ void Graphics() {
     Toggle("Mostrar FPS na tela",show_fps);
     if(show_fps.load()) {
         int corner=fps_corner.load();
-        const char* corners[]{"Superior esquerdo","Superior direito","Inferior esquerdo","Inferior direito"};
-        if(ImGui::Combo("Canto do FPS",&corner,corners,4)) fps_corner.store(corner);
+        const char* corners[]{Tr("Superior esquerdo"),Tr("Superior direito"),Tr("Inferior esquerdo"),Tr("Inferior direito")};
+        if(ImGui::Combo(Tr("Canto do FPS"),&corner,corners,4)) fps_corner.store(corner);
     }
     auto& settings = app::Get();
     int mode = int(settings.display_mode);
-    const char* modes[]{"Tela cheia", "Sem bordas", "Janela"};
-    if (ImGui::Combo("Tela", &mode, modes, 3)) { settings.display_mode = app::DisplayMode(mode); app::ApplyDisplay(); }
-    ImGui::TextDisabled("Alt+Enter: alternar janela / tela cheia.");
-    const char* resolutions[]{"Area de trabalho", "960 x 540", "1280 x 720", "1920 x 1080", "2560 x 1440", "3840 x 2160"};
+    const char* modes[]{Tr("Tela cheia"), Tr("Sem bordas"), Tr("Janela")};
+    if (ImGui::Combo(Tr("Tela"), &mode, modes, 3)) { settings.display_mode = app::DisplayMode(mode); app::ApplyDisplay(); }
+    ImGui::TextDisabled("%s",Tr("Alt+Enter: alternar janela / tela cheia."));
+    const char* resolutions[]{Tr("Area de trabalho"), "960 x 540", "1280 x 720", "1920 x 1080", "2560 x 1440", "3840 x 2160"};
     constexpr std::array<app::Mode,6> sizes{{{0,0},{960,540},{1280,720},{1920,1080},{2560,1440},{3840,2160}}};
     int resolution = 0;
     for (int i=0;i<6;i++) if (settings.width==sizes[size_t(i)].width && settings.height==sizes[size_t(i)].height) resolution=i;
-    if (ImGui::Combo("Resolucao", &resolution, resolutions, 6)) {
+    if (ImGui::Combo(Tr("Resolucao"), &resolution, resolutions, 6)) {
         settings.width=sizes[size_t(resolution)].width; settings.height=sizes[size_t(resolution)].height; app::ApplyDisplay();
     }
     int percent=int(settings.render_percent);
-    if (ImGui::SliderInt("Resolucao interna", &percent, 50, 200, "%d%%")) settings.render_percent=uint32_t(percent);
+    if (ImGui::SliderInt(Tr("Resolucao interna"), &percent, 50, 200, "%d%%")) settings.render_percent=uint32_t(percent);
     int aniso=0;
     constexpr uint32_t levels[]{0,2,4,8,16};
     for (int i=0;i<5;i++) if (settings.aniso==levels[i]) aniso=i;
-    const char* filters[]{"Como o jogo pede", "2x", "4x", "8x", "16x"};
-    if (ImGui::Combo("Filtro anisotropico", &aniso, filters, 5)) settings.aniso=levels[aniso];
+    const char* filters[]{Tr("Como o jogo pede"), "2x", "4x", "8x", "16x"};
+    if (ImGui::Combo(Tr("Filtro anisotropico"), &aniso, filters, 5)) settings.aniso=levels[aniso];
     int cap=int(settings.fps_cap);
-    if (ImGui::SliderInt("Limite de FPS", &cap, 30, 240)) settings.fps_cap=uint32_t(cap);
-    ImGui::Checkbox("Sincronizacao vertical", &settings.vsync);
+    if (ImGui::SliderInt(Tr("Limite de FPS"), &cap, 30, 240)) settings.fps_cap=uint32_t(cap);
+    ImGui::Checkbox(Tr("Sincronizacao vertical"), &settings.vsync);
     int selected=shader.load();
-    const char* shaders[]{"Original", "Escala de cinza", "CRT leve (linhas de varredura)"};
-    if (ImGui::Combo("Shader de apresentacao", &selected, shaders, 3)) shader.store(selected);
+    const char* shaders[]{Tr("Original"), Tr("Escala de cinza"), Tr("CRT leve (linhas de varredura)")};
+    if (ImGui::Combo(Tr("Shader de apresentacao"), &selected, shaders, 3)) shader.store(selected);
     Slider("Brilho",brightness,-.3f,.3f,"%+.2f");
     Slider("Contraste",contrast,.5f,1.5f,"%.2fx");
     Slider("Saturacao",saturation,0,2,"%.2fx");
-    if(ImGui::Button("Restaurar brilho, contraste e saturacao")) { brightness=0;contrast=1;saturation=1; }
+    if(ImGui::Button(Tr("Restaurar brilho, contraste e saturacao"))) { brightness=0;contrast=1;saturation=1; }
     ImGui::Spacing();
-    ImGui::TextWrapped("Aumentar a resolucao interna e a filtragem melhora a imagem, mas nao cria detalhes novos nas texturas. Packs HD entram pela aba Mods.");
+    ImGui::TextWrapped("%s",Tr("Aumentar a resolucao interna e a filtragem melhora a imagem, mas nao cria detalhes novos nas texturas. Packs HD entram pela aba Mods."));
 }
 void Audio() {
     Heading("Audio", "Volume e canais da saida nativa XAudio2.");
     Toggle("Sem som  [F9]", muted);
     Slider("Volume geral", volume, 0, 1, "%.2f");
     Slider("Balanco esquerda / direita", balance, -1, 1, "%.2f");
-    if (ImGui::Button("Centralizar balanco")) balance.store(0);
+    if (ImGui::Button(Tr("Centralizar balanco"))) balance.store(0);
     Toggle("Silenciar quando a janela perde o foco",mute_unfocused);
     ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-    ImGui::TextUnformatted("Saida do port: estereo, 48 kHz, float32.");
-    ImGui::TextWrapped("O Windows e o XAudio2 encaminham os dois canais para a saida padrao. O port ainda nao oferece surround 5.1/7.1 nativo.");
-    ImGui::TextWrapped("Os efeitos DSP do Xbox sao parcialmente reproduzidos. O log do relato identifica o formato e os canais usados nesta execucao.");
+    ImGui::TextUnformatted(Tr("Saida do port: estereo, 48 kHz, float32."));
+    ImGui::TextWrapped("%s",Tr("O Windows e o XAudio2 encaminham os dois canais para a saida padrao. O port ainda nao oferece surround 5.1/7.1 nativo."));
+    ImGui::TextWrapped("%s",Tr("Os efeitos DSP do Xbox sao parcialmente reproduzidos. O log do relato identifica o formato e os canais usados nesta execucao."));
 }
 std::string KeyName(int key) {
-    if (key==VK_LBUTTON) return "Mouse esquerdo";
-    if (key==VK_RBUTTON) return "Mouse direito";
+    if (key==VK_LBUTTON) return Tr("Mouse esquerdo");
+    if (key==VK_RBUTTON) return Tr("Mouse direito");
     char text[96]{};
     LONG code=LONG(MapVirtualKeyA(UINT(key), MAPVK_VK_TO_VSC)<<16);
     if (GetKeyNameTextA(code,text,sizeof(text))) return text;
-    return "Tecla " + std::to_string(key);
+    return std::string(Tr("Tecla ")) + std::to_string(key);
 }
 void ControllerPage() {
     Heading("Controle", "Escolha qual botao fisico aciona cada botao do jogo (jogador 1).");
-    if(ControllerConnected()) ImGui::TextColored(gold,"Controle conectado.");
-    else ImGui::TextColored(crimson,"Nenhum controle conectado na porta 1.");
+    if(ControllerConnected()) ImGui::TextColored(gold,"%s",Tr("Controle conectado."));
+    else ImGui::TextColored(crimson,"%s",Tr("Nenhum controle conectado na porta 1."));
     Toggle("L3 + R3 abre e fecha o menu",controller_shortcut);
     Toggle("Inverter camera horizontal (analogico direito)",invert_stick_x);
-    if(ImGui::IsItemHovered()) ImGui::SetTooltip("A opcao de inverter camera do jogo so troca o eixo vertical. Esta troca o horizontal.");
-    ImGui::TextWrapped("Menu dev: direcional navega, A/cruz confirma, B/circulo volta, L1/R1 troca de aba. O menu dev, L3 + R3 e Start + Back + LT + RT usam sempre os botoes fisicos, para o controle nunca ficar travado.");
+    if(ImGui::IsItemHovered()) ImGui::SetTooltip("%s",Tr("A opcao de inverter camera do jogo so troca o eixo vertical. Esta troca o horizontal."));
+    ImGui::TextWrapped("%s",Tr("Menu dev: direcional navega, A/cruz confirma, B/circulo volta, L1/R1 troca de aba. O menu dev, L3 + R3 e Start + Back + LT + RT usam sempre os botoes fisicos, para o controle nunca ficar travado."));
     auto map=ControllerMapping();
-    const char* layouts[]{"Xbox (padrao)","PS2","personalizado"};
-    ImGui::TextColored(gold,"Layout atual: %s",layouts[int(DetectControllerLayout(map))]);
-    if(ImGui::Button("Layout Xbox",MenuSize(140,30))) { CancelControllerCapture();SetControllerMapping(IdentityControllerMap()); }
-    if(ImGui::IsItemHovered()) ImGui::SetTooltip("Padrao do port: LB/RB sao branco/preto e LT/RT os gatilhos. Use com os icones originais (PS2-Botoes desligado).");
+    const char* layouts[]{Tr("Xbox (padrao)"),"PS2",Tr("personalizado")};
+    ImGui::TextColored(gold,Tr("Layout atual: %s"),layouts[int(DetectControllerLayout(map))]);
+    if(ImGui::Button(Tr("Layout Xbox"),MenuSize(140,30))) { CancelControllerCapture();SetControllerMapping(IdentityControllerMap()); }
+    if(ImGui::IsItemHovered()) ImGui::SetTooltip("%s",Tr("Padrao do port: LB/RB sao branco/preto e LT/RT os gatilhos. Use com os icones originais (PS2-Botoes desligado)."));
     ImGui::SameLine();
-    if(ImGui::Button("Layout PS2",MenuSize(140,30))) { CancelControllerCapture();SetControllerMapping(Ps2ControllerMap()); }
-    if(ImGui::IsItemHovered()) ImGui::SetTooltip("L1/R1 viram os gatilhos do jogo e L2/R2 viram preto/branco, como no PS2. Combina com o pack PS2-Botoes.");
+    if(ImGui::Button(Tr("Layout PS2"),MenuSize(140,30))) { CancelControllerCapture();SetControllerMapping(Ps2ControllerMap()); }
+    if(ImGui::IsItemHovered()) ImGui::SetTooltip("%s",Tr("L1/R1 viram os gatilhos do jogo e L2/R2 viram preto/branco, como no PS2. Combina com o pack PS2-Botoes."));
     ImGui::SameLine();
-    if(ImGui::Button("Trocar A e B",MenuSize(160,30))) { AssignButton(map,0,map[1]);SetControllerMapping(map); }
+    if(ImGui::Button(Tr("Trocar A e B"),MenuSize(160,30))) { AssignButton(map,0,map[1]);SetControllerMapping(map); }
     const int capturing=ControllerCaptureTarget();
     if(capturing>=0) {
-        ImGui::TextColored(gold,"Solte tudo e pressione o botao fisico desejado (6 s). Esc cancela.");
+        ImGui::TextColored(gold,"%s",Tr("Solte tudo e pressione o botao fisico desejado (6 s). Esc cancela."));
         if(ImGui::IsKeyPressed(ImGuiKey_Escape,false)) CancelControllerCapture();
-    } else ImGui::TextWrapped("Selecione um botao do jogo e aperte A (ou clique); depois pressione o botao fisico. Quem usava esse botao fica com o antigo.");
+    } else ImGui::TextWrapped("%s",Tr("Selecione um botao do jogo e aperte A (ou clique); depois pressione o botao fisico. Quem usava esse botao fica com o antigo."));
     ImGui::Spacing();
-    const char* game[]{"A","B","X","Y","Preto","Branco","LT","RT","Direcional cima","Direcional baixo",
-        "Direcional esquerda","Direcional direita","Start","Back","L3 (analogico esquerdo)","R3 (analogico direito)"};
-    const char* physical[]{"A / Cruz","B / Circulo","X / Quadrado","Y / Triangulo","RB / R1","LB / L1","LT / L2","RT / R2",
-        "Direcional cima","Direcional baixo","Direcional esquerda","Direcional direita","Start / Options","Back / Share","L3","R3"};
+    const char* game[]{"A","B","X","Y",Tr("Preto"),Tr("Branco"),"LT","RT",Tr("Direcional cima"),Tr("Direcional baixo"),
+        Tr("Direcional esquerda"),Tr("Direcional direita"),"Start","Back",Tr("L3 (analogico esquerdo)"),Tr("R3 (analogico direito)")};
+    const char* physical[]{Tr("A / Cruz"),Tr("B / Circulo"),Tr("X / Quadrado"),Tr("Y / Triangulo"),"RB / R1","LB / L1","LT / L2","RT / R2",
+        Tr("Direcional cima"),Tr("Direcional baixo"),Tr("Direcional esquerda"),Tr("Direcional direita"),"Start / Options","Back / Share","L3","R3"};
     if (ImGui::BeginTable("controller_map", 2, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
-        ImGui::TableSetupColumn("Botao do jogo");ImGui::TableSetupColumn("Botao fisico");
+        ImGui::TableSetupColumn(Tr("Botao do jogo"));ImGui::TableSetupColumn(Tr("Botao fisico"));
         ImGui::TableHeadersRow();
         for(int target=0;target<kPadButtonCount;++target) {
             ImGui::PushID(target);
@@ -638,13 +648,13 @@ void ControllerPage() {
             const bool changed=map[size_t(target)]!=target;
             if(changed) ImGui::TextColored(gold,"%s",game[target]); else ImGui::TextUnformatted(game[target]);
             ImGui::TableNextColumn();
-            const char* label=capturing==target ? "Pressione um botao..." : physical[map[size_t(target)]];
+            const char* label=capturing==target ? Tr("Pressione um botao...") : physical[map[size_t(target)]];
             if(ImGui::Button(label,{-1,0}) && capturing<0) BeginControllerCapture(target);
             ImGui::PopID();
         }
         ImGui::EndTable();
     }
-    ImGui::TextColored(muted_text,"Salvar opcoes grava o mapeamento; perfis salvos tambem o levam.");
+    ImGui::TextColored(muted_text,"%s",Tr("Salvar opcoes grava o mapeamento; perfis salvos tambem o levam."));
 }
 void Controls() {
     Heading("Teclado e mouse", "Teclado e mouse no jogador 1, junto com o controle conectado.");
@@ -652,15 +662,15 @@ void Controls() {
     Toggle("Mouse controla o analogico da camera", mouse_camera);
     Toggle("Inverter mouse horizontal",invert_mouse_x);
     Toggle("Inverter mouse vertical",invert_mouse_y);
-    if(ImGui::Button("Restaurar controles padrao")) ResetBindings();
+    if(ImGui::Button(Tr("Restaurar controles padrao"))) ResetBindings();
     Slider("Sensibilidade", sensitivity, .001f, .05f, "%.3f");
-    ImGui::TextWrapped("Menu fechado: WASD move, mouse controla a camera, setas sao o direcional (navegam nos menus do jogo), Enter confirma e Esc abre ou volta o menu do jogo. Menu aberto: teclado e mouse operam a interface; analogicos continuam no jogo.");
-    ImGui::TextWrapped("Clique no botao de uma acao e pressione a nova tecla. F1, F8, F9 e Esc ficam reservadas.");
+    ImGui::TextWrapped("%s",Tr("Menu fechado: WASD move, mouse controla a camera, setas sao o direcional (navegam nos menus do jogo), Enter confirma e Esc abre ou volta o menu do jogo. Menu aberto: teclado e mouse operam a interface; analogicos continuam no jogo."));
+    ImGui::TextWrapped("%s",Tr("Clique no botao de uma acao e pressione a nova tecla. F1, F8, F9 e Esc ficam reservadas."));
     ImGui::Spacing();
     if (ImGui::BeginTable("bindings", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp)) {
-        ImGui::TableSetupColumn("Botao Xbox");ImGui::TableSetupColumn("Acao");ImGui::TableSetupColumn("Teclado / mouse");
+        ImGui::TableSetupColumn(Tr("Botao Xbox"));ImGui::TableSetupColumn(Tr("Acao"));ImGui::TableSetupColumn(Tr("Teclado / mouse"));
         ImGui::TableHeadersRow();
-        const char* xbox[]{"A","B","X","Y","Preto (RB)","Branco (LB)","LT","RT","Start","Back", "LS cima","LS baixo","LS esquerda","LS direita","D-pad cima","D-pad baixo","D-pad esquerda","D-pad direita","A"};
+        const char* xbox[]{"A","B","X","Y",Tr("Preto (RB)"),Tr("Branco (LB)"),"LT","RT","Start","Back",Tr("LS cima"),Tr("LS baixo"),Tr("LS esquerda"),Tr("LS direita"),Tr("D-pad cima"),Tr("D-pad baixo"),Tr("D-pad esquerda"),Tr("D-pad direita"),"A"};
         const auto bindings = Bindings();
         for (size_t i=0;i<bindings.size();i++) {
             const auto& binding=bindings[i]; ImGui::PushID(int(i));
@@ -668,7 +678,7 @@ void Controls() {
             const ImVec4 colors[]{{.35f,.85f,.35f,1},{1,.3f,.3f,1},{.3f,.6f,1,1},{1,.85f,.25f,1}};
             const size_t face=bindings[i].button<4 ? size_t(bindings[i].button) : 4;
             ImGui::TextColored(face<4 ? colors[face] : gold,"%s",i<std::size(xbox) ? xbox[i] : "");
-            ImGui::TableNextColumn();ImGui::TextUnformatted(binding.action);
+            ImGui::TableNextColumn();ImGui::TextUnformatted(Tr(binding.action));
             ImGui::TableNextColumn();
             if (ImGui::Button(KeyName(binding.key).c_str(), {-1,0})) BeginBinding(int(i));
             ImGui::PopID();
@@ -678,25 +688,29 @@ void Controls() {
 }
 void Appearance() {
     Heading("Aparencia", "Arraste a barra de titulo para mover. Use o canto inferior direito para redimensionar.");
+    int menu_language=menu_english.load() ? 1 : 0;
+    const char* menu_languages[]{"Português (Brasil)","English"};
+    if(ImGui::Combo(Tr("Idioma do menu"),&menu_language,menu_languages,2)) SetMenuEnglish(menu_language==1);
+    ImGui::TextColored(muted_text,"%s",Tr("Muda so o texto destas ferramentas. Os botoes PT-BR e English no rodape fazem o mesmo."));
     Toggle("Pausar o jogo com o menu aberto",pause_with_menu);
-    ImGui::TextColored(muted_text,"Desligado (padrao): o jogo continua rodando; os analogicos andam e giram a camera e os botoes ficam com o menu.");
-    ImGui::SliderFloat("Opacidade do painel",&menu_preferences.opacity,.25f,1,"%.2f");
-    ImGui::ColorEdit3("Fundo",menu_preferences.background.data());
-    ImGui::ColorEdit3("Cor de selecao",menu_preferences.accent.data());
-    ImGui::ColorEdit3("Destaques e foco",menu_preferences.highlight.data());
-    ImGui::TextWrapped("Posicao, tamanho e cores ficam nas suas opcoes. Salvar opcoes grava imediatamente; fechar o painel tambem grava a geometria.");
-    if(ImGui::Button("Restaurar aparencia padrao")) {
+    ImGui::TextColored(muted_text,"%s",Tr("Desligado (padrao): o jogo continua rodando; os analogicos andam e giram a camera e os botoes ficam com o menu."));
+    ImGui::SliderFloat(Tr("Opacidade do painel"),&menu_preferences.opacity,.25f,1,"%.2f");
+    ImGui::ColorEdit3(Tr("Fundo"),menu_preferences.background.data());
+    ImGui::ColorEdit3(Tr("Cor de selecao"),menu_preferences.accent.data());
+    ImGui::ColorEdit3(Tr("Destaques e foco"),menu_preferences.highlight.data());
+    ImGui::TextWrapped("%s",Tr("Posicao, tamanho e cores ficam nas suas opcoes. Salvar opcoes grava imediatamente; fechar o painel tambem grava a geometria."));
+    if(ImGui::Button(Tr("Restaurar aparencia padrao"))) {
         menu_preferences=MenuPreferences{};menu_geometry_reset=true;
     }
     ImGui::Spacing();
-    ImGui::TextWrapped("Controle: L1/R1 troca de aba. Direcional navega. A confirma e B volta. Movimento e tamanho da janela podem ser ajustados abaixo sem mouse.");
-    ImGui::DragFloat("Posicao horizontal",&menu_preferences.x,2,0,ImGui::GetIO().DisplaySize.x-160);
+    ImGui::TextWrapped("%s",Tr("Controle: L1/R1 troca de aba. Direcional navega. A confirma e B volta. Movimento e tamanho da janela podem ser ajustados abaixo sem mouse."));
+    ImGui::DragFloat(Tr("Posicao horizontal"),&menu_preferences.x,2,0,ImGui::GetIO().DisplaySize.x-160);
     const bool moved_x=ImGui::IsItemEdited();
-    ImGui::DragFloat("Posicao vertical",&menu_preferences.y,2,0,ImGui::GetIO().DisplaySize.y-80);
+    ImGui::DragFloat(Tr("Posicao vertical"),&menu_preferences.y,2,0,ImGui::GetIO().DisplaySize.y-80);
     const bool moved_y=ImGui::IsItemEdited();
-    ImGui::DragFloat("Largura",&menu_preferences.width,4,640,ImGui::GetIO().DisplaySize.x);
+    ImGui::DragFloat(Tr("Largura"),&menu_preferences.width,4,640,ImGui::GetIO().DisplaySize.x);
     const bool resized_x=ImGui::IsItemEdited();
-    ImGui::DragFloat("Altura",&menu_preferences.height,4,420,ImGui::GetIO().DisplaySize.y);
+    ImGui::DragFloat(Tr("Altura"),&menu_preferences.height,4,420,ImGui::GetIO().DisplaySize.y);
     if(moved_x || moved_y || resized_x || ImGui::IsItemEdited()) menu_geometry_reset=true;
 }
 void ProfilesPage() {
@@ -704,63 +718,63 @@ void ProfilesPage() {
     static char status[128] = {};
     static bool status_ok = true;
     auto names=UserProfileNames();
-    std::array<std::string,5> labels{"Padrao (vanilla)","Dev (Godmode)","Perfil 1","Perfil 2","Perfil 3"};
+    std::array<std::string,5> labels{Tr("Padrao (vanilla)"),"Dev (Godmode)",Tr("Perfil 1"),Tr("Perfil 2"),Tr("Perfil 3")};
     for(size_t i=0;i<names.size();++i)if(!names[i].empty())labels[i+2]=names[i];
     std::array<const char*,5> items{};for(size_t i=0;i<items.size();++i)items[i]=labels[i].c_str();
     int selection=SelectedProfile();
-    if(ImGui::Combo("Perfil",&selection,items.data(),int(items.size()))) {
+    if(ImGui::Combo(Tr("Perfil"),&selection,items.data(),int(items.size()))) {
         SetSelectedProfile(selection);
         const std::string& name=selection>=2?names[size_t(selection-2)]:selection==1?labels[1]:labels[0];
         std::snprintf(profile_name,sizeof(profile_name),"%s",name.empty()?"Meu perfil":name.c_str());
         status[0]=0;status_ok=true;
     }
-    if(ImGui::Button("Aplicar perfil",MenuSize(190,36))) {
+    if(ImGui::Button(Tr("Aplicar perfil"),MenuSize(190,36))) {
         const bool applied=ApplyProfile(SelectedProfile());
-        std::snprintf(status,sizeof(status),"%s",applied?"Perfil aplicado.":"Este perfil ainda nao tem dados salvos.");
+        std::snprintf(status,sizeof(status),"%s",Tr(applied?"Perfil aplicado.":"Este perfil ainda nao tem dados salvos."));
         status_ok=applied;
     }
     ImGui::SameLine();
-    if(ImGui::Button("Ativar perfil Dev",MenuSize(190,36))) {
+    if(ImGui::Button(Tr("Ativar perfil Dev"),MenuSize(190,36))) {
         ApplyProfile(1);
         const bool godmode_active=godmode_ready.load();
-        std::snprintf(status,sizeof(status),godmode_active?
+        std::snprintf(status,sizeof(status),"%s",Tr(godmode_active?
             "Perfil Dev ativo: Godmode e modificacoes do port ligados.":
-            "Perfil Dev ativo, mas Godmode nao passou na validacao desta versao.");
+            "Perfil Dev ativo, mas Godmode nao passou na validacao desta versao."));
         status_ok=godmode_active;
     }
-    ImGui::InputText("Nome do perfil salvo",profile_name,sizeof(profile_name));
+    ImGui::InputText(Tr("Nome do perfil salvo"),profile_name,sizeof(profile_name));
     ImGui::BeginDisabled(SelectedProfile()<2);
-    if(ImGui::Button("Salvar opcoes atuais neste perfil",MenuSize(285,36))) {
+    if(ImGui::Button(Tr("Salvar opcoes atuais neste perfil"),MenuSize(285,36))) {
         if(SaveUserProfile(SelectedProfile()-2,profile_name)) {
-            app::Save();std::snprintf(status,sizeof(status),"Perfil salvo. As opcoes atuais foram guardadas.");
+            app::Save();std::snprintf(status,sizeof(status),"%s",Tr("Perfil salvo. As opcoes atuais foram guardadas."));
             status_ok=true;
-        } else {std::snprintf(status,sizeof(status),"Digite um nome antes de salvar o perfil.");status_ok=false;}
+        } else {std::snprintf(status,sizeof(status),"%s",Tr("Digite um nome antes de salvar o perfil."));status_ok=false;}
     }
     ImGui::EndDisabled();
     if(status[0])ImGui::TextColored(status_ok?gold:crimson,"%s",status);
     ImGui::Spacing();ImGui::Separator();ImGui::Spacing();
-    if(ImGui::Button("Restaurar padrao vanilla",MenuSize(245,40))) {
-        ApplyProfile(0);std::snprintf(status,sizeof(status),"Padroes restaurados. Voce pode alterar as opcoes agora.");
+    if(ImGui::Button(Tr("Restaurar padrao vanilla"),MenuSize(245,40))) {
+        ApplyProfile(0);std::snprintf(status,sizeof(status),"%s",Tr("Padroes restaurados. Voce pode alterar as opcoes agora."));
         status_ok=true;
     }
-    ImGui::TextWrapped("O perfil vanilla restaura imagem, controles, audio, camera e opcoes do port aos valores originais. Seus perfis salvos permanecem disponiveis, e voce pode alterar qualquer opcao logo depois.");
-    ImGui::TextWrapped("O perfil Dev liga Godmode, PT-BR, minimapa rotativo e HUD em 50%%. Mantem a camera original para evitar o modo orbital que voce relatou como bugado.");
+    ImGui::TextWrapped("%s",Tr("O perfil vanilla restaura imagem, controles, audio, camera e opcoes do port aos valores originais. Seus perfis salvos permanecem disponiveis, e voce pode alterar qualquer opcao logo depois."));
+    ImGui::TextWrapped("%s",Tr("O perfil Dev liga Godmode, PT-BR, minimapa rotativo e HUD em 50%. Mantem a camera original para evitar o modo orbital que voce relatou como bugado."));
 }
 void SavesPage() {
     Heading("Saves e sessao", "Arquivos de progresso do jogo. Carregamento usa o menu original.");
-    ImGui::TextWrapped("Para carregar outro slot, reinicie no titulo e escolha Load Game. O progresso que ainda nao foi salvo sera perdido.");
-    if(ImGui::Button("Reiniciar no titulo / carregar save")) ImGui::OpenPopup("Confirmar reinicio");
-    if(ImGui::BeginPopupModal("Confirmar reinicio",nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextUnformatted("O progresso nao salvo sera perdido. Seus saves gravados ficam preservados.");
-        if(ImGui::Button("Reiniciar no titulo")) { app::Save();RequestTitleRestart();ImGui::CloseCurrentPopup(); }
-        ImGui::SameLine();if(ImGui::Button("Continuar jogando")) ImGui::CloseCurrentPopup();
+    ImGui::TextWrapped("%s",Tr("Para carregar outro slot, reinicie no titulo e escolha Load Game. O progresso que ainda nao foi salvo sera perdido."));
+    if(ImGui::Button(Tr("Reiniciar no titulo / carregar save"))) ImGui::OpenPopup("###confirm_restart");
+    if(ImGui::BeginPopupModal((std::string(Tr("Confirmar reinicio"))+"###confirm_restart").c_str(),nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::TextUnformatted(Tr("O progresso nao salvo sera perdido. Seus saves gravados ficam preservados."));
+        if(ImGui::Button(Tr("Reiniciar no titulo"))) { app::Save();RequestTitleRestart();ImGui::CloseCurrentPopup(); }
+        ImGui::SameLine();if(ImGui::Button(Tr("Continuar jogando"))) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
     ImGui::Separator();
-    ImGui::TextUnformatted("Arquivos locais em hdd (somente leitura)");
+    ImGui::TextUnformatted(Tr("Arquivos locais em hdd (somente leitura)"));
     static std::vector<std::string> files;
     static bool scanned=false;
-    const bool refresh=ImGui::Button("Atualizar lista de arquivos");
+    const bool refresh=ImGui::Button(Tr("Atualizar lista de arquivos"));
     if(!scanned || refresh) {
     scanned=true;files.clear();
     // Consulta apenas metadados; nunca abre, substitui ou apaga progresso.
@@ -771,51 +785,51 @@ void SavesPage() {
         if(it->is_symlink(ec)) { if(it->is_directory(ec)) it.disable_recursion_pending();continue; }
         if(!it->is_regular_file(ec)) continue;
         files.push_back(it->path().lexically_relative(root).string()+" ("+std::to_string(it->file_size(ec))+" bytes)");
-        if(++count>=100){files.push_back("Lista limitada aos primeiros 100 arquivos.");break;}
+        if(++count>=100){files.push_back(Tr("Lista limitada aos primeiros 100 arquivos."));break;}
     }
     }
     for(const auto& file:files) ImGui::TextWrapped("%s",file.c_str());
-    if(files.empty()) ImGui::TextUnformatted("Nenhum arquivo de save encontrado.");
+    if(files.empty()) ImGui::TextUnformatted(Tr("Nenhum arquivo de save encontrado."));
     ImGui::Spacing();
-    ImGui::TextWrapped("Savestate completo ainda exige suporte do motor. Esses arquivos sao saves normais, nao um estado instantaneo da partida.");
+    ImGui::TextWrapped("%s",Tr("Savestate completo ainda exige suporte do motor. Esses arquivos sao saves normais, nao um estado instantaneo da partida."));
 }
 void ModsPage() {
     Heading("Mods", "Arquivos adicionais, sem sobrescrever os assets originais.");
-    if (ImGui::Button("Recarregar lista de mods")) ReloadMods();
-    ImGui::TextWrapped("Coloque arquivos em mods/NomeDoMod/files/ com o mesmo caminho do jogo. Ative abaixo e reinicie para recarregar assets ja em cache.");
+    if (ImGui::Button(Tr("Recarregar lista de mods"))) ReloadMods();
+    ImGui::TextWrapped("%s",Tr("Coloque arquivos em mods/NomeDoMod/files/ com o mesmo caminho do jogo. Ative abaixo e reinicie para recarregar assets ja em cache."));
     ImGui::Spacing();
-    if (Mods().empty()) ImGui::TextColored(muted_text, "Nenhum mod instalado. Consulte MODDING.md na pasta do projeto.");
+    if (Mods().empty()) ImGui::TextColored(muted_text,"%s",Tr("Nenhum mod instalado. Consulte MODDING.md na pasta do projeto."));
     for (size_t i=0;i<Mods().size();i++) {
         if (Mods()[i].name==kTranslationTextureMod) {
             bool active=ptbr_enabled.load();
             ImGui::BeginDisabled();ImGui::Checkbox(Mods()[i].name.c_str(),&active);ImGui::EndDisabled();
-            ImGui::SameLine();ImGui::TextColored(muted_text,"segue Opcoes > Idioma > Português");
+            ImGui::SameLine();ImGui::TextColored(muted_text,"%s",Tr("segue Opcoes > Idioma > Português"));
             continue;
         }
         bool enabled=Mods()[i].enabled;
         if (ImGui::Checkbox(Mods()[i].name.c_str(), &enabled)) EnableMod(i,enabled);
     }
     ImGui::Spacing();
-    ImGui::TextWrapped("Se dois mods substituirem o mesmo arquivo, o nome em ordem alfabetica mais alta tem prioridade. So arquivos do disco do jogo sao substituidos; saves ficam fora dessa camada.");
+    ImGui::TextWrapped("%s",Tr("Se dois mods substituirem o mesmo arquivo, o nome em ordem alfabetica mais alta tem prioridade. So arquivos do disco do jogo sao substituidos; saves ficam fora dessa camada."));
     Toggle("Exportar texturas para criar um pack HD", texture_dump);
-    ImGui::Text("Texturas exportadas: %u | Substituicoes HD carregadas: %u",texture_exports.load(),texture_replacements.load());
-    ImGui::TextWrapped("Exporta ate 200 texturas por execucao para texture-dumps. Packs usam arquivos BMP nomeados pelo hash da textura; veja MODDING.md.");
+    ImGui::Text(Tr("Texturas exportadas: %u | Substituicoes HD carregadas: %u"),texture_exports.load(),texture_replacements.load());
+    ImGui::TextWrapped("%s",Tr("Exporta ate 200 texturas por execucao para texture-dumps. Packs usam arquivos BMP nomeados pelo hash da textura; veja MODDING.md."));
 }
 void CheatsPage() {
     Heading("Cheats", "Patches de memoria para esta versao de Xbox, com valor esperado e reversao.");
-    ImGui::TextWrapped("Codigos GameShark de PS2 nao sao compativeis. Use cheats.toml com enderecos validados do Xbox USA. Cheats nao sao ativados automaticamente.");
-    if (ImGui::Button("Recarregar cheats.toml")) ReloadCheats();
+    ImGui::TextWrapped("%s",Tr("Codigos GameShark de PS2 nao sao compativeis. Use cheats.toml com enderecos validados do Xbox USA. Cheats nao sao ativados automaticamente."));
+    if (ImGui::Button(Tr("Recarregar cheats.toml"))) ReloadCheats();
     ImGui::Spacing();
     GameHacks();
     ImGui::Spacing();ImGui::Separator();ImGui::Spacing();
-    if (Cheats().empty()) ImGui::TextColored(muted_text,"Nenhum perfil adicional em cheats.toml.");
+    if (Cheats().empty()) ImGui::TextColored(muted_text,"%s",Tr("Nenhum perfil adicional em cheats.toml."));
     for (auto& cheat : Cheats()) {
         bool enabled=cheat.enabled;
         if (ImGui::Checkbox(cheat.name.c_str(), &enabled)) ToggleCheat(cheat,enabled);
         ImGui::SameLine(); ImGui::TextColored(muted_text,"%s",cheat.status.c_str());
     }
     ImGui::Spacing();
-    ImGui::TextWrapped("Ao desligar um cheat, o valor original so e restaurado se a memoria ainda contiver o valor escrito pelo patch. A seguranca depende de validar o endereco e o contexto.");
+    ImGui::TextWrapped("%s",Tr("Ao desligar um cheat, o valor original so e restaurado se a memoria ainda contiver o valor escrito pelo patch. A seguranca depende de validar o endereco e o contexto."));
 }
 }
 
@@ -904,7 +918,7 @@ void Draw(double fps) {
     ImGui::SetNextWindowPos({std::clamp(menu_preferences.x,0.0f,std::max(0.0f,screen.x-std::min(screen.x-24,menu_preferences.width))),std::clamp(menu_preferences.y,0.0f,std::max(0.0f,screen.y-std::min(screen.y-24,menu_preferences.height)))},condition);
     menu_geometry_reset=false;
     bool open=true;
-    if (ImGui::Begin("Castlevania | Ferramentas", &open, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar)) {
+    if (ImGui::Begin((std::string(Tr("Castlevania | Ferramentas"))+"###dev_tools").c_str(), &open, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar)) {
         const ImVec2 pos=ImGui::GetWindowPos(),size=ImGui::GetWindowSize();
         menu_preferences.x=pos.x;menu_preferences.y=pos.y;menu_preferences.width=size.x;menu_preferences.height=size.y;menu_preferences.positioned=true;
         ImGui::GetWindowDrawList()->AddRect({pos.x+6,pos.y+6},{pos.x+size.x-6,pos.y+size.y-6},IM_COL32(105,78,39,255));
@@ -915,8 +929,8 @@ void Draw(double fps) {
         ImGui::TextColored(muted_text,"%s",status);
         if(kernel::g_base) {
             const int stage=static_cast<int8_t>(kernel::g_base[0xB234F4]),room=static_cast<int8_t>(kernel::g_base[0xB234F5]);
-            if(const char* area=AreaName(stage)) ImGui::TextColored(muted_text,"%s  /  Mapa %d  /  Sala %d",area,stage,room);
-            else ImGui::TextColored(muted_text,"Mapa %d  /  Sala %d",stage,room);
+            if(const char* area=AreaName(stage)) ImGui::TextColored(muted_text,Tr("%s  /  Mapa %d  /  Sala %d"),area,stage,room);
+            else ImGui::TextColored(muted_text,Tr("Mapa %d  /  Sala %d"),stage,room);
         }
         ImGui::Separator();
         const float footer=80*scale;
@@ -934,8 +948,8 @@ void Draw(double fps) {
         ImGui::PushItemFlag(ImGuiItemFlags_NoNav,true);
         for(int i=0;i<tab_count;++i) {
             if(i) ImGui::SameLine(0,6*scale);
-            const ImVec2 size{ImGui::CalcTextSize(kTabs[i].label).x+20*scale,28*scale};
-            if(ImGui::Selectable(kTabs[i].label,nav.tab==i,ImGuiSelectableFlags_None,size)) {
+            const ImVec2 size{ImGui::CalcTextSize(Tr(kTabs[i].label)).x+20*scale,28*scale};
+            if(ImGui::Selectable(Tr(kTabs[i].label),nav.tab==i,ImGuiSelectableFlags_None,size)) {
                 nav.tab=i;nav.title=0;nav.level=MenuNav::Level::Titles;nav.focus=true;
             }
         }
@@ -951,11 +965,11 @@ void Draw(double fps) {
             draw->AddCircle(center,radius,IM_COL32(230,200,140,255),16,2*scale);
             draw->AddLine({center.x+radius*.7f,center.y+radius*.7f},{b.x-(b.x-a.x)*.2f,b.y-(b.y-a.y)*.2f},IM_COL32(230,200,140,255),2.5f*scale);
         }
-        if(ImGui::IsItemHovered()) ImGui::SetTooltip("Buscar opcao (Y no controle)");
+        if(ImGui::IsItemHovered()) ImGui::SetTooltip("%s",Tr("Buscar opcao (Y no controle)"));
         ImGui::SameLine();
         ImGui::SetNextItemWidth(-1);
         if(ImGui::IsKeyChordPressed(ImGuiMod_Ctrl|ImGuiKey_F)) ImGui::SetKeyboardFocusHere();
-        bool search_enter=ImGui::InputTextWithHint("##filtro","Buscar opcao (Ctrl+F ou Y): vida, camera, minimapa...",
+        bool search_enter=ImGui::InputTextWithHint("##filtro",Tr("Buscar opcao (Ctrl+F ou Y): vida, camera, minimapa..."),
             search_text,sizeof(search_text),ImGuiInputTextFlags_EnterReturnsTrue);
         if(search_keys) {
             // Teclado na tela: navegavel pelo direcional, A digita.
@@ -969,15 +983,15 @@ void Draw(double fps) {
                     if(ImGui::Button(label,key)) SearchKeyPress(search_text,sizeof(search_text),char(*c+32));
                 }
             }
-            if(ImGui::Button("Espaco",{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),' ');
+            if(ImGui::Button(Tr("Espaco"),{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),' ');
             ImGui::SameLine(0,3*scale);
-            if(ImGui::Button("Apagar",{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),'\b');
+            if(ImGui::Button(Tr("Apagar"),{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),'\b');
             ImGui::SameLine(0,3*scale);
-            if(ImGui::Button("Limpar",{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),0);
+            if(ImGui::Button(Tr("Limpar"),{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),0);
             ImGui::SameLine(0,3*scale);
-            if(ImGui::Button("Abrir 1o",{key.x*3,key.y})) search_enter=true;
+            if(ImGui::Button(Tr("Abrir 1o"),{key.x*3,key.y})) search_enter=true;
             ImGui::SameLine(0,3*scale);
-            if(ImGui::Button("Fechar",{key.x*3,key.y})) search_keys=false;
+            if(ImGui::Button(Tr("Fechar"),{key.x*3,key.y})) search_keys=false;
         }
         if(search_text[0]) {
             ImGui::BeginChild("search",{0,-footer},ImGuiChildFlags_Border);
@@ -985,15 +999,16 @@ void Draw(double fps) {
             const char* target_label=nullptr;
             for(int i=0;i<int(std::size(kMenuSearchIndex));++i) {
                 const auto& entry=kMenuSearchIndex[i];
-                const std::string path=PagePath(entry.page),row=std::string(entry.label)+"   |   "+path;
-                if(path.empty() || !MenuSearchMatch(row,search_text)) continue;
+                const std::string path=PagePath(entry.page),row=std::string(Tr(entry.label))+"   |   "+path;
+                // acha pelo nome nos dois idiomas e mostra no idioma do menu
+                if(path.empty() || (!MenuSearchMatch(row,search_text) && !MenuSearchMatch(entry.label,search_text))) continue;
                 ImGui::PushID(i);
                 const bool pick=ImGui::Selectable(row.c_str()) || (search_enter && !found);
                 ImGui::PopID();
                 if(pick && target<0) { target=entry.page;target_label=entry.label; }
                 ++found;
             }
-            if(!found) ImGui::TextColored(muted_text,"Nada encontrado. Tente outra palavra, sem acento ou so o comeco.");
+            if(!found) ImGui::TextColored(muted_text,"%s",Tr("Nada encontrado. Tente outra palavra, sem acento ou so o comeco."));
             ImGui::EndChild();
             if(target>=0) {
                 ShowPage(target);jump_label=target_label;search_text[0]=0;search_keys=false;
@@ -1004,8 +1019,8 @@ void Draw(double fps) {
         nav.title=std::clamp(nav.title,0,tab.count-1);
         ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing,ImVec2{8*scale,4*scale});
         ImGui::BeginChild("categories",{180*scale,-footer},ImGuiChildFlags_Border);
-        ImGui::TextDisabled("%s",tab.label);ImGui::Separator();
-        for(int i=0;i<tab.count;++i) MenuTitle(nav,i,tab.titles[i].label,{0,29*scale});
+        ImGui::TextDisabled("%s",Tr(tab.label));ImGui::Separator();
+        for(int i=0;i<tab.count;++i) MenuTitle(nav,i,Tr(tab.titles[i].label),{0,29*scale});
         ImGui::EndChild();ImGui::PopStyleVar();ImGui::SameLine();
         page=tab.titles[nav.title].page;
         if(page!=15 && ControllerCaptureTarget()>=0) CancelControllerCapture();
@@ -1023,10 +1038,18 @@ void Draw(double fps) {
         ImGui::PopItemWidth();ImGui::EndChild();
         }
         ImGui::Separator();
-        if(ImGui::Button("Salvar opcoes",{160*scale,32*scale})) app::Save();
+        if(ImGui::Button(Tr("Salvar opcoes"),{160*scale,32*scale})) app::Save();
         ImGui::SameLine();
-        if(ImGui::Button("Voltar ao jogo",{170*scale,32*scale})) open=false;
-        ImGui::TextDisabled("L1/R1: aba | Direcional: navegar | A: entrar/ajustar | B: voltar | L3+R3 ou F1: fechar");
+        if(ImGui::Button(Tr("Voltar ao jogo"),{170*scale,32*scale})) open=false;
+        // Idioma do menu dev (so a interface das ferramentas; o idioma do jogo fica em Jogabilidade).
+        for(const bool english:{false,true}) {
+            ImGui::SameLine();
+            const bool current=menu_english.load()==english;
+            if(current) ImGui::PushStyleColor(ImGuiCol_Button,ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+            if(ImGui::Button(english ? "English" : "PT-BR",{110*scale,32*scale}) && !current) SetMenuEnglish(english);
+            if(current) ImGui::PopStyleColor();
+        }
+        ImGui::TextDisabled("%s",Tr("L1/R1: aba | Direcional: navegar | A: entrar/ajustar | B: voltar | L3+R3 ou F1: fechar"));
     }
     ImGui::End();
     editing_item=ImGui::IsAnyItemActive();

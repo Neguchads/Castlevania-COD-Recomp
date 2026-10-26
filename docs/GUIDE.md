@@ -4,7 +4,7 @@ English · [Português (Brasil)](GUIDE.pt-BR.md)
 
 This guide explains how to install, play and configure everything the port offers. The technical side of mods (file format, texture packs, `cheats.toml`) is in [MODDING.md](../MODDING.md).
 
-The tools menu is in Brazilian Portuguese. Option names below appear as they do in the menu, with an English translation in parentheses.
+The tools menu starts in Brazilian Portuguese. Switch it to English with the **English** button in its footer (**PT-BR** switches back), or in Menu > Aparência > "Idioma do menu" with the controller. The choice is saved in `settings.toml` (`menu_language`). Option names below appear as they do in the Portuguese menu, with the English menu name in parentheses.
 
 ## PC requirements
 
@@ -116,7 +116,7 @@ The enemy layers multiply: all × type × roll. Size and smaller items are visua
 |---|---|
 | Mods | Lists the mods in `mods/`, with a checkbox for each; reload the list; export textures to build an HD pack |
 | Suporte | **Relatar bug** (report a bug): game frame capture, title and text, saved in `reports/`. **Capturas salvas** (saved captures): the 12 newest. **Logs e travamentos** (logs and crashes): last log lines and crash dumps. **Diagnóstico** (diagnostics): performance logging, enemy HP probe, current area and room. Nothing is sent to the internet. |
-| Menu | **Aparência** (appearance): opacity, colors, pause while the menu is open. **Perfis** (profiles): save and apply sets of options, Dev profile and vanilla defaults. |
+| Menu | **Aparência** (appearance): menu language, opacity, colors, pause while the menu is open. **Perfis** (profiles): save and apply sets of options, Dev profile and vanilla defaults. |
 
 ## Bundled mods
 

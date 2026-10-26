@@ -4,6 +4,8 @@
 
 Este guia explica como instalar, jogar e configurar tudo o que o port oferece. A parte técnica de mods (formato dos arquivos, packs de textura, `cheats.toml`) fica em [MODDING.pt-BR.md](../MODDING.pt-BR.md).
 
+O menu de ferramentas começa em português. O botão **English** no rodapé dele passa para inglês (**PT-BR** volta); no controle, use Menu > Aparência > "Idioma do menu". A escolha fica salva em `settings.toml` (`menu_language`). Isso muda só o texto das ferramentas; o idioma do jogo é outra opção.
+
 ## Requisitos de PC
 
 | | Mínimo | Testado em |
@@ -114,7 +116,7 @@ As camadas de inimigos se multiplicam: todos × tipo × sorteio. Tamanho e itens
 |---|---|
 | Mods | Lista os mods em `mods/`, com caixa para ligar cada um; recarregar a lista; exportar texturas para criar um pack HD |
 | Suporte | **Relatar bug:** captura do quadro do jogo, título e texto, salvo em `reports/`. **Capturas salvas:** as 12 mais novas. **Logs e travamentos:** últimas linhas do log e dumps de travamento. **Diagnóstico:** registro de desempenho, pesquisa da vida dos inimigos e área e sala atuais. Nada é enviado para a internet. |
-| Menu | **Aparência:** opacidade, cores, pausar com o menu aberto. **Perfis:** salvar e aplicar conjuntos de opções, perfil Dev e padrão vanilla. |
+| Menu | **Aparência:** idioma do menu, opacidade, cores, pausar com o menu aberto. **Perfis:** salvar e aplicar conjuntos de opções, perfil Dev e padrão vanilla. |
 
 ## Mods incluídos
 

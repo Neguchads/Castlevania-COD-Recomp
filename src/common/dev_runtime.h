@@ -63,6 +63,8 @@ inline bool CharacterChoosing() { return new_game_phase.load() == NewGamePhase::
 inline bool UiCapturing() { return menu_open.load() || CharacterChoosing(); }
 // padrao: o jogo segue rodando com o menu aberto (analogicos continuam no jogo)
 inline std::atomic<bool> pause_with_menu{false};
+// idioma das ferramentas: falso = portugues (padrao), verdadeiro = ingles; o idioma do jogo e outra opcao
+inline std::atomic<bool> menu_english{false};
 // barra do menu sendo ajustada: o analogico esquerdo arrasta a barra e nao anda
 inline std::atomic<bool> menu_adjusting{false};
 // Dificuldade: multiplicadores do dano em vida (stat 6) do jogador (slot 0) e dos Innocent Devils (outros slots)
