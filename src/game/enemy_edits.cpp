@@ -8,7 +8,10 @@
 #include <atomic>
 #include <cmath>
 #include <cstring>
+#include <mutex>
 #include <string>
+#include <unordered_map>
+#include "common/drop_rules.h"
 
 X86_EXTERN_FUNC(__imp__sub_0035BA40);
 X86_EXTERN_FUNC(__imp__sub_00060010);
@@ -57,10 +60,29 @@ bool WriteScale(X86Context& ctx,uint8_t* base,uint32_t actor,const dev::ScaleSte
     __imp__sub_0035BA40(call,base);
     return true;
 }
+// Escala da primeira peca do modelo: com [ator+0x100]==1, sub_0035BA40 copia o vetor em cada peca.
+// Lista em [modelo+0x11C]: contagem em +0x14, nos de 0x80 bytes a partir de [lista+0x10], escala em +0x20.
+float ModelNodeScale(const uint8_t* base,uint32_t actor) {
+    if(base[actor+0x100]!=1) return NAN;
+    const auto model=Read<uint32_t>(base,actor+0x104);
+    if(!model || !dev::ReadableGuestRange(base,model,0x140)) return NAN;
+    const auto list=Read<uint32_t>(base,model+0x11C);
+    if(!list || !dev::ReadableGuestRange(base,list,0x18) || Read<int32_t>(base,list+0x14)<=0) return NAN;
+    const auto nodes=Read<uint32_t>(base,list+0x10);
+    if(!nodes || !dev::ReadableGuestRange(base,nodes,0x80)) return NAN;
+    return Read<float>(base,nodes+0x20);
+}
+std::atomic<int> scale_logs{0};
 // Edita um ator; com hp_return, o topo do x87 e a vida maxima que sub_00060010 acabou de devolver.
 dev::ActorEdit EditActor(X86Context& ctx,uint8_t* base,uint32_t actor,uint32_t type,const dev::EnemyRandomSettings& random,bool hp_return) {
     const float factor=dev::CombinedEnemyScale(dev::enemy_scale.load(),dev::EnemyScaleEdit(type));
     const auto edit=dev::EnemyActorEdit(actor,type,Read<float>(base,actor+kScale),factor,random);
+    // O jogo pode devolver as pecas do modelo ao tamanho dele sem passar pela escala do ator:
+    // com fator ativo, a raiz ainda tem o nosso valor e as pecas recebem de novo.
+    const float total=dev::ClampEnemyScale(factor*edit.roll.scale),root=Read<float>(base,actor+kScale),node=ModelNodeScale(base,actor);
+    if(!edit.step.write && total!=1.0f && std::isfinite(node) && std::fabs(node-root)>1e-4f &&
+       WriteScale(ctx,base,actor,{true,root,{}}) && scale_logs.fetch_add(1)<12)
+        LOGR("editor: model reset actor %08X type %u node %.2f -> %.2f",actor,type,node,root);
     // A barra do inimigo divide [ator+0x1C] por este retorno; vida cheia acompanha a maxima sorteada.
     if(hp_return && edit.roll.hp!=1.0f) {
         double& top=ctx.st[ctx.top&7];
@@ -73,7 +95,38 @@ dev::ActorEdit EditActor(X86Context& ctx,uint8_t* base,uint32_t actor,uint32_t t
     return edit;
 }
 }
+namespace {
+// Itens no chao criados por sub_002F92F0: endereco -> modelo, para reconhecer o mesmo objeto depois.
+std::mutex item_lock;
+std::unordered_map<uint32_t,uint32_t> item_objects;
+bool IsItemObject(const uint8_t* base,uint32_t object) {
+    std::lock_guard guard(item_lock);
+    const auto it=item_objects.find(object);
+    return it!=item_objects.end() && it->second==Read<uint32_t>(base,object+0x104);
+}
+}
 namespace dev {
+void NoteItemObject(const uint8_t* base,uint32_t object) {
+    if(!object || !ReadableGuestRange(base,object,kActorBytes)) return;
+    std::lock_guard guard(item_lock);
+    if(item_objects.size()>512) item_objects.clear();
+    item_objects[object]=Read<uint32_t>(base,object+0x104);
+}
+// O jogo acabou de escalar um objeto (sub_0035BA40): inimigo ou item no chao recebem o fator por cima.
+void GameScaleSet(X86Context& ctx,uint8_t* base,uint32_t object) {
+    if(!object || !ReadableGuestRange(base,object,kActorBytes)) return;
+    const float current=Read<float>(base,object+kScale);
+    if(Read<uint16_t>(base,object)==2) {
+        const uint32_t type=Read<uint16_t>(base,object+2);
+        const float factor=CombinedEnemyScale(enemy_scale.load(),EnemyScaleEdit(type));
+        const float total=EnemyGameScale(object,type,current,factor,RandomSettings());
+        if(total!=1.0f && WriteScale(ctx,base,object,{true,current*total,{}}) && scale_logs.fetch_add(1)<12)
+            LOGR("editor: game scale actor %08X type %u %.2f -> %.2f",object,type,current,current*total);
+        return;
+    }
+    const float factor=ClampItemScale(item_scale.load());
+    if(factor!=1.0f && IsItemObject(base,object)) ScaleSceneObject(ctx,base,object,factor);
+}
 bool ScaleSceneObject(X86Context& ctx,uint8_t* base,uint32_t object,float factor) {
     if(!object || factor==1.0f || !std::isfinite(factor) || factor<=0 || !ReadableGuestRange(base,object,kActorBytes)) return false;
     const float current=Read<float>(base,object+kScale);
@@ -112,6 +165,13 @@ bool VerifyEnemyEditorHooks() {
     enemy_scale=2;const bool grown=EditActor(call,memory,actor,7,off,false).step.write && scale()==std::array<float,4>{2,2,2,1};
     const bool stable=!EditActor(call,memory,actor,7,off,false).step.write && scale()==std::array<float,4>{2,2,2,1};
     enemy_scale=1;const bool restored=EditActor(call,memory,actor,7,off,false).step.write && scale()==std::array<float,4>{1,1,1,1};
+    // O jogo reescala o ator (nascimento/efeito): com 2x ativo, o fator volta por cima do valor do jogo.
+    const bool saved_random=enemy_random.load();enemy_random=false;
+    enemy_scale=2;Write(memory,actor+kScale,std::array<float,4>{.5f,.5f,.5f,1});
+    GameScaleSet(call,memory,actor);
+    enemy_random=saved_random;
+    const bool game_set=scale()==std::array<float,4>{1,1,1,1};
+    enemy_scale=1;EditActor(call,memory,actor,7,off,false);
     // Elite garantido: vida do retorno no x87 dobra e o tamanho vai a 2x com faixa fixa em 1x.
     EnemyRandomSettings elite;elite.enabled=true;elite.elite_chance=1;elite.elite_scale=2;elite.elite_hp=2;
     Write(memory,actor+2,uint16_t(8));Write(memory,actor+kHp,100.0f);
@@ -121,8 +181,8 @@ bool VerifyEnemyEditorHooks() {
         scale()==std::array<float,4>{2,2,2,1};
     enemy_scale=saved;
     const bool esp_kept=call.esp==GuestTestMemory::stack;
-    const bool ok=grown&&stable&&restored&&elite_ok&&esp_kept;
-    LOGR("dev selftest: enemy editor scale grow/no stacking/restore/elite hp+size/stack=%d",ok);
+    const bool ok=grown&&stable&&restored&&game_set&&elite_ok&&esp_kept;
+    LOGR("dev selftest: enemy editor scale grow/no stacking/restore/game rescale/elite hp+size/stack=%d (game rescale=%d)",ok,int(game_set));
     return ok;
 }
 }

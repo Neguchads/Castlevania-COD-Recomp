@@ -92,7 +92,13 @@ X86_FUNC(sub_002F9A30) {
 // Cria o objeto do item no chao e devolve o ponteiro (0 se falhou): aplica o tamanho escolhido.
 X86_FUNC(sub_002F92F0) {
     __imp__sub_002F92F0(ctx,base);
+    const uint32_t object=ctx.eax;
+    dev::NoteItemObject(base,object);
     const float factor=dev::ClampItemScale(dev::item_scale.load());
-    if(factor!=1.0f && dev::ScaleSceneObject(ctx,base,ctx.eax,factor) && logged.fetch_add(1)<16)
-        LOGR("drops: item object %08X scale %.2f",ctx.eax,factor);
+    if(factor==1.0f || !object) return;
+    const bool scaled=dev::ScaleSceneObject(ctx,base,object,factor);
+    // Pesquisa: se falhar, a escala do objeto recem-criado ainda nao vale (o jogo escala depois, e o hook pega).
+    if(logged.fetch_add(1)<16)
+        LOGR("drops: item object %08X scale %.2f ok=%d current=%.3f",object,factor,int(scaled),
+             dev::ReadableGuestRange(base,object,0x140) ? Read<float>(base,object+0xA0) : -1.0f);
 }
