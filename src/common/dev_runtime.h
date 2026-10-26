@@ -76,6 +76,11 @@ inline std::atomic<bool> enemy_random{false};
 inline std::atomic<float> enemy_random_scale_min{.8f},enemy_random_scale_max{1.3f};
 inline std::atomic<float> enemy_random_hp_min{1.0f},enemy_random_hp_max{1.5f};
 inline std::atomic<float> enemy_elite_chance{0.0f},enemy_elite_scale{2.0f},enemy_elite_hp{3.0f};
+// Drops (sub_0008EF10): chance dos itens e dos cristais dos Innocent Devils, cristais por drop,
+// item sorteado da tabela de drops do jogo e tamanho dos itens soltos no chao.
+inline std::atomic<float> drop_rate{1.0f},crystal_rate{1.0f},crystal_amount{1.0f},item_scale{1.0f};
+inline std::atomic<bool> random_drops{false};
+bool VerifyDropHooks();
 // Economia: multiplicador do ganho de ouro (stat 111) e EXP (stat 3); compras sem gastar ouro
 inline std::atomic<float> gold_gain{1.0f},exp_gain{1.0f};
 inline std::atomic<bool> free_shopping{false};

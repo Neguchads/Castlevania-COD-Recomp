@@ -6,6 +6,7 @@
 #include "core/log.h"
 #include <array>
 #include <atomic>
+#include <cmath>
 #include <cstring>
 #include <string>
 
@@ -73,6 +74,12 @@ dev::ActorEdit EditActor(X86Context& ctx,uint8_t* base,uint32_t actor,uint32_t t
 }
 }
 namespace dev {
+bool ScaleSceneObject(X86Context& ctx,uint8_t* base,uint32_t object,float factor) {
+    if(!object || factor==1.0f || !std::isfinite(factor) || factor<=0 || !ReadableGuestRange(base,object,kActorBytes)) return false;
+    const float current=Read<float>(base,object+kScale);
+    if(!std::isfinite(current) || current<=0) return false;
+    return WriteScale(ctx,base,object,{true,current*factor,{}});
+}
 void ApplyEnemyEdits(X86Context& ctx,uint8_t* base,uint32_t actor,bool hp_return) {
     if(!actor || !ReadableGuestRange(base,actor,kActorBytes) || Read<uint16_t>(base,actor)!=2) return;
     const uint32_t type=Read<uint16_t>(base,actor+2);

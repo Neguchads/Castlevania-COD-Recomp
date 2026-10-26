@@ -17,6 +17,7 @@
 #include "menu_input.h"
 #include "menu_nav.h"
 #include "game_cheat_rules.h"
+#include "drop_rules.h"
 #include "enemy_editor.h"
 #include "menu_search.h"
 #include "menu_search_index.h"
@@ -31,7 +32,7 @@ MenuNav nav;
 struct MenuTitleEntry {const char* label;int page;};
 struct MenuTabEntry {const char* label;MenuTitleEntry titles[6];int count;};
 constexpr MenuTabEntry kTabs[]{
-    {"Jogabilidade",{{"Jogo e minimapa",0},{"Dificuldade",16},{"HUD e pets",10},{"Camera",11},{"Saves e sessao",8}},5},
+    {"Jogabilidade",{{"Jogo e minimapa",0},{"Dificuldade",16},{"Drops e itens",20},{"HUD e pets",10},{"Camera",11},{"Saves e sessao",8}},6},
     {"Graficos",{{"Graficos",2}},1},
     {"Audio",{{"Audio",3}},1},
     {"Controles",{{"Controle",15},{"Teclado e mouse",4}},2},
@@ -245,6 +246,22 @@ void EnemiesPage() {
     Slider("Tamanho dos inimigos",enemy_scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
     ImGui::TextWrapped("As camadas se multiplicam: todos x tipo (Por tipo) x sorteio (Aleatorio). Limites finais: tamanho 0,5x a 3x, vida 0,5x a 5x.");
     ImGui::TextColored(muted_text,"Tamanho e so visual: a area de acerto continua a original. Vida vale para quem aparece depois: troque de sala.");
+}
+void DropsPage() {
+    Heading("Drops e itens","Chance e quantidade do que os inimigos soltam ao morrer, e tamanho dos itens no chao. So na memoria.");
+    Slider("Taxa de drop de itens",drop_rate,0,kMaxDropFactor,"%.2fx");
+    ImGui::TextColored(muted_text,"Multiplica a chance de cada item (a sorte do personagem continua contando). 0x desliga os itens.");
+    Slider("Chance de cristais dos Innocent Devils",crystal_rate,0,kMaxDropFactor,"%.2fx");
+    Slider("Cristais por drop",crystal_amount,1,kMaxCrystalAmount,"%.2fx");
+    ImGui::TextColored(muted_text,"Cristais de evolucao so caem com um Innocent Devil em campo. O jogo junta no maximo 4 cristais por drop.");
+    Toggle("Itens aleatorios nos drops",random_drops);
+    ImGui::TextColored(muted_text,"Troca o item que o inimigo soltaria por outro da tabela de drops do proprio jogo.");
+    Slider("Tamanho dos itens no chao",item_scale,kMinItemScale,kMaxItemScale,"%.2fx");
+    if(ImGui::Button("Itens pela metade",MenuSize(200,30))) item_scale.store(.5f);
+    ImGui::SameLine();
+    if(ImGui::Button("Tamanho original",MenuSize(200,30))) item_scale.store(1);
+    ImGui::TextColored(muted_text,"So o visual muda: a area de pegar continua a original. Vale para itens que caem depois da mudanca.");
+    ImGui::TextWrapped("Valem para inimigos que morrem depois da mudanca. Salvar opcoes grava tudo.");
 }
 void EnemyRandomPage() {
     Heading("Aleatorio","Cada inimigo sorteia tamanho e vida ao aparecer e mantem o sorteio ate sumir.");
@@ -948,7 +965,7 @@ void Draw(double fps) {
             case 10:HudPage();break;case 11:CameraPage();break;case 12:Diagnostics(fps);break;
             case 13:ReportsGallery();break;case 14:LogsPage();break;case 15:ControllerPage();break;
             case 16:DifficultyPage();break;case 17:EnemyEditorPage();break;
-            case 18:EnemiesPage();break;case 19:EnemyRandomPage();break;}
+            case 18:EnemiesPage();break;case 19:EnemyRandomPage();break;case 20:DropsPage();break;}
         ImGui::PopItemWidth();ImGui::EndChild();
         }
         ImGui::Separator();

@@ -127,5 +127,13 @@ inline constexpr MenuSearchEntry kMenuSearchIndex[]{
     {19, "Tamanho extra da elite"},
     {19, "Vida extra da elite"},
     {19, "Trocar tipos de inimigo"},
+    {20, "Drops e itens"},
+    {20, "Taxa de drop de itens"},
+    {20, "Chance de cristais dos Innocent Devils"},
+    {20, "Cristais por drop"},
+    {20, "Itens aleatorios nos drops"},
+    {20, "Tamanho dos itens no chao"},
+    {20, "Itens pela metade"},
+    {20, "Tamanho original"},
 };
 }
