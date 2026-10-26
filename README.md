@@ -38,6 +38,7 @@ Requisitos: Windows 10/11, Visual Studio 2022 com "Desenvolvimento para desktop 
 2. Mantenha o checkout do `XboxXBERecomp` ao lado deste projeto. O fallback do SDK fica fixado no commit `e0de3e44d10443c1c9aad512f36baf133cdd4a60`.
 3. Rode `build.bat`. O primeiro build recompila o XBE (30 a 90 minutos).
 4. Abra `out\build\release\CastlevaniaCOD.exe`. **F1** ou **L3 + R3** abre o menu dev.
+5. Opcional: `.\tools\make-portable.ps1` monta uma pasta pronta para jogar, "Castlevania Curse of Darkness Recomp", na área de trabalho, com exe, dll, `assets`, mods, saves e opções. Ela funciona em qualquer disco. Ao rodar de novo, o script atualiza o jogo e os mods, mas não sobrescreve os saves nem as opções da pasta pronta. `-Destination` escolhe outro lugar e `-DryRun` só mostra o tamanho.
 
 Antes de um commit ou PR, rode `tools\verify.cmd`: build, testes C++ e Python (`tools\test-local.cmd`) e varredura de segredos com gitleaks.
 
