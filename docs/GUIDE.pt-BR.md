@@ -4,7 +4,7 @@
 
 Este guia explica como instalar, jogar e configurar tudo o que o port oferece. A parte técnica de mods (formato dos arquivos, packs de textura, `cheats.toml`) fica em [MODDING.pt-BR.md](../MODDING.pt-BR.md).
 
-O menu de ferramentas começa em português. Os botões **PT-BR** e **EN** no canto superior direito trocam na hora; no controle, use Menu > Aparência > "Idioma do menu". A escolha fica salva em `settings.toml` (`menu_language`). Isso muda só o texto das ferramentas; o idioma do jogo é outra opção.
+O menu de ferramentas começa em português. Os botões **PT-BR** e **EN** no canto superior direito trocam na hora; no controle, use Suporte e menu > Aparência do menu > "Idioma do menu". A escolha fica salva em `settings.toml` (`menu_language`). Isso muda só o texto das ferramentas; o idioma do jogo é outra opção.
 
 ## Requisitos de PC
 
@@ -71,7 +71,7 @@ O menu de ferramentas, L3 + R3 e Start + Back + LT + RT usam sempre os botões f
 
 ## Menu de ferramentas
 
-O menu abre por cima do jogo, e o jogo continua rodando: os analógicos andam e giram a câmera, e os botões ficam com o menu. Para pausar tudo, ligue "Pausar o jogo com o menu aberto" em Menu > Aparência.
+O menu abre por cima do jogo, e o jogo continua rodando: os analógicos andam e giram a câmera, e os botões ficam com o menu. Para pausar tudo, ligue "Pausar o jogo com o menu aberto" em Suporte e menu > Aparência do menu.
 
 Navegação:
 - L1/R1 trocam de aba.
@@ -88,44 +88,53 @@ Navegação:
 
 | Página | O que tem |
 |---|---|
-| Jogo e minimapa | Idioma do jogo (English / Português); minimapa (ligar, girar com a câmera, tamanho 0,6–1,6x, opacidade, posição horizontal e vertical, botão "canto superior direito") |
+| Jogo | Idioma do jogo (English / Português) |
 | Dificuldade | Presets Fácil, Normal, Difícil, Muito difícil e Pesadelo; barras "Dano recebido pelo jogador" e "Dano recebido pelo Innocent Devil". O golpe final e as mortes por roteiro continuam matando. |
-| Inimigos: todos | Vida dos inimigos (0,5x–5x) e tamanho (0,5x–3x); combinações prontas Original, Variados, Elites, Gigantes e Caotico; botão "Restaurar padrão dos inimigos" |
-| Inimigos: aleatório | Cada inimigo sorteia tamanho e vida ao aparecer, dentro das faixas mínima e máxima. A chance de elite (0–100%) e o tamanho e a vida extras da elite multiplicam por cima. "Trocar tipos de inimigo" ainda está em pesquisa. |
-| Inimigos: por tipo | Vida e tamanho para cada tipo de inimigo já visto, como mod em `mods/Editor/enemies.toml`; valem com "Aplicar edições" ligado. Tem os botões "Voltar ao original" e "Voltar todos os tipos ao original". |
-| Drops e itens | Taxa de drop de itens (0x–10x); chance de cristais dos Innocent Devils (0x–10x) e cristais por drop (1x–5x, no máximo 4 por drop); itens aleatórios tirados da tabela de drops do próprio jogo; tamanho dos itens no chão (0,25x–2x, botão "Itens pela metade") |
-| Cheats | Godmode; speedhack (0,5x–2x); vida cheia; MP cheio; MP infinito; ouro máximo; ganho de ouro e de EXP (1x–10x); compras sem gastar ouro; "Simular save de Lament of Innocence" (libera a estátua Moai); `cheats.toml` próprio |
-| HUD e pets | Mostrar HUD original; vida e MP sempre visíveis; escala do HUD; ocultar mais rápido fora de combate e tempo de espera |
+| Todos os inimigos | Vida dos inimigos (0,5x–5x) e tamanho (0,5x–3x); combinações prontas Original, Variados, Elites, Gigantes e Caotico; botão "Restaurar padrão dos inimigos" |
+| Inimigos aleatórios | Cada inimigo sorteia tamanho e vida ao aparecer, dentro das faixas mínima e máxima. A chance de elite (0–100%) e o tamanho e a vida extras da elite multiplicam por cima. "Trocar tipos de inimigo" ainda está em pesquisa. |
+| Inimigos por tipo | Vida e tamanho para cada tipo de inimigo já visto, como mod em `mods/Editor/enemies.toml`; valem com "Aplicar edições" ligado. Tem os botões "Voltar ao original" e "Voltar todos os tipos ao original". |
+| Drops e itens | Taxa de drop de itens (0x–10x); itens aleatórios tirados da tabela de drops do próprio jogo; tamanho dos itens no chão (0,25x–2x, botão "Itens pela metade") |
+| Innocent Devils | Chance de cristais dos Innocent Devils (0x–10x) e cristais por drop (1x–5x, no máximo 4 por drop); diagnóstico ao vivo do sorteio do cristal. Bestiário, Gráfico e Linha evolutiva do Devil só aparecem depois de abrir os baús certos (jogo original). |
 | Câmera | Modos Original, Cinemática, Próxima, Personalizada, Livre e Orbital. Ajustes de distância, altura, campo de visão, ângulo horizontal, inclinação e rotação do horizonte, além de acompanhamento suave e velocidade da câmera livre. |
+| Minimapa e HUD | Minimapa (ligar, girar com a câmera, tamanho 0,6–1,6x, opacidade, posição horizontal e vertical, botão "canto superior direito"). HUD: Mostrar HUD original; vida e MP sempre visíveis; escala do HUD; ocultar mais rápido fora de combate e tempo de espera |
 | Saves e sessão | Lista os arquivos de save; "Reiniciar no título" para carregar outro save. O menu não apaga nem troca saves. |
 
 As camadas de inimigos se multiplicam: todos × tipo × sorteio. Tamanho e itens menores são só visuais; a área de acerto e a de pegar o item continuam as originais. A vida vale para os inimigos que aparecem depois da mudança, então troque de sala para ver.
 
-### Gráficos, Áudio e Controles
+Cada página com opções tem "Restaurar padrões desta página"; o rodapé tem "Restaurar padrões" ao lado de "Voltar ao jogo", com confirmação.
 
-| Aba | O que tem |
+### Vídeo e áudio
+
+| Página | O que tem |
 |---|---|
 | Gráficos | Tela cheia ou janela; resolução; resolução interna; filtro anisotrópico; limite de FPS; vsync; shader de apresentação (Original, Escala de cinza, CRT leve); brilho, contraste e saturação; FPS na tela, com escolha do canto; sombra do personagem (desligada por padrão) |
 | Áudio | Volume geral; balanço esquerda/direita; sem som (F9); silenciar quando a janela perde o foco |
-| Controles > Controle | Remapear cada botão do jogo (A em cima do botão e aperte o botão físico novo); Layout Xbox e Layout PS2; Trocar A e B; inverter a câmera horizontal do analógico direito (a opção do jogo só inverte a vertical); desligar o atalho L3 + R3 |
-| Controles > Teclado e mouse | Remapear teclas; ligar o teclado; mouse como câmera; inverter o mouse em cada eixo; sensibilidade; restaurar o padrão |
 
-### Mods, Suporte e Menu
+### Controles
+
+| Página | O que tem |
+|---|---|
+| Controle | Remapear cada botão do jogo (A em cima do botão e aperte o botão físico novo); Layout Xbox e Layout PS2; Trocar A e B; inverter a câmera horizontal do analógico direito (a opção do jogo só inverte a vertical); desligar o atalho L3 + R3 |
+| Teclado e mouse | Remapear teclas; ligar o teclado; mouse como câmera; inverter o mouse em cada eixo; sensibilidade; restaurar o padrão |
+
+### Cheats, Mods e Suporte e menu
 
 | Aba | O que tem |
 |---|---|
+| Cheats | Godmode; speedhack (0,5x–2x); vida cheia; MP cheio; MP infinito; ouro máximo; ganho de ouro e de EXP (1x–10x); compras sem gastar ouro; "Simular save de Lament of Innocence" (libera a estátua Moai); `cheats.toml` próprio |
 | Mods | Lista os mods em `mods/`, com caixa para ligar cada um; recarregar a lista; exportar texturas para criar um pack HD |
-| Suporte | **Relatar bug:** captura do quadro do jogo, título e texto, salvo em `reports/`. **Capturas salvas:** as 12 mais novas. **Logs e travamentos:** últimas linhas do log e dumps de travamento. **Diagnóstico:** registro de desempenho, pesquisa da vida dos inimigos e área e sala atuais. Nada é enviado para a internet. |
-| Menu | **Aparência:** idioma do menu, opacidade, cores, pausar com o menu aberto. **Perfis:** salvar e aplicar conjuntos de opções, perfil Dev e padrão vanilla. |
+| Suporte e menu | **Relatar bug:** captura do quadro do jogo, título e texto, salvo em `reports/`. **Capturas salvas:** as 12 mais novas. **Logs e travamentos:** últimas linhas do log e dumps de travamento. **Diagnóstico:** registro de desempenho, pesquisa da vida dos inimigos e área e sala atuais. Nada é enviado para a internet. |
+| Suporte e menu > Aparência do menu | Idioma do menu, opacidade, cores, pausar com o menu aberto. |
+| Suporte e menu > Perfis | Salvar e aplicar conjuntos de opções, perfil Dev e padrão vanilla. |
 
 ## Mods incluídos
 
 | Mod | O que faz | Como ligar |
 |---|---|---|
-| PTBR-PS2 | Tradução de 2479 textos, imagens e dublagem em português, trazidas da ISO PS2 dos fãs | Opções > Idioma do jogo > Português (também em Jogabilidade > Jogo e minimapa) |
+| PTBR-PS2 | Tradução de 2479 textos, imagens e dublagem em português, trazidas da ISO PS2 dos fãs | Opções > Idioma do jogo > Português (também em Jogabilidade > Jogo) |
 | HD4K | 2739 texturas 4K do pacote PS2 (PlatinumMimic), pareadas com as do Xbox | Aba Mods |
 | PS2-Botoes | Ícones ✕ ○ □ △ L1 L2 R1 R2 no lugar dos botões do Xbox | Aba Mods; para os gatilhos, use também Controles > Layout PS2 |
-| Editor | Ajustes de vida e tamanho por tipo de inimigo | Jogabilidade > Inimigos: por tipo > "Aplicar edições" |
+| Editor | Ajustes de vida e tamanho por tipo de inimigo | Jogabilidade > Inimigos por tipo > "Aplicar edições" |
 
 Os mods nunca alteram os arquivos originais do jogo: substituem só na memória. Para criar o seu, veja [MODDING.pt-BR.md](../MODDING.pt-BR.md). Os créditos dos materiais de terceiros estão em [CREDITS.pt-BR.md](CREDITS.pt-BR.md).
 

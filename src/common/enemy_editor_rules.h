@@ -15,7 +15,7 @@ inline constexpr float kMinEnemyScale = .5f, kMaxEnemyScale = 3.0f;
 inline float ClampEnemyScale(float factor) {
     return std::isfinite(factor) ? std::clamp(factor, kMinEnemyScale, kMaxEnemyScale) : 1.0f;
 }
-// Barra global da aba Inimigos vezes o ajuste do tipo no mod Editor.
+// Barra global de Todos os inimigos vezes o ajuste do tipo no mod Editor.
 inline float CombinedEnemyScale(float global, float edit) {
     return ClampEnemyScale(ClampEnemyScale(global) * ClampEnemyScale(edit));
 }

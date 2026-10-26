@@ -4,11 +4,11 @@
 
 ## Personalização do painel
 
-Idioma do menu: os botões **PT-BR** e **EN** no canto superior direito (ou Menu > Aparência > "Idioma do menu", no controle) trocam o texto das ferramentas, salvo como `menu_language` em `settings.toml`. O inglês fica em `src/common/menu_strings_en.h`, com o texto em português como chave; `python tools/menu_strings.py` falha se faltar tradução ou se uma tradução mudar o formato do printf.
+Idioma do menu: os botões **PT-BR** e **EN** no canto superior direito (ou Suporte e menu > Aparência do menu > "Idioma do menu", no controle) trocam o texto das ferramentas, salvo como `menu_language` em `settings.toml`. O inglês fica em `src/common/menu_strings_en.h`, com o texto em português como chave; `python tools/menu_strings.py` falha se faltar tradução ou se uma tradução mudar o formato do printf.
 
-O guia do jogador, com cada aba e opção, está em [docs/GUIDE.pt-BR.md](docs/GUIDE.pt-BR.md). Sete abas no topo: Jogabilidade (jogo e minimapa, dificuldade, inimigos, drops e itens, cheats, HUD e pets, câmera, saves), Gráficos, Áudio, Controles, Mods, Suporte (relatar bug, diagnóstico) e Menu (aparência, perfis). O campo com a lupa, no topo, busca qualquer opção pelo nome: Ctrl+F no teclado ou Y no controle, que abre um teclado na tela. L1/R1 ou clique trocam de aba. O direcional escolhe um título na coluna esquerda; A entra nas opções dele. Numa barra, A entra no ajuste: direcional ou analógico esquerdo arrasta, B sai do ajuste. B volta das opções para os títulos e nunca fecha o painel; só **L3 + R3** ou **F1** fecham. No teclado: setas, Enter e Esc fazem o mesmo. Com o painel aberto o jogo continua rodando: os analógicos andam e giram a câmera (também na Livre e na Orbital) e os botões ficam com o painel; enquanto uma barra é ajustada, o analógico esquerdo só mexe a barra. Para pausar tudo (jogo, relógio, vblank e som), ligue "Pausar o jogo com o menu aberto" em Menu > Aparência.
+O guia do jogador, com cada aba e opção, está em [docs/GUIDE.pt-BR.md](docs/GUIDE.pt-BR.md). Seis abas no topo: Jogabilidade (jogo, dificuldade, inimigos, drops e itens, Innocent Devils, câmera, minimapa e HUD, saves), Vídeo e áudio (gráficos, áudio), Controles, Cheats, Mods e Suporte e menu (relatar bug, diagnóstico, aparência do menu, perfis). O campo com a lupa, no topo, busca qualquer opção pelo nome: Ctrl+F no teclado ou Y no controle, que abre um teclado na tela. L1/R1 ou clique trocam de aba. O direcional escolhe um título na coluna esquerda; A entra nas opções dele. Numa barra, A entra no ajuste: direcional ou analógico esquerdo arrasta, B sai do ajuste. B volta das opções para os títulos e nunca fecha o painel; só **L3 + R3** ou **F1** fecham. No teclado: setas, Enter e Esc fazem o mesmo. Com o painel aberto o jogo continua rodando: os analógicos andam e giram a câmera (também na Livre e na Orbital) e os botões ficam com o painel; enquanto uma barra é ajustada, o analógico esquerdo só mexe a barra. Para pausar tudo (jogo, relógio, vblank e som), ligue "Pausar o jogo com o menu aberto" em Suporte e menu > Aparência do menu.
 
-Idioma: Jogabilidade > Jogo e minimapa > Idioma do jogo troca entre English e Português (Brasil). Textos mudam na hora; imagens e vozes já carregadas, ao reiniciar. Japonês continua em Opções > Idioma no jogo.
+Idioma: Jogabilidade > Jogo > Idioma do jogo troca entre English e Português (Brasil). Textos mudam na hora; imagens e vozes já carregadas, ao reiniciar. Japonês continua em Opções > Idioma no jogo.
 
 Dificuldade (Jogabilidade > Dificuldade): presets Fácil, Normal, Difícil, Muito difícil e Pesadelo, ou as barras "Dano recebido pelo jogador" e "Dano recebido pelo Innocent Devil" (0,25x a 4x). O golpe final e mortes por roteiro continuam matando. A vida dos inimigos fica em Jogabilidade > Inimigos (abaixo).
 
@@ -18,7 +18,7 @@ Cheats: além de godmode e speedhack, "Vida cheia" (não revive), "MP cheio", "M
 
 Save de Lament of Innocence: no PS2, ter o save de LoI no memory card libera a estátua Moai. Em Cheats, "Simular save de Lament of Innocence" faz o jogo achar esse save; ligue, salve as opções e só então carregue o save ou comece um jogo novo pela tela de título (o log mostra `cheat: Lament of Innocence save simulated`). O bônus fica gravado no save ao salvar. Pelo código, ele libera um objeto numa sala (não cai direto no inventário); a sala ainda não foi identificada.
 
-Minimapa: em Jogabilidade > Jogo e minimapa, "Posição horizontal/vertical do minimapa" (0 = esquerda/topo, 1 = direita/base) e o botão que volta ao canto superior direito. Salvar opções grava a posição.
+Minimapa: em Jogabilidade > Minimapa e HUD, "Posição horizontal/vertical do minimapa" (0 = esquerda/topo, 1 = direita/base) e o botão que volta ao canto superior direito. Salvar opções grava a posição.
 
 Botões de PlayStation: ligue o mod **PS2-Botoes** (Mods) para ver ✕ ○ □ △ L1 L2 R1 R2 no lugar de A B X Y L preto R branco, e em Controles > Controle aperte **Layout PS2** para L1/R1 virarem os gatilhos e L2/R2 o preto/branco, como no PS2. **Layout Xbox** volta ao padrão; a linha "Layout atual" mostra Xbox, PS2 ou personalizado. Para gerar o pack de novo: `python tools\hd_pack_match.py buttons --pack <pasta replacements do 4K PS2>`.
 
@@ -26,11 +26,11 @@ Gráficos também têm brilho, contraste e saturação; Áudio tem "Silenciar qu
 
 Mouse horizontal/vertical têm inversão separada. O padrão foi invertido em relação ao build anterior por pedido do usuário. WASD movimenta, setas controlam câmera; os dois grupos podem ser remapeados. Restaurar controles padrão repõe as teclas do port.
 
-Jogabilidade > Inimigos: todos > "Vida dos inimigos" (0,5x a 5x, chave `enemy_hp`) multiplica a vida máxima calculada pelo jogo para cada tipo de inimigo. Vale para inimigos que aparecem depois da mudança; troque de sala para ver.
+Jogabilidade > Todos os inimigos > "Vida dos inimigos" (0,5x a 5x, chave `enemy_hp`) multiplica a vida máxima calculada pelo jogo para cada tipo de inimigo. Vale para inimigos que aparecem depois da mudança; troque de sala para ver.
 
-Jogabilidade > Inimigos: todos > "Tamanho dos inimigos" (0,5x a 3x, chave `enemy_scale`) muda o tamanho de todos; o ajuste por tipo multiplica por cima. Jogabilidade > Inimigos: por tipo ajusta vida e tamanho por tipo de inimigo. Os ajustes ficam em `mods/Editor/enemies.toml` (`[enemy.N]` com `name`, `hp` de 0,5 a 5 e `scale` de 0,5 a 3) e só valem com o mod Editor ligado; nenhum arquivo do jogo muda. O tamanho é só visual: a área de acerto continua a original. O jogo reescala o inimigo depois que ele aparece; desde 26/10 o port reaplica o fator nessa reescala. Essa correção ainda não foi confirmada no jogo. A vida funciona.
+Jogabilidade > Todos os inimigos > "Tamanho dos inimigos" (0,5x a 3x, chave `enemy_scale`) muda o tamanho de todos; o ajuste por tipo multiplica por cima. Jogabilidade > Inimigos por tipo ajusta vida e tamanho por tipo de inimigo. Os ajustes ficam em `mods/Editor/enemies.toml` (`[enemy.N]` com `name`, `hp` de 0,5 a 5 e `scale` de 0,5 a 3) e só valem com o mod Editor ligado; nenhum arquivo do jogo muda. O tamanho é só visual: a área de acerto continua a original. O jogo reescala o inimigo depois que ele aparece; desde 26/10 o port reaplica o fator nessa reescala. Essa correção ainda não foi confirmada no jogo. A vida funciona.
 
-Jogabilidade > Inimigos: aleatório sorteia tamanho e vida de cada inimigo ao aparecer (`enemy_random`, faixas `enemy_random_scale_min/max` e `enemy_random_hp_min/max`). A chance de elite (`enemy_elite_chance`, 0 a 100) multiplica por cima com `enemy_elite_scale` e `enemy_elite_hp`. As camadas se multiplicam (todos x tipo x sorteio), com limite final de 0,5x a 3x no tamanho e 0,5x a 5x na vida. Os botões Original, Variados, Elites, Gigantes e Caotico preenchem tudo de uma vez. Trocar um tipo de inimigo por outro ainda está em pesquisa.
+Jogabilidade > Inimigos aleatórios sorteia tamanho e vida de cada inimigo ao aparecer (`enemy_random`, faixas `enemy_random_scale_min/max` e `enemy_random_hp_min/max`). A chance de elite (`enemy_elite_chance`, 0 a 100) multiplica por cima com `enemy_elite_scale` e `enemy_elite_hp`. As camadas se multiplicam (todos x tipo x sorteio), com limite final de 0,5x a 3x no tamanho e 0,5x a 5x na vida. Os botões Original, Variados, Elites, Gigantes e Caotico preenchem tudo de uma vez. Trocar um tipo de inimigo por outro ainda está em pesquisa.
 
 O campo "Filtrar opções" no topo do menu dev (Ctrl+F) acha qualquer opção pelo nome, sem acento e em qualquer ordem de palavras; Enter abre a página dela.
 
@@ -40,7 +40,7 @@ A opção "inverter câmera" das Opções do jogo só inverte o eixo vertical, c
 
 Godmode agora intercepta também o setter absoluto de HP, além do delta: ambos passaram pelos wrappers originais em teste isolado, preservando cura e outros personagens. O segundo bypass foi reproduzido antes da correção. Reteste em combate continua necessário.
 
-O painel pode ser movido pela barra de título e redimensionado pelo canto inferior direito. A aba Aparência ajusta opacidade, fundo, seleção e foco. Os controles numéricos de posição/tamanho também aceitam navegação por controle. Restaurar aparência padrão repõe a janela e a paleta preto/vermelho/dourado; não apaga saves nem remapeamentos.
+O painel pode ser movido pela barra de título e redimensionado pelo canto inferior direito. Suporte e menu > Aparência do menu ajusta opacidade, fundo, seleção e foco. Os controles numéricos de posição/tamanho também aceitam navegação por controle. Restaurar aparência padrão repõe a janela e a paleta preto/vermelho/dourado; não apaga saves nem remapeamentos.
 
 Salvar opções grava as preferências em settings.toml. Fechar o painel grava também sua geometria. A aba Controles mostra a referência Xbox, a ação e a tecla em colunas separadas.
 
@@ -68,7 +68,7 @@ F3 salva a imagem e o relatório depois que a captura gráfica termina. A confir
 
 Cada pasta `reports/data-hora-identificador` contém `screenshot.bmp`, `report.txt` e `runtime.log`. A captura vem do quadro do jogo, sem o menu de ferramentas nem a Área de Trabalho. Nenhum arquivo é enviado automaticamente. O log corresponde ao momento em que você salva o relato. Capturas durante carregamento podem registrar um quadro preto; use Nova captura quando a imagem desejada estiver visível.
 
-Outras páginas da aba Suporte:
+Outras páginas da aba Suporte e menu:
 
 - **Capturas salvas**: as 12 mais novas. Passe o direcional pela lista para ver a imagem; Abrir pasta e Copiar relato agem sobre a selecionada.
 - **Logs e travamentos**: últimas 200 linhas do log desta sessão (Copiar log, Abrir pasta do log). Cada travamento grava `CrashDumps/<data>.dmp` e uma cópia do log com o mesmo nome; abra o item para ver as últimas linhas.
