@@ -137,11 +137,14 @@ void GameHacks() {
     static const char* action_status="";
     if(ImGui::Button("Vida cheia",MenuSize(150,30))) action_status=RefillPlayerHp() ? "Vida restaurada." : "Vida ja cheia ou jogador fora de partida.";
     ImGui::SameLine();
+    if(ImGui::Button("MP cheio",MenuSize(150,30))) action_status=RefillPlayerMp() ? "MP restaurado." : "MP ja cheio ou jogador fora de partida.";
+    ImGui::SameLine();
     if(ImGui::Button("Ouro maximo",MenuSize(150,30))) action_status=MaxPlayerGold() ? "Ouro em 9.999.999." : "Memoria do ouro indisponivel.";
     if(*action_status) ImGui::TextColored(muted_text,"%s",action_status);
     Slider("Ganho de ouro",gold_gain,kMinGainFactor,kMaxGainFactor,"%.1fx");
     Slider("Ganho de EXP",exp_gain,kMinGainFactor,kMaxGainFactor,"%.1fx");
     Toggle("Compras nao gastam ouro",free_shopping);
+    Toggle("MP infinito",infinite_mp);
     ImGui::EndDisabled();
     ImGui::TextWrapped("Ouro e EXP passam pelo setter original do jogo (limite de 9.999.999 e nivel 99 mantidos). Vida cheia nao revive.");
     ImGui::Spacing();

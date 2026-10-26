@@ -64,6 +64,9 @@ X86_FUNC(sub_00336070) {
             const int32_t zero = 0;
             std::memcpy(base + ctx.esp + 4, &zero, 4);
             dev::prevented_damage.fetch_add(1);
+        } else if (dev::BlockMpCost(dev::infinite_mp.load(), ctx.eax, slot, delta)) {
+            const int32_t zero = 0;
+            std::memcpy(base + ctx.esp + 4, &zero, 4);
         } else if (ctx.eax == 6 && delta < 0 && DifficultyActive()) {
             const int32_t scaled = dev::ScaleDamageDelta(delta, DamageFactor(slot));
             if (scaled != delta) {
@@ -111,6 +114,17 @@ bool RefillPlayerHp() {
     if(next==hp) return false;
     std::memcpy(kernel::g_base+hp_address,&next,4);
     LOGR("cheat: HP %d -> %d",hp,next);
+    return true;
+}
+bool RefillPlayerMp() {
+    constexpr uint32_t mp_address=0xB2A350+0x2970+kStatMp*4;   // atributo 32 do slot 0; maximo (31) logo antes
+    if(!godmode_ready || !ReadableGuestRange(kernel::g_base,mp_address-4,8)) return false;
+    int32_t max_mp,mp;
+    std::memcpy(&max_mp,kernel::g_base+mp_address-4,4);std::memcpy(&mp,kernel::g_base+mp_address,4);
+    const int32_t next=RefillMp(mp,max_mp);
+    if(next==mp) return false;
+    std::memcpy(kernel::g_base+mp_address,&next,4);
+    LOGR("cheat: MP %d -> %d",mp,next);
     return true;
 }
 bool MaxPlayerGold() {
@@ -224,6 +238,24 @@ bool VerifyGodmodeOriginal() {
          gold_off,gold_on,spend_off,spend_free,gold_cap,exp_off,exp_on,economy_ok);
     gold_gain.store(saved_gold);exp_gain.store(saved_exp);free_shopping.store(saved_free);
     ok=economy_ok && ok;
+    // MP infinito pelo setter original: atributo 32 do slot 0 em raiz+0x2970+32*4.
+    const bool saved_mp=infinite_mp.load();
+    auto mp=[&](bool enabled,int32_t delta){
+        mapped(false,1,0);
+        constexpr uint32_t address=0xB2A350+0x2970+kStatMp*4;
+        write(address-4,80);write(address,50);
+        infinite_mp.store(enabled);
+        X86Context context{};
+        context.esp=GuestTestMemory::stack;context.eax=kStatMp;context.ebx=1;context.edx=0xB2A350;
+        write(context.esp+4,uint32_t(delta));
+        sub_00336070(context,arena.data());
+        return read(address);
+    };
+    const auto mp_off=mp(false,-10),mp_on=mp(true,-10),mp_gain=mp(true,10);
+    const bool mp_ok=mp_off==40 && mp_on==50 && mp_gain==60;
+    LOGR("dev selftest: infinite mp off=%u on=%u gain=%u passed=%d",mp_off,mp_on,mp_gain,mp_ok);
+    infinite_mp.store(saved_mp);
+    ok=mp_ok && ok;
     // Save de LoI pelo leitor original: grupo 0 em [0x548C0C], palavra 1, bit 2 = flag 0x4002.
     const bool saved_lament=lament_save.load();
     auto flag=[&](uint32_t id,uint32_t word,bool simulate){

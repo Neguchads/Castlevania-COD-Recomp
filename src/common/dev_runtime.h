@@ -63,6 +63,8 @@ inline std::atomic<float> damage_taken{1.0f},devil_damage_taken{1.0f};
 // Economia: multiplicador do ganho de ouro (stat 111) e EXP (stat 3); compras sem gastar ouro
 inline std::atomic<float> gold_gain{1.0f},exp_gain{1.0f};
 inline std::atomic<bool> free_shopping{false};
+// MP infinito: gasto de MP do Hector (atributo 32) zerado no setter
+inline std::atomic<bool> infinite_mp{false};
 // Simula o save de Lament of Innocence (PS2) para liberar o bonus Moai em jogo novo ou ao carregar
 inline std::atomic<bool> lament_save{false};
 // Apresentacao: brilho (soma), contraste e saturacao (1 = original)
@@ -123,6 +125,7 @@ bool ValidateGodmodeImage();
 bool VerifyGodmodeOriginal();
 // Cheats de botao: vida cheia (sem reviver) e ouro no limite do jogo; falso se nada mudou.
 bool RefillPlayerHp();
+bool RefillPlayerMp();
 bool MaxPlayerGold();
 bool VerifySpeedRuntime();
 void Pad(int port, input::Pad& pad);
