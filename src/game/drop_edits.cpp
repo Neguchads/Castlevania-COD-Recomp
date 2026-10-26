@@ -13,6 +13,12 @@ X86_EXTERN_FUNC(__imp__sub_00032D90);
 X86_EXTERN_FUNC(__imp__sub_002F95E0);
 X86_EXTERN_FUNC(__imp__sub_002F9A30);
 X86_EXTERN_FUNC(__imp__sub_002F92F0);
+X86_EXTERN_FUNC(__imp__sub_0008EF10);
+X86_EXTERN_FUNC(__imp__sub_001441F0);
+X86_EXTERN_FUNC(__imp__sub_002F7320);
+X86_EXTERN_FUNC(__imp__sub_00144F00);
+X86_EXTERN_FUNC(__imp__sub_00336660);
+X86_EXTERN_FUNC(__imp__sub_000908D0);
 namespace {
 template<class T> T Read(const uint8_t* base,uint32_t address) {T value{};std::memcpy(&value,base+address,sizeof(T));return value;}
 template<class T> void Write(uint8_t* base,uint32_t address,T value) {std::memcpy(base+address,&value,sizeof(T));}
@@ -27,6 +33,33 @@ float Uniform() {
     return std::uniform_real_distribution<float>(0.0f,1.0f)(rng);
 }
 std::atomic<int> logged{0};
+// Diagnostico do cristal: so o thread do jogo grava a condicao; o relatorio le o resumo sob a trava.
+bool collecting=false;      // dentro de sub_0008EF10
+dev::CrystalGate gate;
+std::mutex crystal_lock;
+uint32_t crystal_kills[dev::kCrystalBlocks]{},crystal_spawned=0,crystal_logs=0,attribute_writes=0;
+int last_block=-1;
+std::string crystal_last="nenhum inimigo derrotado ainda",last_write="nenhuma";
+dev::CrystalProbe ProbeHere(const uint8_t* base,uint32_t esp) {
+    return collecting ? dev::CrystalProbeAt(ReturnAddress(base,esp)) : dev::CrystalProbe::None;
+}
+void FinishCrystalGate() {
+    const auto block=dev::CrystalBlockOf(gate);
+    const auto text=dev::CrystalGateText(gate);
+    bool log=false;
+    {
+        std::lock_guard guard(crystal_lock);
+        ++crystal_kills[int(block)];
+        if(gate.spawned) ++crystal_spawned;
+        uint32_t total=0;
+        for(uint32_t count:crystal_kills) total+=count;
+        log=dev::LogCrystalGate(total,int(block)!=last_block,crystal_logs);
+        if(log) ++crystal_logs;
+        last_block=int(block);
+        crystal_last=text;
+    }
+    if(log) LOGR("crystal gate: %s",text.c_str());
+}
 // Cristais: [esp+8] = quantidade que sub_002F95E0 reparte em ate 4 cristais.
 bool AdjustCrystalAmount(uint8_t* base,uint32_t esp) {
     if(!dev::ReadableGuestRange(base,esp,12)) return false;
@@ -69,6 +102,21 @@ bool VerifyDropHooks() {
     LOGR("dev selftest: drops crystal amount/neutral/random off/random table=%d",ok);
     return ok;
 }
+void NoteCrystalAttributeWrite(uint32_t root,uint32_t id,uint32_t stat,int32_t value,bool absolute) {
+    char text[96];
+    std::snprintf(text,sizeof(text),"raiz=%08X id=%u atributo=%u %s %d",root,id,stat,absolute ? "=" : "+=",value);
+    bool log;
+    {
+        std::lock_guard guard(crystal_lock);
+        log=attribute_writes++<32;
+        last_write=text;
+    }
+    if(log) LOGR("crystal attribute write: %s",text);
+}
+std::string CrystalDiagnosticReport() {
+    std::lock_guard guard(crystal_lock);
+    return CrystalSummaryText(crystal_kills,crystal_spawned,crystal_last,attribute_writes,last_write);
+}
 }
 // Aleatorio [0,max) no x87. So as checagens do drop (pelo retorno) tem o sorteio dividido pelo fator.
 X86_FUNC(sub_00032D90) {
@@ -78,11 +126,49 @@ X86_FUNC(sub_00032D90) {
     if(check==dev::DropCheck::None) return;
     double& top=ctx.st[ctx.top&7];
     top=dev::DropRoll(top,check==dev::DropCheck::Crystal ? dev::crystal_rate.load() : dev::drop_rate.load());
+    if(collecting && check==dev::DropCheck::Crystal) gate.roll=top;
 }
 // Cristais de evolucao soltos pelo inimigo (sub_0008EF10).
 X86_FUNC(sub_002F95E0) {
-    if(ReturnAddress(base,ctx.esp)==dev::kCrystalDropReturn) AdjustCrystalAmount(base,ctx.esp);
+    if(ReturnAddress(base,ctx.esp)==dev::kCrystalDropReturn) {
+        AdjustCrystalAmount(base,ctx.esp);
+        if(collecting) gate.spawned=true;
+    }
     __imp__sub_002F95E0(ctx,base);
+}
+// Drop do inimigo derrotado: as leituras abaixo (pelo endereco de retorno) dizem qual condicao barrou o cristal.
+X86_FUNC(sub_0008EF10) {
+    gate={};collecting=true;
+    __imp__sub_0008EF10(ctx,base);
+    collecting=false;
+    FinishCrystalGate();
+}
+X86_FUNC(sub_001441F0) {
+    const auto probe=ProbeHere(base,ctx.esp);
+    __imp__sub_001441F0(ctx,base);
+    dev::RecordCrystalProbe(gate,probe,ctx.eax);
+}
+X86_FUNC(sub_002F7320) {
+    const auto probe=ProbeHere(base,ctx.esp);
+    __imp__sub_002F7320(ctx,base);
+    dev::RecordCrystalProbe(gate,probe,ctx.eax);
+}
+X86_FUNC(sub_00144F00) {
+    const auto probe=ProbeHere(base,ctx.esp);
+    __imp__sub_00144F00(ctx,base);
+    dev::RecordCrystalProbe(gate,probe,ctx.eax);
+}
+// Leitura de atributo (id, atributo): chamada o tempo todo, so custa algo dentro de sub_0008EF10.
+X86_FUNC(sub_00336660) {
+    const auto probe=ProbeHere(base,ctx.esp);
+    __imp__sub_00336660(ctx,base);
+    dev::RecordCrystalProbe(gate,probe,ctx.eax);
+}
+// Chance base do cristal pelo tipo do inimigo, no topo do x87.
+X86_FUNC(sub_000908D0) {
+    const auto probe=ProbeHere(base,ctx.esp);
+    __imp__sub_000908D0(ctx,base);
+    if(probe==dev::CrystalProbe::Chance) gate.chance=ctx.st[ctx.top&7];
 }
 // Item da ficha do inimigo (raro ou comum).
 X86_FUNC(sub_002F9A30) {

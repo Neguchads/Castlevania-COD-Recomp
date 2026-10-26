@@ -3,6 +3,7 @@
 #include "common/game_cheat_rules.h"
 #include "common/enemy_probe_rules.h"
 #include "common/dev_rules.h"
+#include "common/drop_rules.h"
 #include "common/enemy_editor.h"
 #include "game/enemy_edits.h"
 #include "common/guest_test_memory.h"
@@ -32,6 +33,12 @@ void LogDamage(const char* path,uint32_t id,uint32_t slot,int32_t before,int32_t
 }
 }
 X86_FUNC(sub_00337A00) {
+    // (raiz, id, atributo, valor): registra quem liga ou desliga o cristal de evolucao.
+    if(dev::ReadableGuestRange(base,ctx.esp,20)) {
+        uint32_t args[4];
+        std::memcpy(args,base+ctx.esp+4,sizeof(args));
+        if(dev::CrystalAttribute(args[1],args[2])) dev::NoteCrystalAttributeWrite(args[0],args[1],args[2],int32_t(args[3]),true);
+    }
     if(dev::godmode_ready && dev::ReadableGuestRange(base,ctx.esp,20)) {
         auto read=[&](uint32_t address){uint32_t value;std::memcpy(&value,base+address,4);return value;};
         const auto root=read(ctx.esp+4),id=read(ctx.esp+8),stat=read(ctx.esp+12);
@@ -59,6 +66,11 @@ X86_FUNC(sub_00337A00) {
 }
 
 X86_FUNC(sub_00336070) {
+    if (dev::CrystalAttribute(ctx.ebx, ctx.eax) && dev::ReadableGuestRange(base, ctx.esp, 8)) {
+        int32_t delta;
+        std::memcpy(&delta, base + ctx.esp + 4, 4);
+        dev::NoteCrystalAttributeWrite(ctx.edx, ctx.ebx, ctx.eax, delta, false);
+    }
     // EBX e ID logico: so o mapa do jogo identifica o slot fisico do jogador.
     if (dev::godmode_ready && ctx.edx == 0xB2A350 && ctx.ebx < 60 &&
         dev::ReadableGuestRange(base,ctx.esp,8)) {
