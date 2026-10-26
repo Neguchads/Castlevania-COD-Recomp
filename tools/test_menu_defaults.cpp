@@ -15,7 +15,10 @@ int main() {
     }
     for (const auto& tab : kTabs) {
         if (tab.count < 1 || tab.count > 12) return 2;
-        for (int i = 0; i < tab.count; ++i) if (!tab.titles[i].label || !*tab.titles[i].label) return 2;
+        for (int i = 0; i < tab.count; ++i) {
+            if (!tab.titles[i].label || !*tab.titles[i].label) return 2;
+            if (tab.titles[i].page < 0 || tab.titles[i].page >= kMenuPageCount) return 2;   // pagina nova sem kMenuPageCount
+        }
     }
     // Estrutura pedida: camera e minimapa/HUD em Graficos; Cheats fora de Mods; inimigos juntos;
     // Drops e itens e Pets em abas proprias.
