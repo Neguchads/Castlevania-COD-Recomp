@@ -66,6 +66,8 @@ inline std::atomic<bool> pause_with_menu{false};
 inline std::atomic<bool> menu_adjusting{false};
 // Dificuldade: multiplicadores do dano em vida (stat 6) do jogador (slot 0) e dos Innocent Devils (outros slots)
 inline std::atomic<float> damage_taken{1.0f},devil_damage_taken{1.0f};
+// Multiplica a vida maxima dos inimigos (sub_00090660); vale para quem nasce depois da mudanca.
+inline std::atomic<float> enemy_hp{1.0f};
 // Economia: multiplicador do ganho de ouro (stat 111) e EXP (stat 3); compras sem gastar ouro
 inline std::atomic<float> gold_gain{1.0f},exp_gain{1.0f};
 inline std::atomic<bool> free_shopping{false};

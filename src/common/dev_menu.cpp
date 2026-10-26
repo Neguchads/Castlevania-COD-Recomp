@@ -187,7 +187,8 @@ void DifficultyPage() {
     Slider("Dano recebido pelo jogador",damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     Slider("Dano recebido pelo Innocent Devil",devil_damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     ImGui::TextWrapped("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto.");
-    ImGui::TextColored(muted_text,"Vida e dano dos inimigos ainda nao: a vida deles fica fora da tabela de atributos do grupo e segue em pesquisa.");
+    Slider("Vida dos inimigos",enemy_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
+    ImGui::TextColored(muted_text,"Vale para inimigos que aparecem depois da mudanca: troque de sala para ver.");
 }
 void HudPage() {
     Heading("HUD e pets", "Tamanho e visibilidade da interface original.");

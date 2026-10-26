@@ -17,6 +17,7 @@ X86_EXTERN_FUNC(__imp__sub_00335D30);
 X86_EXTERN_FUNC(__imp__sub_00337A00);
 X86_EXTERN_FUNC(__imp__sub_002F6230);
 X86_EXTERN_FUNC(__imp__sub_0031F270);
+X86_EXTERN_FUNC(__imp__sub_00090660);
 
 namespace {
 // Dificuldade: fator do jogador (slot fisico 0) ou dos Innocent Devils (demais slots da raiz B2A350).
@@ -137,6 +138,23 @@ X86_FUNC(sub_002F6230) {
         }
         ctx.eax = value;
     }
+}
+
+// Vida maxima do inimigo (cdecl, tipo em [esp+4], resultado no topo do x87). O nascimento copia
+// para a vida atual [sub_000276B0(ator)+0x1C]; a barra divide uma pela outra, entao a proporcao continua certa.
+X86_FUNC(sub_00090660) {
+    // o ret do original tira o endereco de retorno: o tipo so pode ser lido antes
+    uint32_t type = 0;
+    if (dev::ReadableGuestRange(base, ctx.esp, 8)) std::memcpy(&type, base + ctx.esp + 4, 4);
+    __imp__sub_00090660(ctx, base);
+    const float factor = dev::enemy_hp.load();
+    if (factor == 1.0f) return;
+    double& top = ctx.st[ctx.top & 7];
+    const double before = top;
+    top = dev::EnemyMaxHp(before, factor);
+    static std::atomic<int> logged{0};
+    if (top != before && logged.fetch_add(1) < 8)
+        LOGR("difficulty: enemy type %u max HP %.0f -> %.0f", type, before, top);
 }
 
 // Botoes do jogo depois da configuracao de botoes nativa (sub_002F6B50: so o direcional passa direto;

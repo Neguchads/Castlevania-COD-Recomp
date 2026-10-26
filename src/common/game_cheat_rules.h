@@ -15,6 +15,16 @@ inline float ClampDamageFactor(float factor) {
 // A raiz de atributos B2A350 so guarda o grupo: slot 0 = Hector, demais = Innocent Devils (logs de 25/10:
 // em 36 golpes so ID 0/slot 0 e ID 1/slot 1). A vida dos inimigos fica fora dela.
 inline float ActorDamageFactor(uint32_t slot, float player, float devil) { return slot == 0 ? player : devil; }
+// Vida dos inimigos: sub_00090660(tipo) devolve a vida maxima (inteiro >= 1, no x87); a vida atual e o float
+// [sub_000276B0(ator)+0x1C], posto igual a maxima ao nascer. Escalar a maxima vale para quem nasce depois.
+inline constexpr float kMinEnemyHpFactor = .5f, kMaxEnemyHpFactor = 5.0f;
+inline float ClampEnemyHpFactor(float factor) {
+    return std::isfinite(factor) ? std::clamp(factor, kMinEnemyHpFactor, kMaxEnemyHpFactor) : 1.0f;
+}
+inline double EnemyMaxHp(double max_hp, float factor) {
+    if (!(max_hp > 0)) return max_hp;
+    return std::max(1.0, std::round(max_hp * ClampEnemyHpFactor(factor)));
+}
 // Delta de vida (sub_00336070): so dano (negativo) muda; dano nunca vira zero nem cura.
 inline int32_t ScaleDamageDelta(int32_t delta, float factor) {
     if (delta >= 0) return delta;

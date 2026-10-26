@@ -21,5 +21,10 @@ int main() {
     if (!BlockPlayerDamage(true, 6, 0, -5) || BlockPlayerDamage(true, 6, 1, -5) || BlockPlayerDamage(true, 5, 0, -5)) return 10;
     // Fator por ator: slot 0 = Hector, outros slots da raiz = Innocent Devils.
     if (ActorDamageFactor(0, 2, .5f) != 2 || ActorDamageFactor(1, 2, .5f) != .5f || ActorDamageFactor(7, 2, .5f) != .5f) return 11;
-    std::puts("Damage rules: factor limits, delta and absolute scaling, lethal and scripted kills, godmode, actor factor passed");
+    // Vida maxima dos inimigos (sub_00090660): inteiro >= 1, fator de 0,5x a 5x, NaN e 1x mantem o original.
+    if (EnemyMaxHp(120, 1) != 120 || EnemyMaxHp(120, 2) != 240 || EnemyMaxHp(120, 1.5f) != 180) return 12;
+    if (EnemyMaxHp(120, 100) != 600 || EnemyMaxHp(120, .1f) != 60 || EnemyMaxHp(120, NAN) != 120) return 13;
+    if (EnemyMaxHp(1, .5f) != 1 || EnemyMaxHp(3, 1.5f) != 5 || EnemyMaxHp(0, 2) != 0) return 14;
+    if (ClampEnemyHpFactor(9) != kMaxEnemyHpFactor || ClampEnemyHpFactor(.2f) != kMinEnemyHpFactor) return 15;
+    std::puts("Damage rules: factor limits, delta and absolute scaling, lethal and scripted kills, godmode, actor factor, enemy max HP passed");
 }
