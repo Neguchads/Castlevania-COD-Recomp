@@ -13,6 +13,10 @@ if exist "%CLANGXX%" goto :clangfound
 where "%CLANGXX%" >nul 2>nul || goto :noclang
 :clangfound
 if not exist .local mkdir .local
+rem SDK: XBE_SDK_DIR, ou a primeira linha de .local\sdk-path.txt (relativa a esta pasta), ou ..\XboxXBERecomp
+set "SDK=..\XboxXBERecomp"
+if exist .local\sdk-path.txt set /p SDK=<.local\sdk-path.txt
+if defined XBE_SDK_DIR set "SDK=%XBE_SDK_DIR%"
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_translation_pack.cpp -o .local\test_translation_pack.exe
 if errorlevel 1 exit /b 1
 .local\test_translation_pack.exe
@@ -56,7 +60,7 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 .local\test_report_gallery.exe
 if errorlevel 1 exit /b 1
-"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror -I"..\XboxXBERecomp\runtime" tools\test_controller_map.cpp -o .local\test_controller_map.exe
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror -I"%SDK%\runtime" tools\test_controller_map.cpp -o .local\test_controller_map.exe
 if errorlevel 1 exit /b 1
 .local\test_controller_map.exe
 if errorlevel 1 exit /b 1
@@ -96,7 +100,7 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 .local\test_drop_rules.exe
 if errorlevel 1 exit /b 1
-"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror -I"..\XboxXBERecomp\runtime" tools\test_menu_defaults.cpp -o .local\test_menu_defaults.exe
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror -I"%SDK%\runtime" tools\test_menu_defaults.cpp -o .local\test_menu_defaults.exe
 if errorlevel 1 exit /b 1
 .local\test_menu_defaults.exe
 if errorlevel 1 exit /b 1
@@ -116,11 +120,11 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 .local\test_guest_memory.exe
 if errorlevel 1 exit /b 1
-"%CLANGXX%" -std=c++20 -I"..\XboxXBERecomp\runtime" -I"out\build\release\_deps\imgui-src" tools\test_menu_input.cpp out\build\release\_deps\imgui-src\imgui.cpp out\build\release\_deps\imgui-src\imgui_draw.cpp out\build\release\_deps\imgui-src\imgui_tables.cpp out\build\release\_deps\imgui-src\imgui_widgets.cpp -o .local\test_menu_input.exe
+"%CLANGXX%" -std=c++20 -I"%SDK%\runtime" -I"out\build\release\_deps\imgui-src" tools\test_menu_input.cpp out\build\release\_deps\imgui-src\imgui.cpp out\build\release\_deps\imgui-src\imgui_draw.cpp out\build\release\_deps\imgui-src\imgui_tables.cpp out\build\release\_deps\imgui-src\imgui_widgets.cpp -o .local\test_menu_input.exe
 if errorlevel 1 exit /b 1
 .local\test_menu_input.exe
 if errorlevel 1 exit /b 1
-"%CLANGXX%" -std=c++20 -I"..\XboxXBERecomp\runtime" -I"out\build\release\_deps\imgui-src" tools\test_menu_nav.cpp out\build\release\_deps\imgui-src\imgui.cpp out\build\release\_deps\imgui-src\imgui_draw.cpp out\build\release\_deps\imgui-src\imgui_tables.cpp out\build\release\_deps\imgui-src\imgui_widgets.cpp -o .local\test_menu_nav.exe
+"%CLANGXX%" -std=c++20 -I"%SDK%\runtime" -I"out\build\release\_deps\imgui-src" tools\test_menu_nav.cpp out\build\release\_deps\imgui-src\imgui.cpp out\build\release\_deps\imgui-src\imgui_draw.cpp out\build\release\_deps\imgui-src\imgui_tables.cpp out\build\release\_deps\imgui-src\imgui_widgets.cpp -o .local\test_menu_nav.exe
 if errorlevel 1 exit /b 1
 .local\test_menu_nav.exe
 if errorlevel 1 exit /b 1

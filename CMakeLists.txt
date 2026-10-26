@@ -6,8 +6,12 @@ project(castlevania_cod LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# the SDK: sdk/ here, two folders up inside the SDK's templates, a checkout beside this repository, else downloaded
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/XbeRecomp.cmake)
+# the SDK: XBE_SDK_DIR (cache or environment), sdk/ here, two folders up inside the SDK's templates,
+# a checkout beside this repository, else downloaded
+set(XBE_SDK_DIR "$ENV{XBE_SDK_DIR}" CACHE PATH "XboxXBERecomp checkout outside the default places")
+if(XBE_SDK_DIR AND EXISTS ${XBE_SDK_DIR}/cmake/XbeRecomp.cmake)
+    set(SDK ${XBE_SDK_DIR})
+elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/sdk/cmake/XbeRecomp.cmake)
     set(SDK ${CMAKE_CURRENT_SOURCE_DIR}/sdk)
 elseif(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/XbeRecomp.cmake)
     set(SDK ${CMAKE_CURRENT_SOURCE_DIR}/../..)
