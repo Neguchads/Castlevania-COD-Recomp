@@ -17,6 +17,7 @@
 #include "menu_input.h"
 #include "menu_nav.h"
 #include "game_cheat_rules.h"
+#include "enemy_editor.h"
 #include "presentation_math.h"
 #include "report_gallery.h"
 #include "translation_pack_rules.h"
@@ -32,7 +33,7 @@ constexpr MenuTabEntry kTabs[]{
     {"Graficos",{{"Graficos",2}},1},
     {"Audio",{{"Audio",3}},1},
     {"Controles",{{"Controle",15},{"Teclado e mouse",4}},2},
-    {"Mods",{{"Mods e texturas",5}},1},
+    {"Mods",{{"Mods e texturas",5},{"Editor de inimigos",17}},2},
     {"Cheats",{{"Cheats",6}},1},
     {"Suporte",{{"Relatar bug",1},{"Capturas salvas",13},{"Logs e travamentos",14},{"Diagnostico",12}},4},
     {"Menu",{{"Aparencia",7},{"Perfis",9}},2}};
@@ -189,6 +190,40 @@ void DifficultyPage() {
     ImGui::TextWrapped("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto.");
     Slider("Vida dos inimigos",enemy_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
     ImGui::TextColored(muted_text,"Vale para inimigos que aparecem depois da mudanca: troque de sala para ver.");
+}
+// Liga ou desliga o mod Editor; cria a pasta na primeira vez.
+void SetEditorMod(bool enabled) {
+    auto find=[]{for(size_t i=0;i<Mods().size();++i) if(Mods()[i].name==kEditorMod) return int(i);return -1;};
+    if(find()<0) { if(!enabled || !SaveEnemyEdits()) return; ReloadMods(); }
+    if(const int index=find();index>=0) EnableMod(size_t(index),enabled);
+}
+void EnemyEditorPage() {
+    Heading("Editor de inimigos","Vida e tamanho por tipo de inimigo, como mod: so na memoria, gravado em mods/Editor/enemies.toml. Desligar o mod volta ao jogo original.");
+    bool on=EnemyEditorActive();
+    if(ImGui::Checkbox("Aplicar edicoes (mod Editor)",&on)) SetEditorMod(on);
+    ImGui::SameLine();
+    if(ImGui::Button("Salvar edicoes",MenuSize(160,0)) && SaveEnemyEdits()) {
+        ReloadMods();NotifyToast("Edicoes dos inimigos salvas em mods/Editor/enemies.toml.");
+    }
+    ImGui::TextWrapped("A lista mostra os inimigos que ja apareceram nesta sessao e os salvos no mod. Tamanho muda na hora; vida vale para quem nasce depois (troque de sala). So o visual cresce: a area de acerto e a colisao continuam as originais.");
+    if(!on) ImGui::TextColored(crimson,"Mod Editor desligado: os ajustes abaixo ficam guardados, mas o jogo usa os valores originais.");
+    const auto rows=EnemyEditorRows();
+    if(rows.empty()) ImGui::TextColored(muted_text,"Nenhum inimigo visto ainda: entre numa sala com inimigos.");
+    for(const auto& row:rows) {
+        ImGui::PushID(int(row.type));
+        char header[96];
+        std::snprintf(header,sizeof(header),"%s (tipo %u)%s",row.edit.name.empty() ? "Inimigo" : row.edit.name.c_str(),row.type,
+            row.seen ? "" : " - salvo, nao visto nesta sessao");
+        ImGui::SeparatorText(header);
+        float hp=row.edit.hp,scale=row.edit.scale;
+        ImGui::TextUnformatted("Vida");ImGui::SetNextItemWidth(-1);
+        bool changed=ImGui::SliderFloat("##hp",&hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
+        ImGui::TextUnformatted("Tamanho");ImGui::SetNextItemWidth(-1);
+        changed|=ImGui::SliderFloat("##scale",&scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
+        if(changed) SetEnemyEdit(row.type,hp,scale);
+        if(!row.edit.Neutral() && ImGui::Button("Voltar ao original",MenuSize(200,0))) SetEnemyEdit(row.type,1,1);
+        ImGui::PopID();
+    }
 }
 void HudPage() {
     Heading("HUD e pets", "Tamanho e visibilidade da interface original.");
@@ -813,7 +848,7 @@ void Draw(double fps) {
             case 7:Appearance();break;case 8:SavesPage();break;case 9:ProfilesPage();break;
             case 10:HudPage();break;case 11:CameraPage();break;case 12:Diagnostics(fps);break;
             case 13:ReportsGallery();break;case 14:LogsPage();break;case 15:ControllerPage();break;
-            case 16:DifficultyPage();break;}
+            case 16:DifficultyPage();break;case 17:EnemyEditorPage();break;}
         ImGui::PopItemWidth();ImGui::EndChild();
         ImGui::Separator();
         if(ImGui::Button("Salvar opcoes",{160*scale,32*scale})) app::Save();

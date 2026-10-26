@@ -48,6 +48,7 @@ void FreeCameraInput(input::Pad& pad,bool forward,bool back,bool left,bool right
 bool VerifyHudHooks();
 bool VerifyIndicatorHooks();
 bool VerifyCameraHooks();
+bool VerifyEnemyEditorHooks();
 inline std::atomic<bool> invert_mouse_x{true}, invert_mouse_y{false};
 // A opcao "inverter camera" do jogo so troca o eixo vertical (sub_002FDF90); o horizontal fica com o port.
 inline std::atomic<bool> invert_stick_x{false};

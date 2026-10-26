@@ -3,6 +3,8 @@
 #include "common/game_cheat_rules.h"
 #include "common/enemy_probe_rules.h"
 #include "common/dev_rules.h"
+#include "common/enemy_editor.h"
+#include "game/enemy_edits.h"
 #include "common/guest_test_memory.h"
 #include <array>
 #include <atomic>
@@ -121,6 +123,12 @@ X86_FUNC(sub_00309010) {
             actor_before = std::move(actor_now); info_before = std::move(info_now);
         }
     }
+    // Alvo do painel: garante nome e tamanho do editor mesmo em inimigo que nao passa por sub_00060010.
+    if (dev::ReadableGuestRange(base, 0xB251F0, 4)) {
+        uint32_t target = 0;
+        std::memcpy(&target, base + 0xB251F0, 4);
+        dev::ApplyEnemyEdits(ctx, base, target);
+    }
     __imp__sub_00309010(ctx, base);
 }
 
@@ -147,11 +155,12 @@ X86_FUNC(sub_00090660) {
     uint32_t type = 0;
     if (dev::ReadableGuestRange(base, ctx.esp, 8)) std::memcpy(&type, base + ctx.esp + 4, 4);
     __imp__sub_00090660(ctx, base);
-    const float factor = dev::enemy_hp.load();
-    if (factor == 1.0f) return;
+    // Barra global de Dificuldade e, com o mod Editor ligado, o ajuste do tipo (cada um limitado a 0,5x-5x).
+    const float factor = dev::enemy_hp.load(), edit = dev::EnemyHpEdit(type);
+    if (factor == 1.0f && edit == 1.0f) return;
     double& top = ctx.st[ctx.top & 7];
     const double before = top;
-    top = dev::EnemyMaxHp(before, factor);
+    top = dev::EnemyMaxHp(dev::EnemyMaxHp(before, factor), edit);
     static std::atomic<int> logged{0};
     if (top != before && logged.fetch_add(1) < 8)
         LOGR("difficulty: enemy type %u max HP %.0f -> %.0f", type, before, top);
