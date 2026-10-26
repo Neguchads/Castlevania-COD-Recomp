@@ -90,6 +90,8 @@ inline constexpr uint16_t KeyboardDigitalBit(int code) {
 inline constexpr int MigratedStartKey(int saved,bool has_menu_confirm,int enter,int start_default) {
     return !has_menu_confirm && saved==enter ? start_default : saved;
 }
+// WM_KEYDOWN: bit 30 do lParam = tecla ja estava apertada (auto-repeat do Windows).
+inline constexpr bool FirstKeyDown(uint64_t lparam) { return !(lparam & (uint64_t(1) << 30)); }
 inline int16_t MoveAxis(bool positive, bool negative) {
     return positive == negative ? 0 : positive ? 32767 : -32767;
 }

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <string>
 #include <vector>
 #include "texture_pack.h"
@@ -28,14 +29,27 @@ inline TextureImage ShrinkPreview(const TextureImage& image, uint32_t max_width)
 }
 // Capturas e relatos salvos em reports/<data>, mais novos primeiro.
 struct ReportEntry { std::string folder, title; bool screenshot = false; };
+// So os nomes entram na ordenacao; report.txt e a captura sao abertos apenas nas `limit` pastas mostradas
+// (a galeria atualiza a cada 2 s na thread do jogo, com centenas de relatos acumulados).
+inline std::vector<std::string> NewestFolders(const std::filesystem::path& root, size_t limit) {
+    namespace fs = std::filesystem;
+    std::vector<std::string> names;
+    std::error_code ec;
+    for (const auto& entry : fs::directory_iterator(root, ec))
+        if (entry.is_directory(ec)) names.push_back(entry.path().filename().string());
+    const size_t keep = std::min(limit, names.size());
+    std::partial_sort(names.begin(), names.begin() + std::ptrdiff_t(keep), names.end(), std::greater<>());
+    names.resize(keep);
+    return names;
+}
 inline std::vector<ReportEntry> ListReports(const std::filesystem::path& root, size_t limit) {
     namespace fs = std::filesystem;
     std::vector<ReportEntry> out;
     std::error_code ec;
-    for (const auto& entry : fs::directory_iterator(root, ec)) {
-        if (!entry.is_directory(ec)) continue;
-        ReportEntry item{entry.path().filename().string(), "(sem relato)", fs::is_regular_file(entry.path() / "screenshot.bmp", ec)};
-        std::ifstream text(entry.path() / "report.txt", std::ios::binary);
+    for (const auto& name : NewestFolders(root, limit)) {
+        const fs::path folder = root / name;
+        ReportEntry item{name, "(sem relato)", fs::is_regular_file(folder / "screenshot.bmp", ec)};
+        std::ifstream text(folder / "report.txt", std::ios::binary);
         for (std::string line; text && std::getline(text, line);) {
             if (line.rfind("Titulo:", 0) != 0) continue;
             line.erase(0, 7);
@@ -46,8 +60,6 @@ inline std::vector<ReportEntry> ListReports(const std::filesystem::path& root, s
         }
         out.push_back(std::move(item));
     }
-    std::sort(out.begin(), out.end(), [](const ReportEntry& a, const ReportEntry& b) { return a.folder > b.folder; });
-    if (out.size() > limit) out.resize(limit);
     return out;
 }
 // Ultimas linhas inteiras de um log (le so o final do arquivo).

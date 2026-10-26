@@ -60,5 +60,7 @@ int main() {
     // Configuracao antiga com Enter no Start migra para P; nova ou remapeada fica como esta.
     if(MigratedStartKey(13,false,13,'P')!='P' || MigratedStartKey(13,true,13,'P')!=13 ||
        MigratedStartKey('K',false,13,'P')!='K') return 36;
+    // F3 segurado: so o primeiro WM_KEYDOWN captura; repeticoes (bit 30) nao.
+    if(!FirstKeyDown(0x003D0001) || FirstKeyDown(0x403D0001) || !FirstKeyDown(0x203D0001)) return 37;
     std::puts("Dev: caminhos de mods, limites de cheats, volume/balanco e entradas passaram");
 }

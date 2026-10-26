@@ -120,7 +120,8 @@ void ConfigureMenuFonts();
 void UpdateUiInput();
 bool GameFocused();
 void ProcessControllerShortcut(input::Pad& pad);
-void SetSpeed(float factor);
+// log=false para a barra do menu, que chama a cada quadro do arraste (registra ao soltar).
+void SetSpeed(float factor, bool log = true);
 uint64_t VirtualNanoseconds();
 int64_t RealWaitNanoseconds(int64_t virtual_ns);
 bool ValidateGodmodeImage();

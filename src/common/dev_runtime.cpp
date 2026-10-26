@@ -9,6 +9,7 @@
 #include <mutex>
 #include <sstream>
 #include <cctype>
+#include <cstring>
 #include <toml++/toml.hpp>
 #include "app/app.h"
 #include "core/log.h"
@@ -362,7 +363,8 @@ void RestoreVanilla() {
 void ActivateDevProfile() {
     minimap_enabled=true;minimap_rotating=true;minimap_scale=1.0f;minimap_opacity=.8f;
     hud_enabled=true;hud_always_visible=false;hud_scale=.5f;hud_quick_hide=true;hud_hide_delay=1.0f;
-    camera_mode=0;shader=0;ptbr_enabled=true;
+    // ptbr_enabled fica com SelectTextLanguage(2): ligar antes escondia a troca e as texturas PT-BR nao recarregavam.
+    camera_mode=0;shader=0;
     godmode.store(godmode_ready.load());SetSpeed(1.0f);
     for(auto& cheat:Cheats())ToggleCheat(cheat,false);
     SelectTextLanguage(2);selected_profile=1;
@@ -393,8 +395,24 @@ bool VerifyProfileStorage() {
     } catch(const toml::parse_error&) {ok=false;}
     const bool rejected=!SaveUserProfile(1,"   ");
     user_profiles[0]=saved;selected_profile=old_selection;Cheats()=std::move(saved_cheats);
-    LOGR("dev selftest: user profile save/serialization/no recursion=%d",ok&&rejected);
-    return ok&&rejected;
+    // Perfil Dev vindo do ingles troca a geracao das texturas (senao o PT-BR em imagem fica pela metade).
+    toml::table before;Save(&before);
+    std::vector<size_t> active_cheats;
+    for(size_t i=0;i<Cheats().size();++i) if(Cheats()[i].enabled) active_cheats.push_back(i);
+    uint8_t guest_language[8]{};
+    const bool guest=kernel::g_base&&ReadableGuestRange(kernel::g_base,0xB235E0,8);
+    if(guest) std::memcpy(guest_language,kernel::g_base+0xB235E0,8);
+    const bool was_ptbr=ptbr_enabled.load();
+    ptbr_enabled.store(false);
+    const auto generation=texture_generation.load();
+    ActivateDevProfile();
+    const bool dev_reload=ptbr_enabled.load()&&texture_generation.load()!=generation;
+    Load(&before);ptbr_enabled.store(was_ptbr);texture_generation.fetch_add(1);
+    for(size_t i:active_cheats) if(i<Cheats().size()) ToggleCheat(Cheats()[i],true);
+    if(guest) std::memcpy(kernel::g_base+0xB235E0,guest_language,8);
+    selected_profile=old_selection;
+    LOGR("dev selftest: user profile save/serialization/no recursion=%d dev-profile texture reload=%d",ok&&rejected,dev_reload);
+    return ok&&rejected&&dev_reload;
 }
 void ReloadMods() {
     std::lock_guard lock(mods_lock);
@@ -434,12 +452,15 @@ std::optional<fs::path> ModTexture(uint64_t hash) {
         index=texture_lookup::Index<fs::path>{};
         std::error_code ec;
         auto add_folder=[&](const fs::path& textures) {
-            for(const auto& entry:fs::directory_iterator(textures,ec)) {
-                if(!entry.is_regular_file(ec)) continue;
-                // DDS BC7 primeiro (comprimido na placa); BMP continua aceito.
-                const auto file=texture_lookup::ParseTextureFile(entry.path().filename().string());
-                if(file && SafeChild(textures,entry.path())) index.Add(file->hash,file->dds,entry.path());
-            }
+            // A pasta e conferida uma vez; nos arquivos basta recusar link simbolico (nome vindo da listagem nao
+            // tem ".."). Canonicalizar cada um dos milhares de arquivos travava a thread de render sob mods_lock.
+            if(SafeChild(Root()/"mods",textures))
+                for(const auto& entry:fs::directory_iterator(textures,ec)) {
+                    if(entry.is_symlink(ec) || !entry.is_regular_file(ec)) continue;
+                    // DDS BC7 primeiro (comprimido na placa); BMP continua aceito.
+                    const auto file=texture_lookup::ParseTextureFile(entry.path().filename().string());
+                    if(file) index.Add(file->hash,file->dds,entry.path());
+                }
             index.NextFolder();
         };
         // O pacote PT-BR deve vencer packs genericos nas texturas que traduz.

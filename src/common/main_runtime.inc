@@ -22,6 +22,7 @@
 #include "app/app.h"
 #include "core/input.h"
 #include "core/log.h"
+#include "dev_rules.h"
 #include "gpu/backend.h"
 #include "image_symbols.h"
 #include "kernel/kernel.h"
@@ -150,7 +151,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case WM_APP+3:
             kernel::Relaunch("CastlevaniaCOD");
         case WM_KEYDOWN:
-            if (wp == VK_F3) DumpThreads();
+            // Segurar F3 repetia a captura (pasta de relato + leituras da GPU) ~30 vezes por segundo.
+            if (wp == VK_F3 && dev_rules::FirstKeyDown(uint64_t(lp))) DumpThreads();
             return 0;
         case WM_ACTIVATE:
             if (LOWORD(wp) == WA_INACTIVE) {
