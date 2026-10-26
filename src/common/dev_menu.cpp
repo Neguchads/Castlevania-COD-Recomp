@@ -30,15 +30,15 @@ namespace {
 int page = 0;
 MenuNav nav;
 struct MenuTitleEntry {const char* label;int page;};
-struct MenuTabEntry {const char* label;MenuTitleEntry titles[6];int count;};
+struct MenuTabEntry {const char* label;MenuTitleEntry titles[12];int count;};
+// Tudo que muda a partida fica em Jogabilidade (inimigos, drops e cheats inclusos).
 constexpr MenuTabEntry kTabs[]{
-    {"Jogabilidade",{{"Jogo e minimapa",0},{"Dificuldade",16},{"Drops e itens",20},{"HUD e pets",10},{"Camera",11},{"Saves e sessao",8}},6},
+    {"Jogabilidade",{{"Jogo e minimapa",0},{"Dificuldade",16},{"Inimigos: todos",18},{"Inimigos: aleatorio",19},
+        {"Inimigos: por tipo",17},{"Drops e itens",20},{"Cheats",6},{"HUD e pets",10},{"Camera",11},{"Saves e sessao",8}},10},
     {"Graficos",{{"Graficos",2}},1},
     {"Audio",{{"Audio",3}},1},
     {"Controles",{{"Controle",15},{"Teclado e mouse",4}},2},
-    {"Inimigos",{{"Todos os inimigos",18},{"Aleatorio",19},{"Por tipo",17}},3},
     {"Mods",{{"Mods e texturas",5}},1},
-    {"Cheats",{{"Cheats",6}},1},
     {"Suporte",{{"Relatar bug",1},{"Capturas salvas",13},{"Logs e travamentos",14},{"Diagnostico",12}},4},
     {"Menu",{{"Aparencia",7},{"Perfis",9}},2}};
 // Abre direto a pagina pedida (ex.: captura de bug leva ao relato).
@@ -209,7 +209,7 @@ void DifficultyPage() {
     Slider("Dano recebido pelo jogador",damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     Slider("Dano recebido pelo Innocent Devil",devil_damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     ImGui::TextWrapped("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto.");
-    ImGui::TextColored(muted_text,"Vida, tamanho, sorteio e elites dos inimigos: aba Inimigos.");
+    ImGui::TextColored(muted_text,"Vida, tamanho, sorteio e elites dos inimigos: Jogabilidade > Inimigos.");
 }
 // Combinacoes prontas da aba Inimigos: global, sorteio por inimigo e elite juntos.
 struct EnemyPreset {const char* name;float hp,scale;bool random;float scale_min,scale_max,hp_min,hp_max,elite;};
