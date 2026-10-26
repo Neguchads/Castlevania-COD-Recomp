@@ -2,7 +2,7 @@
 
 English · [Português (Brasil)](MODDING.pt-BR.md)
 
-The tools menu starts in Brazilian Portuguese; the **English** / **PT-BR** buttons in its footer (or Menu > Aparência > "Idioma do menu") switch its language, saved as `menu_language` in `settings.toml`. Option names appear below as they do in the Portuguese menu, with an English translation in parentheses where it helps. The English text lives in `src/common/menu_strings_en.h`, keyed by the Portuguese text; `python tools/menu_strings.py` fails when a menu string has no translation or a translation changes the printf format.
+The tools menu starts in Brazilian Portuguese; the **PT-BR** / **EN** buttons in its top-right corner (or Menu > Aparência > "Idioma do menu") switch its language, saved as `menu_language` in `settings.toml`. Option names appear below as they do in the Portuguese menu, with an English translation in parentheses where it helps. The English text lives in `src/common/menu_strings_en.h`, keyed by the Portuguese text; `python tools/menu_strings.py` fails when a menu string has no translation or a translation changes the printf format.
 
 ## Panel customization
 

@@ -4,7 +4,7 @@ English · [Português (Brasil)](GUIDE.pt-BR.md)
 
 This guide explains how to install, play and configure everything the port offers. The technical side of mods (file format, texture packs, `cheats.toml`) is in [MODDING.md](../MODDING.md).
 
-The tools menu starts in Brazilian Portuguese. Switch it to English with the **English** button in its footer (**PT-BR** switches back), or in Menu > Aparência > "Idioma do menu" with the controller. The choice is saved in `settings.toml` (`menu_language`). Option names below appear as they do in the Portuguese menu, with the English menu name in parentheses.
+The tools menu starts in Brazilian Portuguese. Switch it with the **PT-BR** and **EN** buttons in its top-right corner (it changes immediately), or in Menu > Aparência > "Idioma do menu" with the controller. The choice is saved in `settings.toml` (`menu_language`). Option names below appear as they do in the Portuguese menu, with the English menu name in parentheses.
 
 ## PC requirements
 
@@ -139,10 +139,50 @@ Mods never change the original game files: they replace them in memory only. To 
 - **Gameplay:** damage-based difficulty; enemy HP, size, random rolls and elites; drop rate, crystals and random items; HP, MP, gold and EXP cheats; Moai bonus without the PS2 save.
 - **Support:** bug report with capture and log, performance logging and crash dumps.
 
-## Known limits
+## Experimental features and status
 
-- **Enemy and item size:** fixed on 2026-10-26 to keep the size when the game rescales the enemy. It still needs confirmation in game.
-- **Shadow:** still looks wrong in some places. Send an F3 capture when it happens.
+"Validated in game" means someone played it and saw it work. "Tested" means automated tests or the runtime self-test passed, but nobody has confirmed it while playing yet. Report anything odd with F8.
+
+### Works, validated in game
+
+| Feature | Notes |
+|---|---|
+| Brazilian Portuguese text, images and dub | Switching language mid-game; images and voices already loaded change after a restart. |
+| HD4K pack and title-screen HD | Matched textures load without FPS drops. |
+| Enemy HP (all enemies) | 0.5x–5x through the game's own max-HP formula (185 → 925 at 5x). |
+| Return to title (Start + Back + LT + RT) | Unsaved progress is lost. |
+
+### Implemented and tested, waiting for in-game confirmation
+
+| Feature | What is still unknown |
+|---|---|
+| Enemy size (all, per type, random, elites) | Fixed on 2026-10-26 to survive the game's own rescale; not yet seen working. Size is visual only. |
+| Random enemy rolls and elites | Same as size; HP rolls use the native max-HP return. |
+| Item drop rate and Innocent Devil crystals | Only the 5 drop checks of the enemy death routine are changed. |
+| Random items in drops | The log shows swaps (`drops: random item 230 -> 242`), but the player has not noticed them yet. |
+| Size of items on the ground | Visual only; the pickup area stays the original. |
+| Menu search with the on-screen keyboard | Ctrl+F and Y; Enter or "Abrir 1o" opens the first match. |
+| Tools menu in English (PT-BR / EN buttons, top right) | 402 menu strings; a headless test clicks the buttons. Some long English labels may be clipped on fixed-width buttons. |
+| Godmode | Damage blocked in an isolated arena with the original routines; scripted deaths are not proven. |
+| Speedhack 0.5x–2x | Clocks and timers measured; the full campaign at each speed is not. |
+| *Lament of Innocence* save bonus | The bonus object is unlocked, but the room where it appears is not identified. |
+
+### Experimental by design
+
+| Feature | Limits |
+|---|---|
+| Cinemática, Próxima and Personalizada cameras | Framing profiles only; large angles skew movement and some cutscenes may be affected. |
+| Livre (free) camera | No collision; the character does not move while it is on. |
+| Orbital camera | Native collision tested on a single triangle; corners and tight rooms are untested. |
+| HUD scale and fast hiding | Inventory and original menus are not scaled; full visual coverage pending. |
+| Minimap | Shows rooms you have not explored; no door, save or teleport icons. |
+| Custom `cheats.toml` profiles | Only for addresses you validated yourself; a wrong address can corrupt the game state. |
+
+### Known problems and not available yet
+
+- **Character shadow:** fixed for the 4X multisample mode, but still wrong in some places. Send an F3 capture when it happens.
 - **Occasional FPS drops:** under investigation; turn on performance logging and send a report.
-- **Being researched, not available yet:** swapping enemy types, more enemies per room and moving enemies.
-- **Not tested in this version:** the @CRAZY and @TREVOR name codes, savestates and switching characters mid-campaign.
+- **Audio:** stereo only; Xbox DSP effects are partly reproduced.
+- **Being researched:** swapping enemy types, more enemies per room and moving enemies.
+- **Not available:** savestates.
+- **Not tested in this version:** the @CRAZY and @TREVOR name codes and switching characters mid-campaign.

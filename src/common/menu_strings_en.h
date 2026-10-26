@@ -255,7 +255,7 @@ inline constexpr std::pair<const char*, const char*> kMenuStringsEn[]{
     {"Movimento: esquerda", "Move: left"},
     {"Movimento: frente", "Move: forward"},
     {"Movimento: tras", "Move: back"},
-    {"Muda so o texto destas ferramentas. Os botoes PT-BR e English no rodape fazem o mesmo.", "Only changes the text of these tools. The PT-BR and English buttons in the footer do the same."},
+    {"Muda so o texto destas ferramentas. Os botoes PT-BR e EN no canto superior direito fazem o mesmo.", "Only changes the text of these tools. The PT-BR and EN buttons in the top-right corner do the same."},
     {"Muito dificil", "Very hard"},
     {"Multiplica a chance de cada item (a sorte do personagem continua contando). 0x desliga os itens.", "Multiplies the chance of each item (the character's luck still counts). 0x turns items off."},
     {"Multiplica o dano que o jogador e o Innocent Devil recebem.", "Multiplies the damage the player and the Innocent Devil take."},

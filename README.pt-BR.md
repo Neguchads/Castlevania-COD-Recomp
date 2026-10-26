@@ -76,6 +76,6 @@ Este repositório não distribui ISO/XBE, arquivos extraídos, o código C++ ger
 
 A tradução e a dublagem PT-BR são de HNNEWGAMES, STR Brasil, MATTH dubs e Os Aristocratas do Giz Vermelho. O pacote de texturas 4K é de PlatinumMimic. Autores, funções e links estão em [CREDITS.pt-BR.md](docs/CREDITS.pt-BR.md).
 
-O port é experimental e a campanha inteira não foi validada. A vida dos inimigos funciona (validada no jogo); o tamanho dos inimigos e dos itens foi corrigido, mas ainda falta confirmar no jogo. Quatro mapas sem teleporte ainda não têm nome.
+O port é experimental e a campanha inteira não foi validada. O que foi validado no jogo, o que só passou nos testes e o que é experimental por natureza está em [Recursos experimentais e estado](docs/GUIDE.pt-BR.md#recursos-experimentais-e-estado). Quatro mapas sem teleporte ainda não têm nome.
 
 Ainda não foi escolhida uma licença para as alterações deste projeto: o código fica visível, mas isso não concede permissão de reutilização. Partes do runtime derivadas do XboxXBERecomp seguem o aviso MIT em [LICENSES/XboxXBERecomp-MIT.txt](LICENSES/XboxXBERecomp-MIT.txt); o SDK e as demais dependências mantêm suas licenças próprias.
