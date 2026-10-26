@@ -23,15 +23,15 @@ Linux: o Direct3D 12 roda pelo Proton (vkd3d), mas isso não foi testado.
 
 ## Instalar e abrir
 
-**Pasta pronta (só jogar):** na pasta do projeto, rode no PowerShell:
+**Pasta de jogar:** na pasta do projeto, rode no PowerShell:
 
 ```powershell
-.\tools\make-portable.ps1
+.\tools\release.ps1 -Destination "G:\Jogos\Castlevania Curse of Darkness Recomp"
 ```
 
-Ele cria "Castlevania Curse of Darkness Recomp" na área de trabalho, com o jogo, os mods, os saves e as opções. Clique em `CastlevaniaCOD.exe` para jogar.
+Ele faz o build, roda os testes e, só se tudo passar, cria ou atualiza a pasta com o jogo, os mods, os saves e as opções, mais um atalho "Castlevania Curse of Darkness Recomp" na área de trabalho. Use qualquer pasta num disco de dados; o script guarda o destino, então da próxima vez basta `.\tools\release.ps1`. Clique no atalho (ou em `CastlevaniaCOD.exe`) para jogar.
 
-- **Atualizar:** rode o script de novo depois de um build. Ele atualiza o jogo e os mods, mas não mexe nos saves nem nas opções da pasta pronta.
+- **Atualizar:** rode `.\tools\release.ps1` de novo depois de mudar o código. Ele atualiza o jogo e os mods, mas não mexe nos saves nem nas opções da pasta pronta.
 - **Outro disco ou PC:** copie a pasta inteira pelo Explorador, que mantém as datas dos arquivos. A dll precisa continuar mais nova que o exe; se não estiver, o jogo procura a pasta `compiler` e para.
 - **Começar do zero:** apague a pasta do save em `hdd\E\UDATA\4b4e002d` (a que contém `C2Save.dat`).
 - **Ícone:** um `assets\icon.ico` seu vira o ícone do exe e da janela no próximo build.

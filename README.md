@@ -57,12 +57,24 @@ Build requirements: Windows 10/11, Visual Studio 2022 with "Desktop development 
 2. Keep the `XboxXBERecomp` checkout next to this project. The SDK fallback is pinned to commit `e0de3e44d10443c1c9aad512f36baf133cdd4a60`.
 3. Run `build.bat`. The first build recompiles the XBE (30 to 90 minutes).
 4. Open `out\build\release\CastlevaniaCOD.exe`. **F1** or **L3 + R3** opens the tools menu.
-5. Optional: `.\tools\make-portable.ps1` builds a ready-to-play folder, "Castlevania Curse of Darkness Recomp", on the desktop, with the exe, dll, `assets`, mods, saves and settings. It works from any disk. When run again, the script updates the game and the mods but does not overwrite the folder's saves or settings. `-Destination` picks another place and `-DryRun` only shows the size. The folder needs only the Visual C++ Redistributable 2015–2022 x64 and a DirectX 12 GPU. Copy the whole folder and keep the file dates: without the `compiler` folder, the game only uses the dll if it is newer than the exe.
+5. Optional: `.\tools\release.ps1 -Destination "<games folder>\Castlevania Curse of Darkness Recomp"` builds, runs the tests and only then updates the play folder and a desktop shortcut; the destination is remembered in `.local\release-destination.txt` and extra tool folders (such as LLVM) go one per line in `.local\tool-path.txt`. Underneath, `.\tools\make-portable.ps1` builds a ready-to-play folder, "Castlevania Curse of Darkness Recomp", on the desktop, with the exe, dll, `assets`, mods, saves and settings. It works from any disk. When run again, the script updates the game and the mods but does not overwrite the folder's saves or settings. `-Destination` picks another place and `-DryRun` only shows the size. The folder needs only the Visual C++ Redistributable 2015–2022 x64 and a DirectX 12 GPU. Copy the whole folder and keep the file dates: without the `compiler` folder, the game only uses the dll if it is newer than the exe.
 6. Optional: your own `assets/icon.ico` becomes the exe and window icon on the next build (resource `ICON 1`, compiled with `llvm-rc`). The file stays out of git.
 
 Before a commit or PR, run `tools\verify.cmd`: build, C++ and Python tests (`tools\test-local.cmd`) and a gitleaks secret scan.
 
 The translation, dub and 4K pack are generated from the user's own copies; see [TRANSLATION.md](docs/TRANSLATION.md) and [MODDING.md](MODDING.md).
+
+## Folder layout
+
+Keep three folders apart, so the build tools never end up in the folder you play from:
+
+| Folder | Purpose | Contents |
+|---|---|---|
+| Source (this repository) | Code and docs that go to GitHub | `src/`, `tools/`, `docs/`, tests |
+| Build workspace (a checkout with your `assets/`) | Build and test | `assets/`, `.local/` tools, `out/build/release` with the `compiler` folder, test captures and reports |
+| Play folder (release) | Only play | exe, dll, `assets`, mods, saves, settings and guides; no compiler |
+
+`tools\release.ps1` is the only way into the play folder: it builds, runs `tools\test-local.cmd`, and only then calls `make-portable.ps1` and creates a desktop shortcut. If the build or a test fails, the play folder is not touched. Put the play folder on a data disk (for example a `Jogos` or `Games` folder) instead of the desktop: it is 6.6 GB.
 
 ## Demo
 
