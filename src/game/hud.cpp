@@ -2,6 +2,7 @@
 #include "common/dev_runtime.h"
 #include "common/guest_memory_guard.h"
 #include "common/presentation_math.h"
+#include "common/hud_render_rules.h"
 #include "common/guest_test_memory.h"
 #include "core/log.h"
 #include <array>
@@ -10,6 +11,7 @@
 X86_EXTERN_FUNC(__imp__sub_003575B0);
 X86_EXTERN_FUNC(__imp__sub_00357610);
 X86_EXTERN_FUNC(__imp__sub_003094E0);
+X86_EXTERN_FUNC(__imp__sub_00309930);
 X86_EXTERN_FUNC(__imp__sub_00308E70);
 X86_EXTERN_FUNC(__imp__sub_00367140);
 X86_EXTERN_FUNC(__imp__sub_003677F0);
@@ -31,22 +33,30 @@ thread_local unsigned drawing=0;
 template<class Original> void DrawSprite(X86Context& ctx,uint8_t* base,Original original) {
     if(drawing || !dev::ReadableGuestRange(base,ctx.esp,8)) {original(ctx,base);return;}
     const auto object=Read<uint32_t>(base,ctx.esp+4);
-    const bool hud=HudObject(base,object);
+    // O painel de comandos reutiliza um sprite temporario fora da arvore do HUD.
+    const auto caller=Read<uint32_t>(base,ctx.esp);
+    const bool pet=caller==0x308F97 || caller==0x308FD1 || caller==0x308FFD;
+    const bool life=caller==0x308CAD || caller==0x308CEA || caller==0x308D18 || caller==0x308D56;
+    const bool enemy=caller==0x309171 || caller==0x3091AE || caller==0x3091D8;
+    const bool hud=pet || life || enemy || HudObject(base,object);
     constexpr bool menu=false;
     if((!hud&&!menu) || !dev::ReadableGuestRange(base,object+0x128,4)) {original(ctx,base);return;}
     if(hud&&!dev::hud_enabled){ctx.esp+=4;return;}
     const auto data=Read<uint32_t>(base,object+0x128);
-    if(!dev::ReadableGuestRange(base,data,0x4C)){original(ctx,base);return;}
+    if(!dev::ReadableGuestRange(base,data,0x5A)){original(ctx,base);return;}
     const auto xy=Read<uint32_t>(base,data),offset=Read<uint32_t>(base,data+0x40);
     const auto sx=Read<float>(base,data+8),sy=Read<float>(base,data+12);
     const float scale=hud ? dev::hud_scale.load() : dev::game_menu_scale.load();
     const auto x=Read<int16_t>(base,data)+Read<int16_t>(base,data+0x40);
     const auto y=Read<int16_t>(base,data+2)+Read<int16_t>(base,data+0x42);
-    Write(base,data,int16_t(std::round(hud ? cod_view::HudCoordinate(float(x),scale,true) : x*scale)));
+    Write(base,data,int16_t(std::round(hud ? (enemy ? cod_view::EnemyPanelCoordinate(float(x),scale) : cod_view::HudCoordinate(float(x),scale,true)) : x*scale)));
     Write(base,data+2,int16_t(std::round(hud ? cod_view::HudCoordinate(float(y),scale,false) : y*scale)));
     Write(base,data+0x40,uint32_t(0));Write(base,data+8,sx*scale);Write(base,data+12,sy*scale);
+    // Mesmo bit usado por357B30/357BE0: invalidar os vertices em cache.
+    Write(base,data+0x59,uint8_t(Read<uint8_t>(base,data+0x59)|4));
     ++drawing;original(ctx,base);--drawing;
     Write(base,data,xy);Write(base,data+0x40,offset);Write(base,data+8,sx);Write(base,data+12,sy);
+    Write(base,data+0x59,uint8_t(Read<uint8_t>(base,data+0x59)|4));
 }
 }
 X86_FUNC(sub_003575B0) {DrawSprite(ctx,base,__imp__sub_003575B0);}
@@ -65,11 +75,26 @@ X86_FUNC(sub_003094E0) {
         if(data && dev::ReadableGuestRange(base,data+0x4C,4)) Write(base,data+0x4C,dev::hud_hide_delay.load());
     }
 }
+X86_FUNC(sub_00309930) {
+    __imp__sub_00309930(ctx,base);
+    if(!cod_hud::KeepVisible(dev::hud_enabled.load(),dev::hud_always_visible.load(),false))return;
+    if(dev::NativeMenuActive(base))return;
+    if(!dev::ReadableGuestRange(base,0xB251F0,4))return;
+    const auto root=Read<uint32_t>(base,0xB251F0);
+    if(!root || !dev::ReadableGuestRange(base,root+0x128,4))return;
+    const auto data=Read<uint32_t>(base,root+0x128);
+    if(!data || !dev::ReadableGuestRange(base,data,0x84))return;
+    float timer=Read<float>(base,data+0x4C);
+    auto alpha=Read<uint8_t>(base,data+0x7F);auto state=Read<uint32_t>(base,data+0x80);
+    cod_hud::RefreshVisibility(timer,alpha,state);
+    Write(base,data+0x4C,timer);Write(base,data+0x7F,alpha);Write(base,data+0x80,state);
+}
 // Somente o texto do Innocent Devil no HUD: escala de layout e ancora da chamada original.
 X86_FUNC(sub_00367140) {
     if(!dev::ReadableGuestRange(base,ctx.esp,24)) {__imp__sub_00367140(ctx,base);return;}
     const auto caller=Read<uint32_t>(base,ctx.esp);
-    const bool hud=caller==0x308F02;
+    const bool hud=caller==0x308F02 || caller==0x308BAC || caller==0x308C29 ||
+        caller==0x309079 || caller==0x3090DD || caller==0x309201;
     constexpr bool menu=false;
     if(!hud&&!menu){__imp__sub_00367140(ctx,base);return;}
     const auto stack=ctx.esp;const float x=Read<float>(base,stack+16),y=Read<float>(base,stack+20);
@@ -79,12 +104,13 @@ X86_FUNC(sub_00367140) {
 }
 X86_FUNC(sub_003677F0) {
     if(!dev::ReadableGuestRange(base,ctx.esp,20)) {__imp__sub_003677F0(ctx,base);return;}
-    const auto caller=Read<uint32_t>(base,ctx.esp);const bool hud=caller==0x308F48;
+    const auto caller=Read<uint32_t>(base,ctx.esp);const bool enemy=caller==0x3090B3 || caller==0x309112 || caller==0x309232;
+    const bool hud=enemy || caller==0x308F48 || caller==0x308BDE || caller==0x308C5C;
     constexpr bool menu=false;
     if(!hud&&!menu){__imp__sub_003677F0(ctx,base);return;}
     const auto stack=ctx.esp;const auto x=Read<int32_t>(base,stack+12),y=Read<int32_t>(base,stack+16);
     const float scale=hud ? dev::hud_scale.load() : dev::game_menu_scale.load();
-    Write(base,stack+12,int32_t(std::round(hud ? cod_view::HudCoordinate(float(x),scale,true) : x*scale)));
+    Write(base,stack+12,int32_t(std::round(hud ? (enemy ? cod_view::EnemyPanelCoordinate(float(x),scale) : cod_view::HudCoordinate(float(x),scale,true)) : x*scale)));
     Write(base,stack+16,int32_t(std::round(hud ? cod_view::HudCoordinate(float(y),scale,false) : y*scale)));
     __imp__sub_003677F0(ctx,base);Write(base,stack+12,x);Write(base,stack+16,y);
 }
@@ -104,18 +130,55 @@ bool VerifyHudHooks() {
     hud_enabled=true;hud_scale=.5f;
     bool called=false,transformed=false;
     auto draw=[&](X86Context& call,uint8_t* bytes) {
-        called=true;transformed=Read<int16_t>(bytes,data)==-228 && Read<int16_t>(bytes,data+2)==212 &&
+        called=true;transformed=(Read<uint8_t>(bytes,data+0x59)&4)!=0 && Read<int16_t>(bytes,data)==-228 && Read<int16_t>(bytes,data+2)==212 &&
             Read<float>(bytes,data+8)==.5f && Read<float>(bytes,data+12)==1;
+        Write(bytes,data+0x59,uint8_t(Read<uint8_t>(bytes,data+0x59)&~4u));
         call.esp+=4;
     };
     X86Context call{};call.esp=GuestTestMemory::stack;Write(memory,call.esp+4,sprite);
     DrawSprite(call,memory,draw);
     bool ok=called && transformed && call.esp==GuestTestMemory::stack+4 && Read<int16_t>(memory,data)==-200 &&
-        Read<int16_t>(memory,data+2)==200 && Read<float>(memory,data+8)==1 && Read<float>(memory,data+12)==2;
+        Read<int16_t>(memory,data+2)==200 && Read<float>(memory,data+8)==1 && Read<float>(memory,data+12)==2 && (Read<uint8_t>(memory,data+0x59)&4)!=0;
     hud_enabled=false;called=false;call.esp=GuestTestMemory::stack;DrawSprite(call,memory,draw);
     ok=ok && !called && call.esp==GuestTestMemory::stack+4;
     Write(memory,sprite+0x40,uint32_t(0));called=false;call.esp=GuestTestMemory::stack;DrawSprite(call,memory,draw);
     ok=ok && called;
+    bool pet_ok=true;
+    hud_enabled=true;
+    for(const uint32_t caller:{0x308F97u,0x308FD1u,0x308FFDu,0x308CADu,0x308CEAu,0x308D18u,0x308D56u}) {
+        for(const float factor:{1.0f,.5f,.35f}) {
+            hud_scale=factor;call.esp=GuestTestMemory::stack;
+            Write(memory,call.esp,caller);
+            bool scaled=false;
+            DrawSprite(call,memory,[&](X86Context& context,uint8_t* bytes) {
+                scaled=Read<int16_t>(bytes,data)==int16_t(std::round(cod_view::HudCoordinate(-200,factor,true))) &&
+                    Read<int16_t>(bytes,data+2)==int16_t(std::round(cod_view::HudCoordinate(200,factor,false))) &&
+                    Read<float>(bytes,data+8)==factor && Read<float>(bytes,data+12)==2*factor;
+                context.esp+=4;
+            });
+            pet_ok=pet_ok && scaled && call.esp==GuestTestMemory::stack+4 &&
+                Read<int16_t>(memory,data)==-200 && Read<int16_t>(memory,data+2)==200 &&
+                Read<float>(memory,data+8)==1 && Read<float>(memory,data+12)==2;
+        }
+        hud_enabled=false;called=false;call.esp=GuestTestMemory::stack;
+        DrawSprite(call,memory,draw);pet_ok=pet_ok && !called;
+        hud_enabled=true;
+    }
+    for(const uint32_t caller:{0x309171u,0x3091AEu,0x3091D8u}) {
+        for(const float factor:{1.f,.5f,.35f}) {
+            call.esp=GuestTestMemory::stack;Write(memory,call.esp,caller);hud_scale=factor;
+            bool scaled=false;
+            DrawSprite(call,memory,[&](X86Context& context,uint8_t* bytes) {
+                scaled=Read<int16_t>(bytes,data)==int16_t(std::round(cod_view::EnemyPanelCoordinate(-200,factor))) &&
+                    Read<float>(bytes,data+8)==factor;
+                context.esp+=4;
+            });
+            pet_ok=pet_ok && scaled && Read<int16_t>(memory,data)==-200 && Read<float>(memory,data+8)==1;
+        }
+    }
+    Write(memory,GuestTestMemory::stack,uint32_t(0));hud_scale=.5f;
+    ok=ok && pet_ok;
+    LOGR("dev selftest: pet scratch sprite scale/restore/hide=%d",pet_ok);
     const float saved_menu_scale=game_menu_scale.load();game_menu_scale=.4f;
     Write(memory,0xB25518,root);Write(memory,0xB251F0,uint32_t(0));Write(memory,sprite+0x40,root);
     call.esp=GuestTestMemory::stack;
