@@ -56,6 +56,7 @@ std::string PagePath(int target) {
 }
 // Barra de filtro: texto digitado e a opcao escolhida nos resultados (a pagina rola ate ela).
 char search_text[64]{};
+bool search_keys=false,search_keys_focus=false;   // teclado na tela aberto; foca a primeira tecla ao abrir
 std::string jump_label;
 void ScrollIfJumped(const char* label) {
     if(jump_label.empty() || jump_label!=label) return;
@@ -225,6 +226,17 @@ bool PresetActive(const EnemyPreset& p) {
     return enemy_random_scale_min.load()==p.scale_min && enemy_random_scale_max.load()==p.scale_max &&
         enemy_random_hp_min.load()==p.hp_min && enemy_random_hp_max.load()==p.hp_max && enemy_elite_chance.load()==p.elite;
 }
+// Volta todas as opcoes dos inimigos (todos, aleatorio e elite) ao padrao; o mod Editor por tipo tem botao proprio.
+void ResetEnemyOptions() {
+    enemy_hp.store(1);enemy_scale.store(1);enemy_random.store(false);
+    enemy_random_scale_min.store(.8f);enemy_random_scale_max.store(1.3f);
+    enemy_random_hp_min.store(1);enemy_random_hp_max.store(1.5f);
+    enemy_elite_chance.store(0);enemy_elite_scale.store(2);enemy_elite_hp.store(3);
+    LOGR("dev: enemy options reset to default");
+}
+void ResetEnemyButton() {
+    if(ImGui::Button("Restaurar padrao dos inimigos",MenuSize(280,30))) ResetEnemyOptions();
+}
 void ApplyPreset(const EnemyPreset& p) {
     enemy_hp.store(p.hp);enemy_scale.store(p.scale);enemy_random.store(p.random);
     enemy_random_scale_min.store(p.scale_min);enemy_random_scale_max.store(p.scale_max);
@@ -246,6 +258,7 @@ void EnemiesPage() {
     Slider("Tamanho dos inimigos",enemy_scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
     ImGui::TextWrapped("As camadas se multiplicam: todos x tipo (Por tipo) x sorteio (Aleatorio). Limites finais: tamanho 0,5x a 3x, vida 0,5x a 5x.");
     ImGui::TextColored(muted_text,"Tamanho e so visual: a area de acerto continua a original. Vida vale para quem aparece depois: troque de sala.");
+    ResetEnemyButton();
 }
 void DropsPage() {
     Heading("Drops e itens","Chance e quantidade do que os inimigos soltam ao morrer, e tamanho dos itens no chao. So na memoria.");
@@ -278,6 +291,7 @@ void EnemyRandomPage() {
     Slider("Vida extra da elite",enemy_elite_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
     ImGui::EndDisabled();
     ImGui::TextWrapped("Minimo maior que maximo e trocado sozinho. Elite multiplica por cima do sorteio. Vale para inimigos que aparecem depois da mudanca.");
+    ResetEnemyButton();
     ImGui::SeparatorText("Trocar tipos de inimigo");
     ImGui::TextColored(muted_text,"Em pesquisa: trocar um inimigo por outro exige carregar modelos que a sala nao tem, com risco de travar. Vem depois do estudo das posicoes.");
 }
@@ -299,6 +313,8 @@ void EnemyEditorPage() {
     if(!on) ImGui::TextColored(crimson,"Mod Editor desligado: os ajustes abaixo ficam guardados, mas o jogo usa os valores originais.");
     const auto rows=EnemyEditorRows();
     if(rows.empty()) ImGui::TextColored(muted_text,"Nenhum inimigo visto ainda: entre numa sala com inimigos.");
+    else if(ImGui::Button("Voltar todos os tipos ao original",MenuSize(300,30)))
+        for(const auto& row:rows) SetEnemyEdit(row.type,1,1);
     for(const auto& row:rows) {
         ImGui::PushID(int(row.type));
         char header[96];
@@ -909,7 +925,11 @@ void Draw(double fps) {
         const int previous_page=page;
         const int step=int(ImGui::IsKeyPressed(ImGuiKey_GamepadR1,false))-int(ImGui::IsKeyPressed(ImGuiKey_GamepadL1,false));
         const bool back=ImGui::IsKeyPressed(ImGuiKey_GamepadFaceRight,false) || ImGui::IsKeyPressed(ImGuiKey_Escape,false);
-        StepMenuNav(nav,{.tab_step=step,.back=back,.busy=was_editing || popup || ControllerCaptureTarget()>=0},tab_count);
+        // Y (triangulo) abre e fecha o teclado na tela da busca; B fecha o teclado antes de voltar no menu.
+        if(!was_editing && !popup && ImGui::IsKeyPressed(ImGuiKey_GamepadFaceUp,false)) { search_keys=!search_keys;search_keys_focus=search_keys; }
+        const bool close_keys=search_keys && back;
+        if(close_keys) search_keys=false;
+        StepMenuNav(nav,{.tab_step=step,.back=back && !close_keys,.busy=was_editing || popup || ControllerCaptureTarget()>=0},tab_count);
         // Abas no topo: L1/R1 ou clique; o direcional fica nos titulos e opcoes.
         ImGui::PushItemFlag(ImGuiItemFlags_NoNav,true);
         for(int i=0;i<tab_count;++i) {
@@ -919,12 +939,46 @@ void Draw(double fps) {
                 nav.tab=i;nav.title=0;nav.level=MenuNav::Level::Titles;nav.focus=true;
             }
         }
-        // Filtro por texto (teclado; Ctrl+F foca). Fora da navegacao do controle, como as abas.
+        ImGui::PopItemFlag();
+        // Filtro por texto: lupa (clique ou Y) abre o teclado na tela; teclado fisico digita direto (Ctrl+F foca).
+        const float lupa=28*scale;
+        if(ImGui::Button("##lupa",{lupa,lupa})) { search_keys=!search_keys;search_keys_focus=search_keys; }
+        {
+            const ImVec2 a=ImGui::GetItemRectMin(),b=ImGui::GetItemRectMax();
+            const ImVec2 center{a.x+(b.x-a.x)*.42f,a.y+(b.y-a.y)*.42f};
+            const float radius=(b.x-a.x)*.22f;
+            auto* draw=ImGui::GetWindowDrawList();
+            draw->AddCircle(center,radius,IM_COL32(230,200,140,255),16,2*scale);
+            draw->AddLine({center.x+radius*.7f,center.y+radius*.7f},{b.x-(b.x-a.x)*.2f,b.y-(b.y-a.y)*.2f},IM_COL32(230,200,140,255),2.5f*scale);
+        }
+        if(ImGui::IsItemHovered()) ImGui::SetTooltip("Buscar opcao (Y no controle)");
+        ImGui::SameLine();
         ImGui::SetNextItemWidth(-1);
         if(ImGui::IsKeyChordPressed(ImGuiMod_Ctrl|ImGuiKey_F)) ImGui::SetKeyboardFocusHere();
-        const bool search_enter=ImGui::InputTextWithHint("##filtro","Filtrar opcoes (Ctrl+F): vida, camera, minimapa...",
+        bool search_enter=ImGui::InputTextWithHint("##filtro","Buscar opcao (Ctrl+F ou Y): vida, camera, minimapa...",
             search_text,sizeof(search_text),ImGuiInputTextFlags_EnterReturnsTrue);
-        ImGui::PopItemFlag();
+        if(search_keys) {
+            // Teclado na tela: navegavel pelo direcional, A digita.
+            constexpr const char* rows[]{"ABCDEFGHIJKLM","NOPQRSTUVWXYZ"};
+            const ImVec2 key{30*scale,28*scale};
+            for(const char* row:rows) {
+                for(const char* c=row;*c;++c) {
+                    if(c!=row) ImGui::SameLine(0,3*scale);
+                    const char label[2]{*c,0};
+                    if(search_keys_focus) { ImGui::SetKeyboardFocusHere();search_keys_focus=false; }
+                    if(ImGui::Button(label,key)) SearchKeyPress(search_text,sizeof(search_text),char(*c+32));
+                }
+            }
+            if(ImGui::Button("Espaco",{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),' ');
+            ImGui::SameLine(0,3*scale);
+            if(ImGui::Button("Apagar",{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),'\b');
+            ImGui::SameLine(0,3*scale);
+            if(ImGui::Button("Limpar",{key.x*3,key.y})) SearchKeyPress(search_text,sizeof(search_text),0);
+            ImGui::SameLine(0,3*scale);
+            if(ImGui::Button("Abrir 1o",{key.x*3,key.y})) search_enter=true;
+            ImGui::SameLine(0,3*scale);
+            if(ImGui::Button("Fechar",{key.x*3,key.y})) search_keys=false;
+        }
         if(search_text[0]) {
             ImGui::BeginChild("search",{0,-footer},ImGuiChildFlags_Border);
             int found=0,target=-1;
@@ -942,7 +996,7 @@ void Draw(double fps) {
             if(!found) ImGui::TextColored(muted_text,"Nada encontrado. Tente outra palavra, sem acento ou so o comeco.");
             ImGui::EndChild();
             if(target>=0) {
-                ShowPage(target);jump_label=target_label;search_text[0]=0;
+                ShowPage(target);jump_label=target_label;search_text[0]=0;search_keys=false;
                 LOGR("dev: menu search -> page %d '%s'",target,target_label);
             }
         } else {

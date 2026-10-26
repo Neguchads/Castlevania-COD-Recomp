@@ -22,6 +22,18 @@ inline std::string FoldSearchText(std::string_view text) {
     }
     return out;
 }
+// Teclado na tela da busca: letra/espaco somam, '\b' apaga a ultima, 0 limpa. Respeita o tamanho do buffer.
+inline void SearchKeyPress(char* text, size_t size, char key) {
+    if (!text || !size) return;
+    size_t length = 0;
+    while (length + 1 < size && text[length]) ++length;
+    text[length] = 0;
+    if (key == 0) { text[0] = 0; return; }
+    if (key == '\b') { if (length) text[length - 1] = 0; return; }
+    if (length + 1 >= size || (key == ' ' && (!length || text[length - 1] == ' '))) return;
+    text[length] = key;
+    text[length + 1] = 0;
+}
 // Cada palavra da busca precisa aparecer no texto, em qualquer ordem. Busca vazia nao acha nada.
 inline bool MenuSearchMatch(std::string_view text, std::string_view query) {
     const std::string folded = FoldSearchText(text), words = FoldSearchText(query);

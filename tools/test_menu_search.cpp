@@ -13,6 +13,18 @@ int main() {
     if (MenuSearchMatch("Vida dos inimigos", "vida mana")) return 5;
     if (MenuSearchMatch("Vida dos inimigos", "") || MenuSearchMatch("Vida dos inimigos", "   ")) return 6;
     if (!MenuSearchMatch("Tamanho dos inimigos", "  tam  ")) return 7;
+    // Teclado na tela: soma, espaco unico, apaga, limpa e nao estoura o buffer.
+    char text[5]{};
+    SearchKeyPress(text, sizeof(text), ' ');
+    SearchKeyPress(text, sizeof(text), 'v');SearchKeyPress(text, sizeof(text), ' ');SearchKeyPress(text, sizeof(text), ' ');
+    SearchKeyPress(text, sizeof(text), 'i');
+    if (std::strcmp(text, "v i") != 0) return 10;
+    SearchKeyPress(text, sizeof(text), 'd');SearchKeyPress(text, sizeof(text), 'a');
+    if (std::strcmp(text, "v id") != 0) return 11;
+    SearchKeyPress(text, sizeof(text), '\b');
+    if (std::strcmp(text, "v i") != 0) return 12;
+    SearchKeyPress(text, sizeof(text), 0);
+    if (text[0] != 0) return 13;
     // Indice gerado: tem as opcoes e todas apontam para paginas validas do menu.
     bool hp = false, camera = false;
     for (const auto& entry : kMenuSearchIndex) {

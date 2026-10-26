@@ -44,26 +44,38 @@ void NoteEnemy(uint32_t type, const std::string& name) {
     names[type] = name;
     named[type] = true;
 }
-ActorEdit EnemyActorEdit(uint32_t actor, uint32_t type, float current, float factor, const EnemyRandomSettings& random) {
-    std::lock_guard guard(lock);
+namespace {
+// Estado do ator (com lock tomado); sorteia quando o endereco e novo, troca de tipo ou fresh_hint pede.
+ActorState& TrackActor(uint32_t actor, uint32_t type, const EnemyRandomSettings& random, bool fresh_hint, bool& rolled) {
     // Atores mudam de endereco a cada sala; limpar so faz a escala atual virar base e sortear de novo.
     if (actors.size() > 8192) actors.clear();
     auto it = actors.find(actor);
-    // Novo: endereco nunca visto ou reaproveitado por outro tipo. Escala ainda invalida (modelo montando)
-    // guarda o sorteio sem base, para a vida do nascimento e o tamanho depois baterem.
-    // O jogo voltar a escala ao valor dele tambem indica inimigo novo no mesmo endereco.
-    const bool fresh = it == actors.end() || it->second.type != type ||
-        (it->second.has_scale && current > 0 && current != it->second.scale.applied && it->second.scale.applied != it->second.scale.base);
-    ActorEdit edit;
-    if (fresh) {
+    rolled = false;
+    if (it == actors.end() || it->second.type != type || fresh_hint) {
         std::uniform_real_distribution<float> unit(0.0f, 1.0f);
-        edit.roll = RollEnemy(random, unit(rng), unit(rng), unit(rng));
-        edit.rolled = random.enabled;
-        it = actors.insert_or_assign(actor, ActorState{type, {}, false, edit.roll}).first;
-    } else {
-        edit.roll = it->second.roll;
+        const EnemyRoll roll = RollEnemy(random, unit(rng), unit(rng), unit(rng));
+        rolled = random.enabled;
+        it = actors.insert_or_assign(actor, ActorState{type, {}, false, roll}).first;
     }
-    auto& state = it->second;
+    return it->second;
+}
+}
+float EnemyGameScale(uint32_t actor, uint32_t type, float game_scale, float factor, const EnemyRandomSettings& random) {
+    std::lock_guard guard(lock);
+    bool rolled = false;
+    auto& state = TrackActor(actor, type, random, false, rolled);
+    const float total = ClampEnemyScale(factor * state.roll.scale);
+    if (std::isfinite(game_scale) && game_scale > 0) { state.scale = {game_scale, game_scale * total}; state.has_scale = true; }
+    return total;
+}
+ActorEdit EnemyActorEdit(uint32_t actor, uint32_t type, float current, float factor, const EnemyRandomSettings& random) {
+    std::lock_guard guard(lock);
+    // Novo: endereco nunca visto ou reaproveitado por outro tipo. Escala ainda invalida (modelo montando)
+    // guarda o sorteio sem base, para a vida do nascimento e o tamanho depois baterem. Se o jogo trocar a
+    // escala, NextScale toma a atual como base nova sem sortear de novo (o inimigo nao muda de elite no meio).
+    ActorEdit edit;
+    auto& state = TrackActor(actor, type, random, false, edit.rolled);
+    edit.roll = state.roll;
     const ScaleState* known = state.has_scale ? &state.scale : nullptr;
     edit.step = NextScale(current, known, factor * edit.roll.scale);
     if (edit.step.state.base > 0 && std::isfinite(edit.step.state.base)) { state.scale = edit.step.state; state.has_scale = true; }
