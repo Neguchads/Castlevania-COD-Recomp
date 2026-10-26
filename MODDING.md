@@ -12,7 +12,9 @@ Pacotes de textura: os nomes dos arquivos (`<hash de 16 hex>.dds` ou `.bmp`) sã
 
 Cheats: além de godmode e speedhack, "Vida cheia" (não revive), "MP cheio", "MP infinito" (só o Hector; o jogo não tem corações, as habilidades dos Devils gastam MP), "Ouro maximo" (9.999.999), "Ganho de ouro" e "Ganho de EXP" (1x a 10x) e "Compras nao gastam ouro". Ficam salvos nas opções. Códigos de nome do jogo: @CRAZY (modo Crazy) e @TREVOR (jogar com Trevor), segundo guias; não testados nesta versão.
 
-Save de Lament of Innocence: no PS2, ter o save de LoI no memory card libera a estátua Moai. Em Cheats, "Simular save de Lament of Innocence" faz o jogo achar esse save; ligue antes de começar um jogo novo ou carregar. O bônus fica gravado no save ao salvar.
+Save de Lament of Innocence: no PS2, ter o save de LoI no memory card libera a estátua Moai. Em Cheats, "Simular save de Lament of Innocence" faz o jogo achar esse save; ligue, salve as opções e só então carregue o save ou comece um jogo novo pela tela de título (o log mostra `cheat: Lament of Innocence save simulated`). O bônus fica gravado no save ao salvar. Pelo código, ele libera um objeto numa sala (não cai direto no inventário); a sala ainda não foi identificada.
+
+Minimapa: em Jogabilidade > Jogo e minimapa, "Posição horizontal/vertical do minimapa" (0 = esquerda/topo, 1 = direita/base) e o botão que volta ao canto superior direito. Salvar opções grava a posição.
 
 Botões de PlayStation: ligue o mod **PS2-Botoes** (Mods) para ver ✕ ○ □ △ L1 L2 R1 R2 no lugar de A B X Y L preto R branco, e em Controles > Controle aperte **Layout PS2** para L1/R1 virarem os gatilhos e L2/R2 o preto/branco, como no PS2. **Layout Xbox** volta ao padrão; a linha "Layout atual" mostra Xbox, PS2 ou personalizado. Para gerar o pack de novo: `python tools\hd_pack_match.py buttons --pack <pasta replacements do 4K PS2>`.
 
