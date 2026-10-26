@@ -17,6 +17,8 @@
 #include "menu_input.h"
 #include "menu_language.h"
 #include "menu_language_ui.h"
+#include "menu_defaults.h"
+#include "menu_layout.h"
 #include "menu_nav.h"
 #include "game_cheat_rules.h"
 #include "drop_rules.h"
@@ -38,18 +40,7 @@ void SetMenuEnglish(bool english) {
     LOGR("dev: menu language %s",MenuLanguageKey(english));
     app::Save();
 }
-struct MenuTitleEntry {const char* label;int page;};
-struct MenuTabEntry {const char* label;MenuTitleEntry titles[12];int count;};
-// Tudo que muda a partida fica em Jogabilidade (inimigos, drops e cheats inclusos).
-constexpr MenuTabEntry kTabs[]{
-    {"Jogabilidade",{{"Jogo e minimapa",0},{"Dificuldade",16},{"Inimigos: todos",18},{"Inimigos: aleatorio",19},
-        {"Inimigos: por tipo",17},{"Drops e itens",20},{"Cheats",6},{"HUD e pets",10},{"Camera",11},{"Saves e sessao",8}},10},
-    {"Graficos",{{"Graficos",2}},1},
-    {"Audio",{{"Audio",3}},1},
-    {"Controles",{{"Controle",15},{"Teclado e mouse",4}},2},
-    {"Mods",{{"Mods e texturas",5}},1},
-    {"Suporte",{{"Relatar bug",1},{"Capturas salvas",13},{"Logs e travamentos",14},{"Diagnostico",12}},4},
-    {"Menu",{{"Aparencia",7},{"Perfis",9}},2}};
+// Abas e paginas: menu_layout.h. Padroes de cada pagina: menu_defaults.h.
 // Abre direto a pagina pedida (ex.: captura de bug leva ao relato).
 void ShowPage(int target) {
     for(int tab=0;tab<int(std::size(kTabs));++tab)
@@ -192,14 +183,17 @@ void GameHacks() {
     ImGui::TextWrapped("%s",Tr("No PS2, ter o save de Lament of Innocence no memory card libera a estatua Moai (vale 5000 de ouro). Ligue antes de comecar um jogo novo ou carregar; o bonus fica gravado no save quando voce salvar e nao sai desligando a opcao."));
 }
 void General() {
-    Heading("Opcoes de jogo", "Minimapa, interface e ferramentas da partida.");
-    Toggle("Mostrar minimapa",minimap_enabled);
-    Toggle("Girar minimapa conforme a camera",minimap_rotating);
-    ImGui::TextDisabled("%s",Tr("Menus originais: escala 100%. Reducao inteligente adiada."));
+    Heading("Jogo", "Idioma do jogo. Inimigos, drops, pets e cheats ficam nas abas proprias.");
     int language=ptbr_enabled.load() ? 1 : 0;
     const char* languages[]{"English","Português (Brasil)"};
     if(ImGui::Combo(Tr("Idioma do jogo"),&language,languages,2)) SelectTextLanguage(language==1 ? 2 : 1);
     ImGui::TextDisabled("%s",Tr("Textos mudam na hora; imagens e vozes ja carregadas mudam ao reiniciar. Japones: Opcoes > Idioma no jogo."));
+    ImGui::TextDisabled("%s",Tr("Menus originais: escala 100%. Reducao inteligente adiada."));
+}
+void MinimapOptions() {
+    ImGui::SeparatorText(Tr("Minimapa"));
+    Toggle("Mostrar minimapa",minimap_enabled);
+    Toggle("Girar minimapa conforme a camera",minimap_rotating);
     Slider("Tamanho do minimapa",minimap_scale,.6f,1.6f,"%.2fx");
     Slider("Opacidade do minimapa",minimap_opacity,.2f,1.0f,"%.2f");
     Slider("Posicao horizontal do minimapa",minimap_x,0,1,"%.2f");
@@ -221,7 +215,7 @@ void DifficultyPage() {
     Slider("Dano recebido pelo jogador",damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     Slider("Dano recebido pelo Innocent Devil",devil_damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     ImGui::TextWrapped("%s",Tr("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto."));
-    ImGui::TextColored(muted_text,"%s",Tr("Vida, tamanho, sorteio e elites dos inimigos: Jogabilidade > Inimigos."));
+    ImGui::TextColored(muted_text,"%s",Tr("Vida, tamanho, sorteio e elites dos inimigos: aba Inimigos."));
 }
 // Combinacoes prontas da aba Inimigos: global, sorteio por inimigo e elite juntos.
 struct EnemyPreset {const char* name;float hp,scale;bool random;float scale_min,scale_max,hp_min,hp_max,elite;};
@@ -236,17 +230,6 @@ bool PresetActive(const EnemyPreset& p) {
     if(!p.random) return true;
     return enemy_random_scale_min.load()==p.scale_min && enemy_random_scale_max.load()==p.scale_max &&
         enemy_random_hp_min.load()==p.hp_min && enemy_random_hp_max.load()==p.hp_max && enemy_elite_chance.load()==p.elite;
-}
-// Volta todas as opcoes dos inimigos (todos, aleatorio e elite) ao padrao; o mod Editor por tipo tem botao proprio.
-void ResetEnemyOptions() {
-    enemy_hp.store(1);enemy_scale.store(1);enemy_random.store(false);
-    enemy_random_scale_min.store(.8f);enemy_random_scale_max.store(1.3f);
-    enemy_random_hp_min.store(1);enemy_random_hp_max.store(1.5f);
-    enemy_elite_chance.store(0);enemy_elite_scale.store(2);enemy_elite_hp.store(3);
-    LOGR("dev: enemy options reset to default");
-}
-void ResetEnemyButton() {
-    if(ImGui::Button(Tr("Restaurar padrao dos inimigos"),MenuSize(280,30))) ResetEnemyOptions();
 }
 void ApplyPreset(const EnemyPreset& p) {
     enemy_hp.store(p.hp);enemy_scale.store(p.scale);enemy_random.store(p.random);
@@ -269,15 +252,12 @@ void EnemiesPage() {
     Slider("Tamanho dos inimigos",enemy_scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
     ImGui::TextWrapped("%s",Tr("As camadas se multiplicam: todos x tipo (Por tipo) x sorteio (Aleatorio). Limites finais: tamanho 0,5x a 3x, vida 0,5x a 5x."));
     ImGui::TextColored(muted_text,"%s",Tr("Tamanho e so visual: a area de acerto continua a original. Vida vale para quem aparece depois: troque de sala."));
-    ResetEnemyButton();
 }
 void DropsPage() {
     Heading("Drops e itens","Chance e quantidade do que os inimigos soltam ao morrer, e tamanho dos itens no chao. So na memoria.");
     Slider("Taxa de drop de itens",drop_rate,0,kMaxDropFactor,"%.2fx");
     ImGui::TextColored(muted_text,"%s",Tr("Multiplica a chance de cada item (a sorte do personagem continua contando). 0x desliga os itens."));
-    Slider("Chance de cristais dos Innocent Devils",crystal_rate,0,kMaxDropFactor,"%.2fx");
-    Slider("Cristais por drop",crystal_amount,1,kMaxCrystalAmount,"%.2fx");
-    ImGui::TextColored(muted_text,"%s",Tr("Cristais de evolucao so caem com um Innocent Devil em campo. O jogo junta no maximo 4 cristais por drop."));
+    ImGui::TextColored(muted_text,"%s",Tr("Cristais de evolucao dos Innocent Devils: aba Pets."));
     Toggle("Itens aleatorios nos drops",random_drops);
     ImGui::TextColored(muted_text,"%s",Tr("Troca o item que o inimigo soltaria por outro da tabela de drops do proprio jogo."));
     Slider("Tamanho dos itens no chao",item_scale,kMinItemScale,kMaxItemScale,"%.2fx");
@@ -286,6 +266,17 @@ void DropsPage() {
     if(ImGui::Button(Tr("Tamanho original"),MenuSize(200,30))) item_scale.store(1);
     ImGui::TextColored(muted_text,"%s",Tr("So o visual muda: a area de pegar continua a original. Vale para itens que caem depois da mudanca."));
     ImGui::TextWrapped("%s",Tr("Valem para inimigos que morrem depois da mudanca. Salvar opcoes grava tudo."));
+}
+void PetsPage() {
+    Heading("Innocent Devils","Cristais de evolucao (shards) que os inimigos soltam para o Innocent Devil em campo. So na memoria.");
+    Slider("Chance de cristais dos Innocent Devils",crystal_rate,0,kMaxDropFactor,"%.2fx");
+    Slider("Cristais por drop",crystal_amount,1,kMaxCrystalAmount,"%.2fx");
+    ImGui::TextColored(muted_text,"%s",Tr("Cristais de evolucao so caem com um Innocent Devil em campo. O jogo junta no maximo 4 cristais por drop."));
+    ImGui::TextColored(muted_text,"%s",Tr("Dano recebido pelo Innocent Devil: Jogabilidade > Dificuldade."));
+    ImGui::SeparatorText(Tr("Diagnostico dos cristais"));
+    ImGui::TextWrapped("%s",Tr("O jogo so sorteia o cristal com modo normal, Devil em campo, atributo 73 do Hector diferente de 0 e evolucao do Devil ligada. Cada inimigo derrotado conta abaixo; o mesmo texto vai no relato (F8)."));
+    ImGui::TextUnformatted(CrystalDiagnosticReport().c_str());
+    ImGui::TextColored(muted_text,"%s",Tr("Habilidade ??? na ficha do Devil e ??? no menu de pausa (Bestiario) sao do jogo original: aparecem ate a habilidade ser obtida."));
 }
 void EnemyRandomPage() {
     Heading("Aleatorio","Cada inimigo sorteia tamanho e vida ao aparecer e mantem o sorteio ate sumir.");
@@ -302,7 +293,6 @@ void EnemyRandomPage() {
     Slider("Vida extra da elite",enemy_elite_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
     ImGui::EndDisabled();
     ImGui::TextWrapped("%s",Tr("Minimo maior que maximo e trocado sozinho. Elite multiplica por cima do sorteio. Vale para inimigos que aparecem depois da mudanca."));
-    ResetEnemyButton();
     ImGui::SeparatorText(Tr("Trocar tipos de inimigo"));
     ImGui::TextColored(muted_text,"%s",Tr("Em pesquisa: trocar um inimigo por outro exige carregar modelos que a sala nao tem, com risco de travar. Vem depois do estudo das posicoes."));
 }
@@ -324,8 +314,6 @@ void EnemyEditorPage() {
     if(!on) ImGui::TextColored(crimson,"%s",Tr("Mod Editor desligado: os ajustes abaixo ficam guardados, mas o jogo usa os valores originais."));
     const auto rows=EnemyEditorRows();
     if(rows.empty()) ImGui::TextColored(muted_text,"%s",Tr("Nenhum inimigo visto ainda: entre numa sala com inimigos."));
-    else if(ImGui::Button(Tr("Voltar todos os tipos ao original"),MenuSize(300,30)))
-        for(const auto& row:rows) SetEnemyEdit(row.type,1,1);
     for(const auto& row:rows) {
         ImGui::PushID(int(row.type));
         char header[96];
@@ -342,8 +330,48 @@ void EnemyEditorPage() {
         ImGui::PopID();
     }
 }
+// Restaurar padrao: lista de menu_defaults.h mais o que nao e atomico (tela, mapas de botao, aparencia, velocidade,
+// cheats.toml e edicoes por tipo). Paginas sem opcao (relatos, logs, saves, perfis, idioma) nao tem botao.
+bool PageRestorable(int target) {
+    return !PageDefaults(target).Empty() || target==17;
+}
+void RestorePage(int target) {
+    PageDefaults(target).Apply();
+    switch(target) {
+        case 2: {
+            auto& settings=app::Get();const app::Settings defaults{};
+            settings.display_mode=defaults.display_mode;settings.width=defaults.width;settings.height=defaults.height;
+            settings.render_percent=defaults.render_percent;settings.fps_cap=defaults.fps_cap;
+            settings.vsync=defaults.vsync;settings.aniso=defaults.aniso;
+            app::ApplyDisplay();break;
+        }
+        case 4: ResetBindings();break;
+        case 15: CancelControllerCapture();SetControllerMapping(IdentityControllerMap());break;
+        case 6: SetSpeed(1.0f);for(auto& cheat:Cheats()) if(cheat.enabled) ToggleCheat(cheat,false);break;
+        case 7: menu_preferences=MenuPreferences{};menu_geometry_reset=true;break;
+        case 17: for(const auto& row:EnemyEditorRows()) SetEnemyEdit(row.type,1,1);break;
+        default: break;
+    }
+    LOGR("dev: page %d restored to default",target);
+}
+void RestoreAllPages() {
+    for(int target=0;target<kMenuPageCount;++target) if(PageRestorable(target)) RestorePage(target);
+    app::Save();
+    LOGR("dev: all menu options restored to default");
+    NotifyToast("Todas as opcoes do menu voltaram ao padrao.");
+}
+void RestorePageButton(int target) {
+    if(!PageRestorable(target)) return;
+    ImGui::Spacing();ImGui::Separator();ImGui::Spacing();
+    if(ImGui::Button(Tr("Restaurar padrao desta pagina"),MenuSize(280,30))) {
+        RestorePage(target);NotifyToast("Opcoes desta pagina voltaram ao padrao.");
+    }
+    if(ImGui::IsItemHovered()) ImGui::SetTooltip("%s",Tr("So as opcoes desta pagina. Salvar opcoes grava."));
+}
 void HudPage() {
-    Heading("HUD e pets", "Tamanho e visibilidade da interface original.");
+    Heading("Minimapa e HUD", "Minimapa do port e tamanho e visibilidade da interface original.");
+    MinimapOptions();
+    ImGui::SeparatorText(Tr("HUD"));
     Toggle("Mostrar HUD original do jogo",hud_enabled);
     Toggle("Manter vida/MP sempre visiveis",hud_always_visible);
     if(hud_always_visible)ImGui::TextWrapped("%s",Tr("Mantem as barras visiveis fora de combate. Desative para voltar ao temporizador original."));
@@ -663,7 +691,6 @@ void Controls() {
     Toggle("Mouse controla o analogico da camera", mouse_camera);
     Toggle("Inverter mouse horizontal",invert_mouse_x);
     Toggle("Inverter mouse vertical",invert_mouse_y);
-    if(ImGui::Button(Tr("Restaurar controles padrao"))) ResetBindings();
     Slider("Sensibilidade", sensitivity, .001f, .05f, "%.3f");
     ImGui::TextWrapped("%s",Tr("Menu fechado: WASD move, mouse controla a camera, setas sao o direcional (navegam nos menus do jogo), Enter confirma e Esc abre ou volta o menu do jogo. Menu aberto: teclado e mouse operam a interface; analogicos continuam no jogo."));
     ImGui::TextWrapped("%s",Tr("Clique no botao de uma acao e pressione a nova tecla. F1, F8, F9 e Esc ficam reservadas."));
@@ -700,9 +727,6 @@ void Appearance() {
     ImGui::ColorEdit3(Tr("Cor de selecao"),menu_preferences.accent.data());
     ImGui::ColorEdit3(Tr("Destaques e foco"),menu_preferences.highlight.data());
     ImGui::TextWrapped("%s",Tr("Posicao, tamanho e cores ficam nas suas opcoes. Salvar opcoes grava imediatamente; fechar o painel tambem grava a geometria."));
-    if(ImGui::Button(Tr("Restaurar aparencia padrao"))) {
-        menu_preferences=MenuPreferences{};menu_geometry_reset=true;
-    }
     ImGui::Spacing();
     ImGui::TextWrapped("%s",Tr("Controle: L1/R1 troca de aba. Direcional navega. A confirma e B volta. Movimento e tamanho da janela podem ser ajustados abaixo sem mouse."));
     ImGui::DragFloat(Tr("Posicao horizontal"),&menu_preferences.x,2,0,ImGui::GetIO().DisplaySize.x-160);
@@ -939,7 +963,7 @@ void Draw(double fps) {
         }
         ImGui::Separator();
         const float footer=80*scale;
-        constexpr int tab_count=int(std::size(kTabs));
+        constexpr int tab_count=kTabCount;
         const bool popup=ImGui::IsPopupOpen(nullptr,ImGuiPopupFlags_AnyPopupId);
         const int previous_page=page;
         const int step=int(ImGui::IsKeyPressed(ImGuiKey_GamepadR1,false))-int(ImGui::IsKeyPressed(ImGuiKey_GamepadL1,false));
@@ -951,9 +975,14 @@ void Draw(double fps) {
         StepMenuNav(nav,{.tab_step=step,.back=back && !close_keys,.busy=was_editing || popup || ControllerCaptureTarget()>=0},tab_count);
         // Abas no topo: L1/R1 ou clique; o direcional fica nos titulos e opcoes.
         ImGui::PushItemFlag(ImGuiItemFlags_NoNav,true);
+        // 11 abas: quebra a linha quando a proxima nao cabe na largura da janela.
         for(int i=0;i<tab_count;++i) {
-            if(i) ImGui::SameLine(0,6*scale);
             const ImVec2 size{ImGui::CalcTextSize(Tr(kTabs[i].label)).x+20*scale,28*scale};
+            if(i) {
+                ImGui::SameLine(0,6*scale);
+                const float right=ImGui::GetWindowPos().x+ImGui::GetWindowWidth()-ImGui::GetStyle().WindowPadding.x;
+                if(ImGui::GetCursorScreenPos().x+size.x>right) ImGui::NewLine();
+            }
             if(ImGui::Selectable(Tr(kTabs[i].label),nav.tab==i,ImGuiSelectableFlags_None,size)) {
                 nav.tab=i;nav.title=0;nav.level=MenuNav::Level::Titles;nav.focus=true;
             }
@@ -1039,13 +1068,25 @@ void Draw(double fps) {
             case 10:HudPage();break;case 11:CameraPage();break;case 12:Diagnostics(fps);break;
             case 13:ReportsGallery();break;case 14:LogsPage();break;case 15:ControllerPage();break;
             case 16:DifficultyPage();break;case 17:EnemyEditorPage();break;
-            case 18:EnemiesPage();break;case 19:EnemyRandomPage();break;case 20:DropsPage();break;}
+            case 18:EnemiesPage();break;case 19:EnemyRandomPage();break;case 20:DropsPage();break;
+            case 21:PetsPage();break;}
+        RestorePageButton(page);
         ImGui::PopItemWidth();ImGui::EndChild();
         }
         ImGui::Separator();
         if(ImGui::Button(Tr("Salvar opcoes"),{160*scale,32*scale})) app::Save();
         ImGui::SameLine();
         if(ImGui::Button(Tr("Voltar ao jogo"),{170*scale,32*scale})) open=false;
+        ImGui::SameLine();
+        if(ImGui::Button(Tr("Restaurar padroes"),{190*scale,32*scale})) ImGui::OpenPopup("###confirm_defaults");
+        if(ImGui::BeginPopupModal((std::string(Tr("Restaurar todos os padroes"))+"###confirm_defaults").c_str(),nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::TextUnformatted(Tr("Todas as opcoes do menu voltam ao padrao e sao salvas."));
+            ImGui::TextUnformatted(Tr("Ficam como estao: idioma do jogo e do menu, mods ligados, perfis e saves."));
+            if(ImGui::Button(Tr("Restaurar tudo"),MenuSize(180,30))) { RestoreAllPages();ImGui::CloseCurrentPopup(); }
+            ImGui::SameLine();
+            if(ImGui::Button(Tr("Cancelar"),MenuSize(140,30))) ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
         ImGui::TextDisabled("%s",Tr("L1/R1: aba | Direcional: navegar | A: entrar/ajustar | B: voltar | L3+R3 ou F1: fechar"));
     }
     ImGui::End();

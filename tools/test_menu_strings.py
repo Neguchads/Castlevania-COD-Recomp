@@ -5,7 +5,7 @@ import menu_strings as strings
 
 class MenuStrings(unittest.TestCase):
     def test_table_covers_menu_source(self):
-        menu = strings.MENU.read_text(encoding="utf-8")
+        menu = strings.menu_source()   # dev_menu.cpp + menu_layout.h (abas)
         others = [p.read_text(encoding="utf-8") for p in strings.OTHER if p.exists()]
         pairs = strings.table(strings.TABLE.read_text(encoding="utf-8"))
         self.assertEqual(strings.problems(menu, others, pairs), [], "rode python tools/menu_strings.py")
