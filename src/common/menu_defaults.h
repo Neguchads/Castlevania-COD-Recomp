@@ -37,7 +37,7 @@ inline SettingDefaults PageDefaults(int page) {
                          {{&enemy_random, false}}, {}};
         case 20: return {{{&drop_rate, 1}, {&item_scale, 1}}, {{&random_drops, false}}, {}};
         case 21: return {{{&crystal_rate, 1}, {&crystal_amount, 1}}, {}, {}};
-        case 2: return {{{&brightness, 0}, {&contrast, 1}, {&saturation, 1}}, {{&show_fps, false}},
+        case 2: return {{{&brightness, 0}, {&contrast, 1}, {&saturation, 1}}, {{&show_fps, false}, {&character_shadow, false}},
                         {{&fps_corner, 1}, {&shader, 0}}};
         case 11: return {{{&camera_distance, 1}, {&camera_height, 0}, {&camera_field, 1}, {&camera_fly_speed, 600},
                           {&camera_yaw, 0}, {&camera_pitch, 0}, {&camera_roll, 0}, {&orbit_smoothing, 8}},

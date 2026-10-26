@@ -99,6 +99,21 @@ int main() {
            !cod_graphics::DepthClip(true,0,true,true,true) ||
            !cod_graphics::DepthClip(true,0,false,false,true) ||
            !cod_graphics::DepthClip(true,0,false,true,false))return 1;
+        // Graficos > Sombra do personagem: desligada, so o volume stencil sai; cenario, HUD e composite seguem
+        // ops como nas capturas: frente pass INCR_WRAP, verso pass DECR, func ALWAYS
+        if(cod_graphics::KeepDraw(false,true,0,false,true,true,0x207,0x8507,0x1E00) ||
+           cod_graphics::KeepDraw(false,true,0,false,true,true,0x207,0x1E03,0x1E00) ||
+           cod_graphics::KeepDraw(false,true,0,false,true,true,0x207,0x1E00,0x8508) ||
+           !cod_graphics::KeepDraw(true,true,0,false,true,true,0x207,0x8507,0x1E00) ||
+           !cod_graphics::KeepDraw(false,false,0,false,true,true,0x207,0x8507,0x1E00) ||
+           !cod_graphics::KeepDraw(false,true,15,false,true,true,0x207,0x8507,0x1E00) ||
+           !cod_graphics::KeepDraw(false,true,0,true,true,true,0x207,0x8507,0x1E00) ||
+           !cod_graphics::KeepDraw(false,true,0,false,false,true,0x207,0x8507,0x1E00) ||
+           !cod_graphics::KeepDraw(false,true,0,false,true,false,0x207,0x8507,0x1E00) ||
+           // mascara stencil sem contagem (REPLACE, ZERO) ou com teste fica
+           !cod_graphics::KeepDraw(false,true,0,false,true,true,0x207,0x1E01,0x1E00) ||
+           !cod_graphics::KeepDraw(false,true,0,false,true,true,0x207,0,0x1E00) ||
+           !cod_graphics::KeepDraw(false,true,0,false,true,true,0x202,0x8507,0x1E00))return 4;
         const auto clipped=Render(true),clamped=Render(cod_graphics::DepthClip(true,0,false,true,true));
         std::printf("D3D12 WARP shadow volume: far-plane clipped=%u, compatible stencil pixels=%u\n",clipped,clamped);
         return clipped==0 && clamped==4096 ? 0:2;

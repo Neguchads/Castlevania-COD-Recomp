@@ -105,7 +105,7 @@ As camadas de inimigos se multiplicam: todos × tipo × sorteio. Tamanho e itens
 
 | Aba | O que tem |
 |---|---|
-| Gráficos | Tela cheia ou janela; resolução; resolução interna; filtro anisotrópico; limite de FPS; vsync; shader de apresentação (Original, Escala de cinza, CRT leve); brilho, contraste e saturação; FPS na tela, com escolha do canto |
+| Gráficos | Tela cheia ou janela; resolução; resolução interna; filtro anisotrópico; limite de FPS; vsync; shader de apresentação (Original, Escala de cinza, CRT leve); brilho, contraste e saturação; FPS na tela, com escolha do canto; sombra do personagem (desligada por padrão) |
 | Áudio | Volume geral; balanço esquerda/direita; sem som (F9); silenciar quando a janela perde o foco |
 | Controles > Controle | Remapear cada botão do jogo (A em cima do botão e aperte o botão físico novo); Layout Xbox e Layout PS2; Trocar A e B; inverter a câmera horizontal do analógico direito (a opção do jogo só inverte a vertical); desligar o atalho L3 + R3 |
 | Controles > Teclado e mouse | Remapear teclas; ligar o teclado; mouse como câmera; inverter o mouse em cada eixo; sensibilidade; restaurar o padrão |
@@ -131,7 +131,7 @@ Os mods nunca alteram os arquivos originais do jogo: substituem só na memória.
 
 ## O que muda em relação ao Xbox original
 
-- **Vídeo:** roda no Windows com Direct3D 12, em qualquer resolução, com resolução interna maior, filtro anisotrópico e FPS na tela. A sombra do personagem foi corrigida (multisample 4X).
+- **Vídeo:** roda no Windows com Direct3D 12, em qualquer resolução, com resolução interna maior, filtro anisotrópico e FPS na tela. A sombra do personagem passou a sair no lugar certo com a correção do multisample 4X, mas ainda aparecia errada em alguns lugares, então vem desligada (Gráficos > Sombra do personagem).
 - **Idioma:** tradução e dublagem em português, com troca de idioma durante o jogo.
 - **Texturas:** pacote 4K e ícones de botão do PS2.
 - **Controles:** teclado e mouse; controles de Xbox, PlayStation e genéricos (SDL3); remapeamento; inversão horizontal da câmera.
@@ -180,7 +180,7 @@ Os mods nunca alteram os arquivos originais do jogo: substituem só na memória.
 
 ### Problemas conhecidos e o que ainda não existe
 
-- **Sombra do personagem:** corrigida para o modo multisample 4X, mas ainda aparece errada em alguns lugares. Envie uma captura F3 quando acontecer.
+- **Sombra do personagem:** desligada por padrão porque ainda aparecia longe do personagem (paredes, pedras). Ligue em Gráficos > Sombra do personagem; se aparecer errada, envie uma captura F3.
 - **Quedas de FPS ocasionais:** em investigação; ligue o registro de desempenho e envie um relato.
 - **Áudio:** só estéreo; os efeitos DSP do Xbox são reproduzidos em parte.
 - **Em pesquisa:** trocar tipos de inimigo, mais inimigos por sala e mover inimigos.

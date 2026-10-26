@@ -221,6 +221,7 @@ void Load(const void* raw) {
     contrast.store(setting("contrast",1,.5f,1.5f));
     saturation.store(setting("saturation",1,0,2));
     show_fps.store(table["show_fps"].value_or(false));
+    character_shadow.store(table["character_shadow"].value_or(false));
     fps_corner.store(std::clamp(table["fps_corner"].value_or(1),0,3));
     sensitivity.store(std::clamp(table["mouse_sensitivity"].value_or(.012f), .001f, .1f));
     shader.store(std::clamp(table["post_shader"].value_or(0), 0, 2));
@@ -312,6 +313,7 @@ void Save(void* raw) {
     table.insert_or_assign("camera_pitch",camera_pitch.load());
     table.insert_or_assign("camera_roll",camera_roll.load());
     table.insert_or_assign("show_fps",show_fps.load());
+    table.insert_or_assign("character_shadow",character_shadow.load());
     table.insert_or_assign("fps_corner",fps_corner.load());
     table.insert_or_assign("mouse_sensitivity", sensitivity.load());
     table.insert_or_assign("post_shader", shader.load());
@@ -868,7 +870,7 @@ void RunIntegrationChecks() {
     altered.insert_or_assign("lament_save",true);altered.insert_or_assign("infinite_mp",true);
     altered.insert_or_assign("controller_map","1,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15");
     altered.insert_or_assign("camera_roll",12.0f);altered.insert_or_assign("show_fps",true);
-    altered.insert_or_assign("hud_enabled",false);
+    altered.insert_or_assign("hud_enabled",false);altered.insert_or_assign("character_shadow",true);
     altered.insert_or_assign("hud_always_visible",true);
     altered.insert_or_assign("hud_scale",.75f);
     altered.insert_or_assign("hud_quick_hide",true);
@@ -885,7 +887,7 @@ void RunIntegrationChecks() {
         !hud_enabled.load() && hud_always_visible.load() && hud_scale.load()==.75f && hud_quick_hide.load() && hud_hide_delay.load()==.5f &&
         camera_mode.load()==3 && camera_distance.load()==1.2f && camera_height.load()==60 && camera_field.load()==1.1f && camera_fly_speed.load()==800 &&
         !minimap_rotating.load() && game_menu_scale.load()==1.0f && ptbr_enabled.load() && orbit_smoothing.load()==12 && pause_with_menu.load() && damage_taken.load()==2 && contrast.load()==1.2f &&
-        ControllerMapping()[0]==1 && ControllerMapping()[1]==0 && camera_roll.load()==12 && show_fps.load() &&
+        ControllerMapping()[0]==1 && ControllerMapping()[1]==0 && camera_roll.load()==12 && show_fps.load() && character_shadow.load() &&
         gold_gain.load()==3 && free_shopping.load() && devil_damage_taken.load()==.5f && enemy_hp.load()==2.5f && enemy_scale.load()==1.5f && lament_save.load() && infinite_mp.load() &&
         enemy_random.load() && enemy_random_hp_max.load()==2 && enemy_elite_chance.load()==100 && enemy_elite_scale.load()==kMaxEnemyScale &&
         drop_rate.load()==3 && crystal_amount.load()==kMaxCrystalAmount && random_drops.load() && item_scale.load()==.5f &&
@@ -898,7 +900,8 @@ void RunIntegrationChecks() {
         roundtrip["invert_stick_x"].value_or(false) && roundtrip["enemy_hp"].value_or(0.0f)==2.5f &&
         roundtrip["enemy_scale"].value_or(0.0f)==1.5f && roundtrip["enemy_random"].value_or(false) &&
         roundtrip["enemy_random_hp_max"].value_or(0.0f)==2 && roundtrip["enemy_elite_chance"].value_or(0.0f)==100 &&
-        roundtrip["drop_rate"].value_or(0.0f)==3 && roundtrip["random_drops"].value_or(false) && roundtrip["item_scale"].value_or(0.0f)==.5f;
+        roundtrip["drop_rate"].value_or(0.0f)==3 && roundtrip["random_drops"].value_or(false) && roundtrip["item_scale"].value_or(0.0f)==.5f &&
+        roundtrip["character_shadow"].value_or(false);
     settings_ok=settings_ok && roundtrip["menu_x"].value_or(0.0f)==123 && roundtrip["menu_opacity"].value_or(0.0f)==.65f;
     settings_ok=settings_ok && !roundtrip["minimap_enabled"].value_or(true) &&
         roundtrip["minimap_scale"].value_or(0.0f)==1.25f && roundtrip["minimap_opacity"].value_or(0.0f)==.6f &&

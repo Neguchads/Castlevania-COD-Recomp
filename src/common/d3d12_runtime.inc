@@ -2667,6 +2667,10 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
         CaptureShaders(s, a, sh, pk);
     }
 
+    // Graficos > Sombra do personagem desligada: o volume stencil fica de fora (a captura F3 ainda o registra)
+    if (!cod_graphics::KeepDraw(dev::character_shadow.load(), k.sten, k.wmask, k.zwrite, k.zen,
+                                k.topo == uint32_t(Topology::Triangles), k.sfunc, k.spass, k.szfail)) return;
+
     // texture views and samplers, viewport and scissor, blend factor and stencil reference
     SetTextureViewsAndSamplers(s, a, stages);
     SetViewportScissor(s, size);

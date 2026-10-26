@@ -22,6 +22,7 @@ inline constexpr MenuSearchEntry kMenuSearchIndex[]{
     {2, "Contraste"},
     {2, "Saturacao"},
     {2, "Restaurar brilho, contraste e saturacao"},
+    {2, "Sombra do personagem"},
     {3, "Audio"},
     {3, "Sem som  [F9]"},
     {3, "Volume geral"},

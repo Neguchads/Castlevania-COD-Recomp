@@ -620,6 +620,8 @@ void Graphics() {
     Slider("Contraste",contrast,.5f,1.5f,"%.2fx");
     Slider("Saturacao",saturation,0,2,"%.2fx");
     if(ImGui::Button(Tr("Restaurar brilho, contraste e saturacao"))) { brightness=0;contrast=1;saturation=1; }
+    Toggle("Sombra do personagem",character_shadow);
+    ImGui::TextDisabled("%s",Tr("Sombra em volume do Xbox. Desligada por padrao: pode aparecer longe do personagem, em paredes e pedras."));
     ImGui::Spacing();
     ImGui::TextWrapped("%s",Tr("Aumentar a resolucao interna e a filtragem melhora a imagem, mas nao cria detalhes novos nas texturas. Packs HD entram pela aba Mods."));
 }
