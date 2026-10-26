@@ -14,6 +14,7 @@ $required = @(
     'dev selftest: godmode absolute off=90 on=100 heal=110 other=90 passed=1',
     'dev selftest: godmode virtual-stack=D0010000 passed=1',
     'dev selftest: HUD hook scale/restore/hide/menu-guard=1 timer=5.0/0.6 fade=0.3',
+    'dev selftest: pet scratch sprite scale/restore/hide=1',
     'dev selftest: camera native matrices/restore=1 freecam/restore=1',
     'dev selftest: orbit native collision=1 hit=1 correctionZ=-52.00 miss=0',
     'dev selftest: orbit player pose native getter/negative height=1',

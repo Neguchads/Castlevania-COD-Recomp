@@ -18,5 +18,15 @@ int main() {
     if(dev::GuestDeadline(INT64_MIN,100,900)!=INT64_MAX) return 8;
     if(!dev::BlockPlayerDamage(true,6,0,-10) || dev::BlockPlayerDamage(false,6,0,-10) ||
        dev::BlockPlayerDamage(true,6,1,-10) || dev::BlockPlayerDamage(true,6,0,10) || dev::BlockPlayerDamage(true,7,0,-10)) return 9;
-    std::puts("Clock: continuidade 1x/2x/0.5x, frequencia, deadlines e overflow passaram");
+    // Pausa do menu dev: o tempo do jogo para e volta sem salto; trocar a velocidade pausado nao o move.
+    dev::ScaledClock paused(0);
+    paused.SetPaused(1000,true);
+    if(paused.Now(1000)!=1000 || paused.Now(9000)!=1000) return 10;
+    paused.SetRate(9000,2);
+    if(paused.Now(12000)!=1000) return 11;
+    paused.SetPaused(12000,false);
+    if(paused.Now(12000)!=1000 || paused.Now(13000)!=3000) return 12;
+    paused.SetPaused(13000,false);
+    if(paused.Now(14000)!=5000) return 13;
+    std::puts("Clock: continuidade 1x/2x/0.5x, frequencia, deadlines, overflow e pausa passaram");
 }

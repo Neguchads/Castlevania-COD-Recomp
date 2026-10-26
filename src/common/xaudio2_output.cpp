@@ -73,7 +73,9 @@ void StartOutput(std::function<void(float*, uint32_t)> render) {
                 continue;
             }
             float* b = &bufs[(n % kSlots) * kFrames * 2];
-                        render(b, kFrames);
+            // pausado pelo menu dev: silencio sem consumir o audio do jogo, que continua de onde parou
+            if (dev::GamePaused()) std::fill(b, b + kFrames * 2, 0.0f);
+            else render(b, kFrames);
             dev::ApplyAudio(b, kFrames);
             if (!reported_signal) {
                 float left_peak = 0, right_peak = 0;

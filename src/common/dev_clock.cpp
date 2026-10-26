@@ -24,6 +24,12 @@ void SetSpeed(float factor) {
     speed.store(float(state.clock.Rate()));
     LOGR("dev: guest speed %.2fx (clock, waits, vblank, audio)", speed.load());
 }
+void PauseClock(bool paused) {
+    auto& state = State();
+    std::lock_guard guard(state.lock);
+    state.clock.SetPaused(HostNow(), paused);
+    LOGR("dev: guest clock %s", paused ? "paused by dev menu" : "resumed");
+}
 int64_t RealWaitNanoseconds(int64_t virtual_ns) {
     const long double value = std::max(0.0L,static_cast<long double>(virtual_ns) / speed.load());
     return value >= static_cast<long double>(INT64_MAX) ? INT64_MAX : int64_t(value);
