@@ -38,6 +38,8 @@ inline std::atomic<float> camera_yaw{0},camera_pitch{0},camera_roll{0};
 // contador de FPS por cima do jogo; canto 0..3 = sup. esq., sup. dir., inf. esq., inf. dir.
 inline std::atomic<bool> show_fps{false};
 inline std::atomic<int> fps_corner{1};
+// sombra stencil do personagem; desligada por padrao porque aparecia longe dele (relatos de 25/10 e 26/10)
+inline std::atomic<bool> character_shadow{false};
 // Diagnostico > Registrar desempenho: as linhas "perf:" do XBE_PERF, so nesta sessao (nao salvo)
 inline std::atomic<bool> perf_log{false};
 // Pesquisa: registra no log os inteiros do inimigo alvo que caem entre quadros (so nesta sessao)

@@ -105,7 +105,7 @@ The enemy layers multiply: all × type × roll. Size and smaller items are visua
 
 | Tab | What it has |
 |---|---|
-| Gráficos | Fullscreen or window; resolution; internal resolution; anisotropic filtering; FPS cap; vsync; presentation shader (Original, grayscale, light CRT); brightness, contrast and saturation; on-screen FPS, with a choice of corner |
+| Gráficos | Fullscreen or window; resolution; internal resolution; anisotropic filtering; FPS cap; vsync; presentation shader (Original, grayscale, light CRT); brightness, contrast and saturation; on-screen FPS, with a choice of corner; character shadow (off by default) |
 | Áudio | Master volume; left/right balance; mute (F9); mute when the window loses focus |
 | Controles > Controle (controller) | Remap each game button (press A on the button, then press the new physical button); Xbox and PS2 layouts; swap A and B; invert the right stick's horizontal camera (the game's own option only inverts the vertical axis); disable the L3 + R3 shortcut |
 | Controles > Teclado e mouse (keyboard and mouse) | Remap keys; enable the keyboard; mouse as camera; invert the mouse on each axis; sensitivity; reset to default |
@@ -131,7 +131,7 @@ Mods never change the original game files: they replace them in memory only. To 
 
 ## What changes from the original Xbox game
 
-- **Video:** runs on Windows with Direct3D 12, at any resolution, with higher internal resolution, anisotropic filtering and on-screen FPS. The character shadow was fixed (4X multisample).
+- **Video:** runs on Windows with Direct3D 12, at any resolution, with higher internal resolution, anisotropic filtering and on-screen FPS. The character shadow drew in the right place after the 4X multisample fix, but it still showed up wrong in some places, so it is off by default (Gráficos > Sombra do personagem).
 - **Language:** Brazilian Portuguese translation and dub, with language switching during play.
 - **Textures:** 4K pack and PS2 button icons.
 - **Controls:** keyboard and mouse; Xbox, PlayStation and generic controllers (SDL3); remapping; horizontal camera inversion.
@@ -180,7 +180,7 @@ Mods never change the original game files: they replace them in memory only. To 
 
 ### Known problems and not available yet
 
-- **Character shadow:** fixed for the 4X multisample mode, but still wrong in some places. Send an F3 capture when it happens.
+- **Character shadow:** off by default because it still showed up away from the character (walls, rocks). Turn it on in Gráficos > Sombra do personagem; if it shows up wrong, send an F3 capture.
 - **Occasional FPS drops:** under investigation; turn on performance logging and send a report.
 - **Audio:** stereo only; Xbox DSP effects are partly reproduced.
 - **Being researched:** swapping enemy types, more enemies per room and moving enemies.
