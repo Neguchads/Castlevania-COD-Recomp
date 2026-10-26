@@ -59,6 +59,27 @@ set_property(TARGET CastlevaniaCOD PROPERTY SOURCES ${COD_HOST_SOURCES})
 set_source_files_properties(src/common/input_extension.cpp PROPERTIES
     INCLUDE_DIRECTORIES "$<TARGET_PROPERTY:SDL3::SDL3-static,INTERFACE_INCLUDE_DIRECTORIES>")
 
+# Icone do exe e da janela: o SDK carrega o recurso ICON 1. A arte e do usuario e fica em assets/icon.ico
+# (fora do git); sem o arquivo, o exe sai com o icone padrao do Windows.
+set(COD_ICON ${CMAKE_CURRENT_SOURCE_DIR}/assets/icon.ico)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${COD_ICON})
+# llvm-rc direto: a linguagem RC do CMake com clang (frontend GNU) pega o rc.exe do Windows SDK e passa -MD/-MF,
+# que ele recusa. O .res entra no link como arquivo; o lld-link aceita.
+get_filename_component(COD_LLVM_BIN ${CMAKE_CXX_COMPILER} DIRECTORY)
+find_program(COD_LLVM_RC NAMES llvm-rc HINTS ${COD_LLVM_BIN})
+if(EXISTS ${COD_ICON} AND COD_LLVM_RC)
+    set(COD_ICON_RC ${CMAKE_CURRENT_BINARY_DIR}/cod_icon.rc)
+    set(COD_ICON_RES ${CMAKE_CURRENT_BINARY_DIR}/cod_icon.res)
+    file(CONFIGURE OUTPUT ${COD_ICON_RC} CONTENT "1 ICON \"${COD_ICON}\"\n")
+    add_custom_command(OUTPUT ${COD_ICON_RES}
+        COMMAND ${COD_LLVM_RC} /no-preprocess /fo ${COD_ICON_RES} ${COD_ICON_RC}
+        DEPENDS ${COD_ICON_RC} ${COD_ICON} VERBATIM)
+    add_custom_target(cod_icon DEPENDS ${COD_ICON_RES})
+    add_dependencies(CastlevaniaCOD cod_icon)
+    target_link_options(CastlevaniaCOD PRIVATE ${COD_ICON_RES})
+    set_property(TARGET CastlevaniaCOD APPEND PROPERTY LINK_DEPENDS ${COD_ICON_RES})
+endif()
+
 
 # A DLL precisa ser relinkada se o EXE mudar; evita recompilação desnecessária no primeiro início.
 set_property(TARGET CastlevaniaCOD_code APPEND PROPERTY LINK_DEPENDS $<TARGET_FILE:CastlevaniaCOD>)

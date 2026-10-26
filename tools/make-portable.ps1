@@ -20,6 +20,11 @@ $assets = Join-Path $Project 'assets'
 foreach ($required in @((Join-Path $release 'CastlevaniaCOD.exe'), (Join-Path $release 'CastlevaniaCOD.dll'), (Join-Path $assets 'default.xbe'))) {
     if (-not (Test-Path $required)) { throw "Falta $required. Rode o build (e confira a pasta assets) antes." }
 }
+# Sem a pasta compiler, o SDK so usa a dll se ela for mais nova que o exe (game_code.cpp, Current); senao tenta recompilar.
+function Test-DllCurrent([string]$folder) {
+    (Get-Item (Join-Path $folder 'CastlevaniaCOD.dll')).LastWriteTime -gt (Get-Item (Join-Path $folder 'CastlevaniaCOD.exe')).LastWriteTime
+}
+if (-not (Test-DllCurrent $release)) { throw 'A dll esta mais velha que o exe no build: rode o build de novo antes.' }
 if (Get-Process -Name 'CastlevaniaCOD' -ErrorAction SilentlyContinue | Where-Object { $_.Path -and $_.Path.StartsWith($Destination) }) {
     throw "O jogo esta aberto a partir de $Destination. Feche antes de atualizar."
 }
@@ -46,6 +51,7 @@ New-Item -ItemType Directory -Force $Destination | Out-Null
 'Copiando exe e dll...'
 & robocopy $release $Destination 'CastlevaniaCOD.exe' 'CastlevaniaCOD.dll' 'CastlevaniaCOD.pdb' 'MODDING.md' 'cheats.example.toml' /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy falhou ($LASTEXITCODE) no exe" }
+if (-not (Test-DllCurrent $Destination)) { throw 'A copia perdeu a data da dll; o jogo tentaria recompilar. Rode de novo.' }
 'Copiando o jogo (assets)...'
 Copy-Tree $assets (Join-Path $Destination 'assets') @('/XF', '*.private.h')
 'Copiando mods (HD4K, PT-BR...)...'
@@ -66,6 +72,9 @@ Saves ficam em hdd\E; opcoes em settings.toml. Nao apague essas duas coisas.
 Pastas: assets = arquivos do jogo, mods = texturas HD e traducao PT-BR.
 Se o Windows reclamar de MSVCP140.dll ou VCRUNTIME140.dll, instale o
 "Microsoft Visual C++ Redistributable 2015-2022 x64".
+Para levar a outro HD ou PC: copie a pasta inteira (o Explorador mantem as datas).
+A dll precisa continuar mais nova que o exe; se o jogo falar em "compiler folder",
+a copia perdeu as datas: copie de novo a partir da pasta original.
 Esta pasta tem os arquivos do seu jogo: nao compartilhe.
 '@
 Set-Content -Path (Join-Path $Destination 'LEIA-ME.txt') -Value $readme -Encoding utf8
