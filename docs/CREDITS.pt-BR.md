@@ -1,5 +1,7 @@
 # Créditos
 
+[English](CREDITS.md) · Português (Brasil)
+
 Este recomp não teria tradução, dublagem nem texturas em alta resolução sem o trabalho
 das pessoas abaixo. O projeto só adapta esse trabalho para a versão Xbox; a autoria é
 delas. Se você usa o PT-BR ou o pacote HD, visite as páginas originais e apoie os autores.
@@ -64,7 +66,7 @@ opcionais. Ele também fez o pacote 4K de *Lament of Innocence*.
 
 - Converteu textos, imagens e áudio do patch PS2 para os formatos da versão Xbox, por
   scripts que rodam sobre as ISOs do próprio usuário (`tools/ps2_*.py`). Veja
-  [TRADUCAO.md](TRADUCAO.md).
+  [TRANSLATION.pt-BR.md](TRANSLATION.pt-BR.md).
 - Os arquivos do jogo, da tradução, da dublagem e do pacote HD não são distribuídos
   neste repositório.
 

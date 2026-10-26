@@ -1,5 +1,7 @@
 # Tradução PT-BR
 
+[English](TRANSLATION.md) · Português (Brasil)
+
 Escolha no próprio jogo: **Opções → Idioma → Português (Brasil)** e confirme com **Sim**.
 As opções são English, Japanese e Português (Brasil). A mesma tela fica na pausa
 (Opções → Idioma) durante a partida.

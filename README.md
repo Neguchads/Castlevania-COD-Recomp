@@ -1,79 +1,81 @@
 # Castlevania: Curse of Darkness Recomp
 
-Port experimental de *Castlevania: Curse of Darkness* (Xbox, 2005) para Windows, por recompilação estática. O código x86 do XBE original vira C++ nativo, e um runtime próprio substitui os serviços do Xbox: Direct3D 8 sobre Direct3D 12, áudio em XAudio2, controle por SDL3 e arquivos no disco local.
+English · [Português (Brasil)](README.pt-BR.md)
 
-## Problema que resolve
+Experimental Windows port of *Castlevania: Curse of Darkness* (Xbox, 2005), made by static recompilation. The x86 code of the original XBE becomes native C++, and a custom runtime replaces the Xbox services: Direct3D 8 on top of Direct3D 12, XAudio2 audio, SDL3 controllers and files on the local disk.
 
-O jogo só roda em Xbox original ou em emulador. Emulação de Xbox é pesada e ainda tem falhas gráficas neste título. A versão PS2 tem tradução e dublagem em português feitas por fãs e um pacote de texturas 4K, mas a versão Xbox, com sombras e texturas melhores, não tinha nada disso. Este projeto:
+## The problem it solves
 
-- roda o jogo nativo no Windows, em qualquer resolução, sem emulador;
-- traz para o Xbox a tradução PT-BR, a dublagem e o pacote 4K do PS2, convertidos a partir das cópias do próprio usuário;
-- adiciona um menu de desenvolvimento com opções que o original não tem (câmera livre, dificuldade, cheats, mapeamento de controle, relato de bugs).
+The game only runs on an original Xbox or in an emulator. Xbox emulation is heavy and still has graphics bugs in this title. The PS2 version has a fan-made Brazilian Portuguese translation and dub, plus a 4K texture pack, but the Xbox version, which has better shadows and textures, had none of that. This project:
 
-## Tecnologias e por quê
+- runs the game natively on Windows, at any resolution, without an emulator;
+- brings the PS2 Brazilian Portuguese translation, dub and 4K pack to the Xbox version, converted from the user's own copies;
+- adds a developer menu with options the original does not have (free camera, difficulty, cheats, controller remapping, bug reports).
 
-| Peça | Por quê |
+## Technologies and why
+
+| Piece | Why |
 |---|---|
-| [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp) (recompilação estática x86) | Gera C++ do XBE uma vez; o jogo roda em velocidade nativa, sem interpretar instruções. |
-| C++20 + Clang + CMake/Ninja | É o toolchain exigido pelo SDK de recompilação; o mesmo compilador serve para o código gerado e para o runtime. |
-| Direct3D 12 | Traduz o pipeline fixo e os shaders do D3D8 do Xbox para uma API atual. No Linux, o Proton roda o D3D12 sobre Vulkan. |
-| Dear ImGui | Menu dev dentro do jogo, navegável por controle e teclado, sem dependência de janela externa. |
-| SDL3 | Controles de Xbox, PlayStation e genéricos com um código só. |
-| Python (Pillow, NumPy) | Ferramentas offline: conversão de texturas e áudio do PS2, pareamento do pacote 4K com as texturas do Xbox. |
-| texconv (DirectXTex) | Comprime as texturas HD em BC7 com mipmaps, que a placa de vídeo lê direto. |
+| [XboxXBERecomp](https://github.com/TGP482/XboxXBERecomp) (x86 static recompilation) | Generates C++ from the XBE once; the game runs at native speed, without interpreting instructions. |
+| C++20 + Clang + CMake/Ninja | The toolchain required by the recompilation SDK; the same compiler builds the generated code and the runtime. |
+| Direct3D 12 | Translates the Xbox D3D8 fixed pipeline and shaders to a current API. On Linux, Proton runs D3D12 on Vulkan. |
+| Dear ImGui | In-game developer menu, usable with a controller or keyboard, with no external window. |
+| SDL3 | Xbox, PlayStation and generic controllers with one code path. |
+| Python (Pillow, NumPy) | Offline tools: conversion of PS2 textures and audio, matching the 4K pack to the Xbox textures. |
+| texconv (DirectXTex) | Compresses the HD textures to BC7 with mipmaps, which the GPU reads directly. |
 
-## Destaques técnicos
+## Technical highlights
 
-- **Hooks em funções recompiladas:** cada função do jogo pode ser substituída mantendo a original. Godmode, dificuldade e economia (ouro/EXP) passam pelo setter de atributos do próprio jogo, e o bônus do save de *Lament of Innocence* (estátua Moai) é liberado respondendo uma flag no leitor de flags.
-- **Sombra corrigida:** o volume de sombra usa o modo multisample 4X do XDK, em que o hardware expande uma grade lógica 2×2. O port ignorava isso e desenhava a sombra num quarto da tela. Veja `src/common/multisample_rules.h`.
-- **Texturas HD sem queda de FPS:** o hash da textura é guardado por quadro (antes eram 4,6 ms por quadro medidos) e o pacote é indexado uma vez, sem consultar o disco na thread de render.
-- **Pacote 4K do PS2 no Xbox:** `tools/hd_pack_match.py` compara cada PNG do pacote com as texturas do Xbox por assinatura de cor e aceita só pares com folga para o segundo colocado. Texturas quase iguais recebem só o detalhe fino do 4K. São 2739 texturas pareadas.
-- **Testes:** regras puras (dano, economia, controle, navegação do menu, multisample, índice de texturas) têm testes C++, as ferramentas têm testes Python, e as funções do jogo são exercitadas numa memória isolada no autoteste do runtime.
+- **Hooks on recompiled functions:** any game function can be replaced while keeping the original callable. Godmode, difficulty and economy (gold/EXP) go through the game's own attribute setter, and the *Lament of Innocence* save bonus (Moai statue) is unlocked by answering a flag in the flag reader.
+- **Shadow fix:** the shadow volume uses the XDK 4X multisample mode, where the hardware expands a 2×2 logical grid. The port ignored this and drew the shadow in a quarter of the screen. See `src/common/multisample_rules.h`.
+- **HD textures without FPS drops:** the texture hash is cached per frame (it cost 4.6 ms per frame, measured) and the pack is indexed once, without disk lookups on the render thread.
+- **PS2 4K pack on Xbox:** `tools/hd_pack_match.py` compares each PNG in the pack with the Xbox textures by color signature and only accepts pairs with a clear margin over the runner-up. Near-identical textures receive only the fine 4K detail. 2739 textures are matched.
+- **Tests:** pure rules (damage, economy, controller, menu navigation, multisample, texture index, enemy editor, drops, menu search) have C++ tests, the tools have Python tests, and game functions are exercised in isolated memory by the runtime self-test.
 
-## Requisitos de PC
+## PC requirements
 
-| | Mínimo | Testado em |
+| | Minimum | Tested on |
 |---|---|---|
-| Sistema | Windows 10 ou 11, 64 bits | Windows 11 Pro |
-| Processador | x86-64 com SSE4.2 e POPCNT (`-march=x86-64-v2`) | Intel Core i5-10400F |
-| Placa de vídeo | Direct3D 12, nível 11_0 | NVIDIA GeForce RTX 3060, 12 GB |
-| Memória | Não medida | 32 GB |
-| Disco | 6,6 GB com HD4K e PT-BR; cerca de 3,3 GB sem o HD4K | SSD |
-| Bibliotecas | Visual C++ Redistributable 2015–2022 x64 | — |
+| OS | Windows 10 or 11, 64-bit | Windows 11 Pro |
+| CPU | x86-64 with SSE4.2 and POPCNT (`-march=x86-64-v2`) | Intel Core i5-10400F |
+| GPU | Direct3D 12, feature level 11_0 | NVIDIA GeForce RTX 3060, 12 GB |
+| RAM | Not measured | 32 GB |
+| Disk | 6.6 GB with HD4K and PT-BR; about 3.3 GB without HD4K | SSD |
+| Libraries | Visual C++ Redistributable 2015–2022 x64 | — |
 
-Na máquina de teste o jogo roda em 4K, com resolução interna de 200% e 60 FPS. O mínimo vem do que o código exige; não houve teste em PC mais fraco.
+On the test machine the game runs at 4K with 200% internal resolution and 60 FPS. The minimum comes from what the code requires; it was not tested on a weaker PC.
 
-## Guia do jogador
+## Player guide
 
-[docs/GUIA.md](docs/GUIA.md) explica atalhos, cada aba e opção do menu, os mods incluídos, os cheats, a pasta pronta para jogar, os saves e o que muda em relação ao Xbox original.
+[docs/GUIDE.md](docs/GUIDE.md) covers hotkeys, every tab and option of the tools menu, the bundled mods, the cheats, the ready-to-play folder, saves and what changes compared to the original Xbox game.
 
-## Como instalar e rodar
+## Install and run
 
-Requisitos para compilar: Windows 10/11, Visual Studio 2022 com "Desenvolvimento para desktop com C++" e "C++ Clang tools", Git, Python 3.12, e sua própria cópia de *Curse of Darkness* para Xbox (USA).
+Build requirements: Windows 10/11, Visual Studio 2022 with "Desktop development with C++" and "C++ Clang tools", Git, Python 3.12, and your own copy of *Curse of Darkness* for Xbox (USA).
 
-1. Coloque `default.xbe` e as pastas do jogo em `assets/`.
-2. Mantenha o checkout do `XboxXBERecomp` ao lado deste projeto. O fallback do SDK fica fixado no commit `e0de3e44d10443c1c9aad512f36baf133cdd4a60`.
-3. Rode `build.bat`. O primeiro build recompila o XBE (30 a 90 minutos).
-4. Abra `out\build\release\CastlevaniaCOD.exe`. **F1** ou **L3 + R3** abre o menu dev.
-5. Opcional: `.\tools\make-portable.ps1` monta uma pasta pronta para jogar, "Castlevania Curse of Darkness Recomp", na área de trabalho, com exe, dll, `assets`, mods, saves e opções. Ela funciona em qualquer disco. Ao rodar de novo, o script atualiza o jogo e os mods, mas não sobrescreve os saves nem as opções da pasta pronta. `-Destination` escolhe outro lugar e `-DryRun` só mostra o tamanho. A pasta precisa só do Visual C++ Redistributable 2015–2022 x64 e de uma placa com DirectX 12. Copie a pasta inteira e mantenha as datas dos arquivos: sem a pasta `compiler`, o jogo só usa a dll se ela for mais nova que o exe.
-6. Opcional: um `assets/icon.ico` seu vira o ícone do exe e da janela no próximo build (recurso `ICON 1`, compilado com `llvm-rc`). O arquivo fica fora do git.
+1. Put `default.xbe` and the game folders in `assets/`.
+2. Keep the `XboxXBERecomp` checkout next to this project. The SDK fallback is pinned to commit `e0de3e44d10443c1c9aad512f36baf133cdd4a60`.
+3. Run `build.bat`. The first build recompiles the XBE (30 to 90 minutes).
+4. Open `out\build\release\CastlevaniaCOD.exe`. **F1** or **L3 + R3** opens the tools menu.
+5. Optional: `.\tools\make-portable.ps1` builds a ready-to-play folder, "Castlevania Curse of Darkness Recomp", on the desktop, with the exe, dll, `assets`, mods, saves and settings. It works from any disk. When run again, the script updates the game and the mods but does not overwrite the folder's saves or settings. `-Destination` picks another place and `-DryRun` only shows the size. The folder needs only the Visual C++ Redistributable 2015–2022 x64 and a DirectX 12 GPU. Copy the whole folder and keep the file dates: without the `compiler` folder, the game only uses the dll if it is newer than the exe.
+6. Optional: your own `assets/icon.ico` becomes the exe and window icon on the next build (resource `ICON 1`, compiled with `llvm-rc`). The file stays out of git.
 
-Antes de um commit ou PR, rode `tools\verify.cmd`: build, testes C++ e Python (`tools\test-local.cmd`) e varredura de segredos com gitleaks.
+Before a commit or PR, run `tools\verify.cmd`: build, C++ and Python tests (`tools\test-local.cmd`) and a gitleaks secret scan.
 
-Tradução, dublagem e o pacote 4K são gerados a partir das cópias do usuário; veja [TRADUCAO.md](docs/TRADUCAO.md) e [MODDING.md](MODDING.md).
+The translation, dub and 4K pack are generated from the user's own copies; see [TRANSLATION.md](docs/TRANSLATION.md) and [MODDING.md](MODDING.md).
 
-## Demonstração
+## Demo
 
-Capturas e vídeo ainda vão entrar aqui. No jogo: menu dev (F1), câmera livre e orbital, idioma English/Português na pausa, pacote HD4K e PS2-Botoes na aba Mods.
+Screenshots and video are still to come. In game: tools menu (F1), free and orbital cameras, English/Portuguese language in the pause menu, HD4K pack and PS2-Botoes in the Mods tab.
 
-## Não inclui
+## Not included
 
-Este repositório não distribui ISO/XBE, arquivos extraídos, o código C++ gerado do jogo, a DLL recompilada, saves, capturas, o catálogo de textos PT-BR nem os arquivos da tradução, da dublagem ou do pacote 4K. Tudo isso é gerado localmente a partir das cópias do usuário.
+This repository does not distribute ISO/XBE files, extracted files, the game's generated C++ code, the recompiled DLL, saves, captures, the PT-BR text catalog, or the translation, dub or 4K pack files. All of that is generated locally from the user's own copies.
 
-## Créditos e estado
+## Credits and status
 
-A tradução e a dublagem PT-BR são de HNNEWGAMES, STR Brasil, MATTH dubs e Os Aristocratas do Giz Vermelho. O pacote de texturas 4K é de PlatinumMimic. Autores, funções e links estão em [CREDITOS.md](docs/CREDITOS.md).
+The Brazilian Portuguese translation and dub are by HNNEWGAMES, STR Brasil, MATTH dubs and Os Aristocratas do Giz Vermelho. The 4K texture pack is by PlatinumMimic. Authors, roles and links are in [CREDITS.md](docs/CREDITS.md).
 
-O port é experimental e a campanha inteira não foi validada. A vida dos inimigos (para a dificuldade completa) segue em pesquisa, com uma sonda no menu dev que registra os campos do alvo que caem a cada golpe. Quatro mapas sem teleporte ainda não têm nome.
+The port is experimental and the full campaign has not been validated. Enemy HP works (validated in game); enemy and item size was fixed but still needs confirmation in game. Four maps without teleporters still have no name.
 
-Ainda não foi escolhida uma licença para as alterações deste projeto: o código fica visível, mas isso não concede permissão de reutilização. Partes do runtime derivadas do XboxXBERecomp seguem o aviso MIT em [LICENSES/XboxXBERecomp-MIT.txt](LICENSES/XboxXBERecomp-MIT.txt); o SDK e as demais dependências mantêm suas licenças próprias.
+No license has been chosen yet for this project's changes: the code is visible, but that does not grant permission to reuse it. Runtime parts derived from XboxXBERecomp follow the MIT notice in [LICENSES/XboxXBERecomp-MIT.txt](LICENSES/XboxXBERecomp-MIT.txt); the SDK and the other dependencies keep their own licenses.

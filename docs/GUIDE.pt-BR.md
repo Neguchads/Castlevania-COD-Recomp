@@ -1,6 +1,8 @@
 # Guia do jogador: Castlevania: Curse of Darkness Recomp
 
-Este guia explica como instalar, jogar e configurar tudo o que o port oferece. A parte técnica de mods (formato dos arquivos, packs de textura, `cheats.toml`) fica em [MODDING.md](../MODDING.md).
+[English](GUIDE.md) · Português (Brasil)
+
+Este guia explica como instalar, jogar e configurar tudo o que o port oferece. A parte técnica de mods (formato dos arquivos, packs de textura, `cheats.toml`) fica em [MODDING.pt-BR.md](../MODDING.pt-BR.md).
 
 ## Requisitos de PC
 
@@ -32,7 +34,7 @@ Ele cria "Castlevania Curse of Darkness Recomp" na área de trabalho, com o jogo
 - **Começar do zero:** apague a pasta do save em `hdd\E\UDATA\4b4e002d` (a que contém `C2Save.dat`).
 - **Ícone:** um `assets\icon.ico` seu vira o ícone do exe e da janela no próximo build.
 
-**Pelo projeto (desenvolvimento):** veja "Como instalar e rodar" no [README](../README.md). O exe fica em `out\build\release`.
+**Pelo projeto (desenvolvimento):** veja "Como instalar e rodar" no [README](../README.pt-BR.md). O exe fica em `out\build\release`.
 
 A pasta tem os arquivos do seu jogo. Não compartilhe.
 
@@ -123,7 +125,7 @@ As camadas de inimigos se multiplicam: todos × tipo × sorteio. Tamanho e itens
 | PS2-Botoes | Ícones ✕ ○ □ △ L1 L2 R1 R2 no lugar dos botões do Xbox | Aba Mods; para os gatilhos, use também Controles > Layout PS2 |
 | Editor | Ajustes de vida e tamanho por tipo de inimigo | Jogabilidade > Inimigos: por tipo > "Aplicar edições" |
 
-Os mods nunca alteram os arquivos originais do jogo: substituem só na memória. Para criar o seu, veja [MODDING.md](../MODDING.md). Os créditos dos materiais de terceiros estão em [CREDITOS.md](CREDITOS.md).
+Os mods nunca alteram os arquivos originais do jogo: substituem só na memória. Para criar o seu, veja [MODDING.pt-BR.md](../MODDING.pt-BR.md). Os créditos dos materiais de terceiros estão em [CREDITS.pt-BR.md](CREDITS.pt-BR.md).
 
 ## O que muda em relação ao Xbox original
 
