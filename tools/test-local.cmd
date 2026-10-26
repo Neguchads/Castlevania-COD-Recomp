@@ -71,6 +71,10 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 .local\test_multisample_rules.exe
 if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_area_names.cpp -o .local\test_area_names.exe
+if errorlevel 1 exit /b 1
+.local\test_area_names.exe
+if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_enemy_probe.cpp -o .local\test_enemy_probe.exe
 if errorlevel 1 exit /b 1
 .local\test_enemy_probe.exe

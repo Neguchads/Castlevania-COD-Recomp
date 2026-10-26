@@ -12,6 +12,7 @@
 #include "app/app.h"
 #include "core/log.h"
 #include "kernel/kernel.h"
+#include "area_names.h"
 #include "dev_runtime.h"
 #include "menu_input.h"
 #include "menu_nav.h"
@@ -230,8 +231,9 @@ void Diagnostics(double fps) {
     if(kernel::g_base) {
         const auto stage=static_cast<int8_t>(kernel::g_base[0xB234F4]);
         const auto room=static_cast<int8_t>(kernel::g_base[0xB234F5]);
-        ImGui::TextColored(gold,"Mapa ID %d    Sala ID %d",int(stage),int(room));
-        ImGui::TextColored(muted_text,"IDs internos do COD; nomes das areas ainda em identificacao.");
+        const char* area=AreaName(stage);
+        ImGui::TextColored(gold,"%s    Mapa ID %d    Sala ID %d",area ? area : "Area sem nome",int(stage),int(room));
+        ImGui::TextColored(muted_text,"Nomes vindos dos teleportes do jogo; mapas sem teleporte mostram so o ID.");
     }
     Toggle("Registrar desempenho no log (1 vez por segundo)",perf_log);
     ImGui::TextColored(muted_text,"Ligue, jogue o trecho que trava por 1 minuto e salve um relato: o log vai junto. So vale nesta sessao.");
@@ -757,8 +759,11 @@ void Draw(double fps) {
         char status[64];std::snprintf(status,sizeof(status),"%.0f FPS  |  %.2fx",fps,speed.load());
         ImGui::SameLine(std::max(ImGui::GetCursorPosX(),size.x-ImGui::CalcTextSize(status).x-24*scale));
         ImGui::TextColored(muted_text,"%s",status);
-        if(kernel::g_base) ImGui::TextColored(muted_text,"Mapa %d  /  Sala %d",
-            int(static_cast<int8_t>(kernel::g_base[0xB234F4])),int(static_cast<int8_t>(kernel::g_base[0xB234F5])));
+        if(kernel::g_base) {
+            const int stage=static_cast<int8_t>(kernel::g_base[0xB234F4]),room=static_cast<int8_t>(kernel::g_base[0xB234F5]);
+            if(const char* area=AreaName(stage)) ImGui::TextColored(muted_text,"%s  /  Mapa %d  /  Sala %d",area,stage,room);
+            else ImGui::TextColored(muted_text,"Mapa %d  /  Sala %d",stage,room);
+        }
         ImGui::Separator();
         const float footer=80*scale;
         constexpr int tab_count=int(std::size(kTabs));
