@@ -2,7 +2,7 @@
 
 ## Personalização do painel
 
-Oito abas no topo: Jogabilidade (jogo e minimapa, dificuldade, HUD e pets, câmera, saves), Gráficos, Áudio, Controles, Mods, Cheats, Suporte (relatar bug, diagnóstico) e Menu (aparência, perfis). L1/R1 ou clique trocam de aba. O direcional escolhe um título na coluna esquerda; A entra nas opções dele. Numa barra, A entra no ajuste: direcional ou analógico esquerdo arrasta, B sai do ajuste. B volta das opções para os títulos e nunca fecha o painel; só **L3 + R3** ou **F1** fecham. No teclado: setas, Enter e Esc fazem o mesmo. Com o painel aberto o jogo continua rodando: os analógicos andam e giram a câmera (também na Livre e na Orbital) e os botões ficam com o painel; enquanto uma barra é ajustada, o analógico esquerdo só mexe a barra. Para pausar tudo (jogo, relógio, vblank e som), ligue "Pausar o jogo com o menu aberto" em Menu > Aparência.
+O guia do jogador, com cada aba e opção, está em [docs/GUIA.md](docs/GUIA.md). Sete abas no topo: Jogabilidade (jogo e minimapa, dificuldade, inimigos, drops e itens, cheats, HUD e pets, câmera, saves), Gráficos, Áudio, Controles, Mods, Suporte (relatar bug, diagnóstico) e Menu (aparência, perfis). O campo com a lupa, no topo, busca qualquer opção pelo nome: Ctrl+F no teclado ou Y no controle, que abre um teclado na tela. L1/R1 ou clique trocam de aba. O direcional escolhe um título na coluna esquerda; A entra nas opções dele. Numa barra, A entra no ajuste: direcional ou analógico esquerdo arrasta, B sai do ajuste. B volta das opções para os títulos e nunca fecha o painel; só **L3 + R3** ou **F1** fecham. No teclado: setas, Enter e Esc fazem o mesmo. Com o painel aberto o jogo continua rodando: os analógicos andam e giram a câmera (também na Livre e na Orbital) e os botões ficam com o painel; enquanto uma barra é ajustada, o analógico esquerdo só mexe a barra. Para pausar tudo (jogo, relógio, vblank e som), ligue "Pausar o jogo com o menu aberto" em Menu > Aparência.
 
 Idioma: Jogabilidade > Jogo e minimapa > Idioma do jogo troca entre English e Português (Brasil). Textos mudam na hora; imagens e vozes já carregadas, ao reiniciar. Japonês continua em Opções > Idioma no jogo.
 
@@ -24,7 +24,7 @@ Mouse horizontal/vertical têm inversão separada. O padrão foi invertido em re
 
 Jogabilidade > Inimigos: todos > "Vida dos inimigos" (0,5x a 5x, chave `enemy_hp`) multiplica a vida máxima calculada pelo jogo para cada tipo de inimigo. Vale para inimigos que aparecem depois da mudança; troque de sala para ver.
 
-Jogabilidade > Inimigos: todos > "Tamanho dos inimigos" (0,5x a 3x, chave `enemy_scale`) muda o tamanho de todos; o ajuste por tipo multiplica por cima. Jogabilidade > Inimigos: por tipo ajusta vida e tamanho por tipo de inimigo. Os ajustes ficam em `mods/Editor/enemies.toml` (`[enemy.N]` com `name`, `hp` de 0,5 a 5 e `scale` de 0,5 a 3) e só valem com o mod Editor ligado; nenhum arquivo do jogo muda. O tamanho é só visual: a área de acerto continua a original. Em 26/10 o tamanho ainda não aparece na tela (em pesquisa); a vida funciona.
+Jogabilidade > Inimigos: todos > "Tamanho dos inimigos" (0,5x a 3x, chave `enemy_scale`) muda o tamanho de todos; o ajuste por tipo multiplica por cima. Jogabilidade > Inimigos: por tipo ajusta vida e tamanho por tipo de inimigo. Os ajustes ficam em `mods/Editor/enemies.toml` (`[enemy.N]` com `name`, `hp` de 0,5 a 5 e `scale` de 0,5 a 3) e só valem com o mod Editor ligado; nenhum arquivo do jogo muda. O tamanho é só visual: a área de acerto continua a original. O jogo reescala o inimigo depois que ele aparece; desde 26/10 o port reaplica o fator nessa reescala. Essa correção ainda não foi confirmada no jogo. A vida funciona.
 
 Jogabilidade > Inimigos: aleatório sorteia tamanho e vida de cada inimigo ao aparecer (`enemy_random`, faixas `enemy_random_scale_min/max` e `enemy_random_hp_min/max`). A chance de elite (`enemy_elite_chance`, 0 a 100) multiplica por cima com `enemy_elite_scale` e `enemy_elite_hp`. As camadas se multiplicam (todos x tipo x sorteio), com limite final de 0,5x a 3x no tamanho e 0,5x a 5x na vida. Os botões Original, Variados, Elites, Gigantes e Caotico preenchem tudo de uma vez. Trocar um tipo de inimigo por outro ainda está em pesquisa.
 
@@ -124,7 +124,7 @@ Filtro anisotrópico e resolução interna estão em Gráficos. Eles melhoram a 
 
 ## Cheats de Xbox
 
-**Godmode** está pronto nas abas Desenvolvimento e Cheats. Ele protege a vida do personagem principal, bloqueando deltas negativos na rotina original de HP desta versão Xbox USA. A cura e os outros atores continuam funcionando. O programa confere a assinatura da rotina antes de habilitar a opção. Godmode começa desligado a cada execução e mostra quantos danos bloqueou.
+**Godmode** está em Jogabilidade > Cheats. Ele protege a vida do personagem principal, bloqueando deltas negativos na rotina original de HP desta versão Xbox USA. A cura e os outros atores continuam funcionando. O programa confere a assinatura da rotina antes de habilitar a opção. Godmode começa desligado a cada execução e mostra quantos danos bloqueou.
 
 A implementação consulta o mapa de IDs do jogo para proteger o slot do jogador. O ID lógico pode ser 0 ou 1; não é a posição física na lista. O teste usa as rotinas originais de construção desse mapa e de aplicação de dano em uma arena separada: dano normal 100→90, Godmode 100→100, cura 100→110 e outro ator 100→90, inclusive quando o ID 0 pertence a outro slot. Não remove animações de impacto nem revive personagem já morto. Mortes comandadas por scripts ou outros caminhos não foram comprovadas em gameplay.
 
@@ -136,7 +136,7 @@ Cheats começam desligados. Ativados, repetem a escrita a cada quadro. Ao deslig
 
 ## Velocidade e limites
 
-**Speedhack**, em Desenvolvimento e Cheats, varia de 0,5× a 2×. Agora escala RDTSC/QPC, tempo do sistema Xbox, esperas, timers, VBlank, apresentação e consumo das amostras de áudio. A troca de velocidade mantém o relógio contínuo. Vsync é temporariamente suspenso fora de 1× e a preferência salva volta a valer em 1×.
+**Speedhack**, em Jogabilidade > Cheats, varia de 0,5× a 2×. Agora escala RDTSC/QPC, tempo do sistema Xbox, esperas, timers, VBlank, apresentação e consumo das amostras de áudio. A troca de velocidade mantém o relógio contínuo. Vsync é temporariamente suspenso fora de 1× e a preferência salva volta a valer em 1×.
 
 O som muda de tom junto com a velocidade; não há preservação de pitch. A saída XAudio2 permanece estéreo 48 kHz. O jogo sempre inicia em 1×. Use Normal para restaurar.
 

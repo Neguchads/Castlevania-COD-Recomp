@@ -52,6 +52,8 @@ New-Item -ItemType Directory -Force $Destination | Out-Null
 'Copiando exe e dll...'
 & robocopy $release $Destination 'CastlevaniaCOD.exe' 'CastlevaniaCOD.dll' 'CastlevaniaCOD.pdb' 'MODDING.md' 'cheats.example.toml' /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy falhou ($LASTEXITCODE) no exe" }
+$guide = Join-Path $Project 'docs\GUIA.md'
+if (Test-Path $guide) { Copy-Item $guide (Join-Path $Destination 'GUIA.md') }
 if (-not (Test-DllCurrent $Destination)) { throw 'A copia perdeu a data da dll; o jogo tentaria recompilar. Rode de novo.' }
 'Copiando o jogo (assets)...'
 Copy-Tree $assets (Join-Path $Destination 'assets') @('/XF', '*.private.h')
@@ -74,6 +76,7 @@ $readme = @'
 Castlevania: Curse of Darkness Recomp
 Para jogar: clique duas vezes em CastlevaniaCOD.exe.
 Menu de ferramentas: L3 + R3 no controle ou F1 no teclado.
+Guia completo (atalhos, opcoes, mods, cheats): GUIA.md, abre no Bloco de Notas.
 Saves ficam em hdd\E\UDATA; opcoes em settings.toml. Para comecar do zero, apague a pasta
 do save dentro de hdd\E\UDATA\4b4e002d (a que tem C2Save.dat).
 Pastas: assets = arquivos do jogo, mods = texturas HD e traducao PT-BR.

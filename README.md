@@ -30,9 +30,26 @@ O jogo só roda em Xbox original ou em emulador. Emulação de Xbox é pesada e 
 - **Pacote 4K do PS2 no Xbox:** `tools/hd_pack_match.py` compara cada PNG do pacote com as texturas do Xbox por assinatura de cor e aceita só pares com folga para o segundo colocado. Texturas quase iguais recebem só o detalhe fino do 4K. São 2739 texturas pareadas.
 - **Testes:** regras puras (dano, economia, controle, navegação do menu, multisample, índice de texturas) têm testes C++, as ferramentas têm testes Python, e as funções do jogo são exercitadas numa memória isolada no autoteste do runtime.
 
+## Requisitos de PC
+
+| | Mínimo | Testado em |
+|---|---|---|
+| Sistema | Windows 10 ou 11, 64 bits | Windows 11 Pro |
+| Processador | x86-64 com SSE4.2 e POPCNT (`-march=x86-64-v2`) | Intel Core i5-10400F |
+| Placa de vídeo | Direct3D 12, nível 11_0 | NVIDIA GeForce RTX 3060, 12 GB |
+| Memória | Não medida | 32 GB |
+| Disco | 6,6 GB com HD4K e PT-BR; cerca de 3,3 GB sem o HD4K | SSD |
+| Bibliotecas | Visual C++ Redistributable 2015–2022 x64 | — |
+
+Na máquina de teste o jogo roda em 4K, com resolução interna de 200% e 60 FPS. O mínimo vem do que o código exige; não houve teste em PC mais fraco.
+
+## Guia do jogador
+
+[docs/GUIA.md](docs/GUIA.md) explica atalhos, cada aba e opção do menu, os mods incluídos, os cheats, a pasta pronta para jogar, os saves e o que muda em relação ao Xbox original.
+
 ## Como instalar e rodar
 
-Requisitos: Windows 10/11, Visual Studio 2022 com "Desenvolvimento para desktop com C++" e "C++ Clang tools", Git, Python 3.12, e sua própria cópia de *Curse of Darkness* para Xbox (USA).
+Requisitos para compilar: Windows 10/11, Visual Studio 2022 com "Desenvolvimento para desktop com C++" e "C++ Clang tools", Git, Python 3.12, e sua própria cópia de *Curse of Darkness* para Xbox (USA).
 
 1. Coloque `default.xbe` e as pastas do jogo em `assets/`.
 2. Mantenha o checkout do `XboxXBERecomp` ao lado deste projeto. O fallback do SDK fica fixado no commit `e0de3e44d10443c1c9aad512f36baf133cdd4a60`.
