@@ -33,7 +33,8 @@ constexpr MenuTabEntry kTabs[]{
     {"Graficos",{{"Graficos",2}},1},
     {"Audio",{{"Audio",3}},1},
     {"Controles",{{"Controle",15},{"Teclado e mouse",4}},2},
-    {"Mods",{{"Mods e texturas",5},{"Editor de inimigos",17}},2},
+    {"Inimigos",{{"Todos os inimigos",18},{"Aleatorio",19},{"Por tipo",17}},3},
+    {"Mods",{{"Mods e texturas",5}},1},
     {"Cheats",{{"Cheats",6}},1},
     {"Suporte",{{"Relatar bug",1},{"Capturas salvas",13},{"Logs e travamentos",14},{"Diagnostico",12}},4},
     {"Menu",{{"Aparencia",7},{"Perfis",9}},2}};
@@ -188,10 +189,61 @@ void DifficultyPage() {
     Slider("Dano recebido pelo jogador",damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     Slider("Dano recebido pelo Innocent Devil",devil_damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     ImGui::TextWrapped("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto.");
+    ImGui::TextColored(muted_text,"Vida, tamanho, sorteio e elites dos inimigos: aba Inimigos.");
+}
+// Combinacoes prontas da aba Inimigos: global, sorteio por inimigo e elite juntos.
+struct EnemyPreset {const char* name;float hp,scale;bool random;float scale_min,scale_max,hp_min,hp_max,elite;};
+constexpr EnemyPreset kEnemyPresets[]{
+    {"Original",1,1,false,.8f,1.3f,1,1.5f,0},
+    {"Variados",1,1,true,.8f,1.3f,1,1.5f,0},
+    {"Elites",1,1,true,1,1,1,1,15},
+    {"Gigantes",3,2,false,.8f,1.3f,1,1.5f,0},
+    {"Caotico",1,1,true,.5f,2.5f,.5f,3,10}};
+bool PresetActive(const EnemyPreset& p) {
+    if(enemy_hp.load()!=p.hp || enemy_scale.load()!=p.scale || enemy_random.load()!=p.random) return false;
+    if(!p.random) return true;
+    return enemy_random_scale_min.load()==p.scale_min && enemy_random_scale_max.load()==p.scale_max &&
+        enemy_random_hp_min.load()==p.hp_min && enemy_random_hp_max.load()==p.hp_max && enemy_elite_chance.load()==p.elite;
+}
+void ApplyPreset(const EnemyPreset& p) {
+    enemy_hp.store(p.hp);enemy_scale.store(p.scale);enemy_random.store(p.random);
+    enemy_random_scale_min.store(p.scale_min);enemy_random_scale_max.store(p.scale_max);
+    enemy_random_hp_min.store(p.hp_min);enemy_random_hp_max.store(p.hp_max);enemy_elite_chance.store(p.elite);
+    enemy_elite_scale.store(2);enemy_elite_hp.store(3);
+    LOGR("dev: enemy preset %s",p.name);
+}
+void EnemiesPage() {
+    Heading("Todos os inimigos","Vida e tamanho de todos os inimigos, com combinacoes prontas. Tudo so na memoria: o jogo original nao muda.");
+    for(size_t i=0;i<std::size(kEnemyPresets);++i) {
+        if(i) ImGui::SameLine();
+        const bool current=PresetActive(kEnemyPresets[i]);
+        if(current) ImGui::PushStyleColor(ImGuiCol_Button,ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+        if(ImGui::Button(kEnemyPresets[i].name,MenuSize(0,30))) ApplyPreset(kEnemyPresets[i]);
+        if(current) ImGui::PopStyleColor();
+    }
+    ImGui::TextColored(muted_text,"Variados e Caotico sorteiam cada inimigo; Elites deixa 15%% deles com 2x tamanho e 3x vida.");
     Slider("Vida dos inimigos",enemy_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
     Slider("Tamanho dos inimigos",enemy_scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
-    ImGui::TextColored(muted_text,"Tamanho e so visual: a area de acerto continua a original. Por tipo de inimigo: Mods > Editor de inimigos.");
-    ImGui::TextColored(muted_text,"Vale para inimigos que aparecem depois da mudanca: troque de sala para ver.");
+    ImGui::TextWrapped("As camadas se multiplicam: todos x tipo (Por tipo) x sorteio (Aleatorio). Limites finais: tamanho 0,5x a 3x, vida 0,5x a 5x.");
+    ImGui::TextColored(muted_text,"Tamanho e so visual: a area de acerto continua a original. Vida vale para quem aparece depois: troque de sala.");
+}
+void EnemyRandomPage() {
+    Heading("Aleatorio","Cada inimigo sorteia tamanho e vida ao aparecer e mantem o sorteio ate sumir.");
+    Toggle("Sortear tamanho e vida de cada inimigo",enemy_random);
+    ImGui::BeginDisabled(!enemy_random.load());
+    ImGui::SeparatorText("Faixas do sorteio");
+    Slider("Tamanho minimo",enemy_random_scale_min,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
+    Slider("Tamanho maximo",enemy_random_scale_max,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
+    Slider("Vida minima",enemy_random_hp_min,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
+    Slider("Vida maxima",enemy_random_hp_max,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
+    ImGui::SeparatorText("Elites");
+    Slider("Chance de elite",enemy_elite_chance,0,100,"%.0f%%");
+    Slider("Tamanho extra da elite",enemy_elite_scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
+    Slider("Vida extra da elite",enemy_elite_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
+    ImGui::EndDisabled();
+    ImGui::TextWrapped("Minimo maior que maximo e trocado sozinho. Elite multiplica por cima do sorteio. Vale para inimigos que aparecem depois da mudanca.");
+    ImGui::SeparatorText("Trocar tipos de inimigo");
+    ImGui::TextColored(muted_text,"Em pesquisa: trocar um inimigo por outro exige carregar modelos que a sala nao tem, com risco de travar. Vem depois do estudo das posicoes.");
 }
 // Liga ou desliga o mod Editor; cria a pasta na primeira vez.
 void SetEditorMod(bool enabled) {
@@ -200,7 +252,7 @@ void SetEditorMod(bool enabled) {
     if(const int index=find();index>=0) EnableMod(size_t(index),enabled);
 }
 void EnemyEditorPage() {
-    Heading("Editor de inimigos","Vida e tamanho por tipo de inimigo, como mod: so na memoria, gravado em mods/Editor/enemies.toml. Desligar o mod volta ao jogo original.");
+    Heading("Por tipo","Vida e tamanho por tipo de inimigo, como mod: so na memoria, gravado em mods/Editor/enemies.toml. Desligar o mod volta ao jogo original.");
     bool on=EnemyEditorActive();
     if(ImGui::Checkbox("Aplicar edicoes (mod Editor)",&on)) SetEditorMod(on);
     ImGui::SameLine();
@@ -850,7 +902,8 @@ void Draw(double fps) {
             case 7:Appearance();break;case 8:SavesPage();break;case 9:ProfilesPage();break;
             case 10:HudPage();break;case 11:CameraPage();break;case 12:Diagnostics(fps);break;
             case 13:ReportsGallery();break;case 14:LogsPage();break;case 15:ControllerPage();break;
-            case 16:DifficultyPage();break;case 17:EnemyEditorPage();break;}
+            case 16:DifficultyPage();break;case 17:EnemyEditorPage();break;
+            case 18:EnemiesPage();break;case 19:EnemyRandomPage();break;}
         ImGui::PopItemWidth();ImGui::EndChild();
         ImGui::Separator();
         if(ImGui::Button("Salvar opcoes",{160*scale,32*scale})) app::Save();
