@@ -98,8 +98,31 @@ bool VerifyDropHooks() {
     random_drops=false;const bool off=!RandomizeDropItem(memory,esp,.9f) && Read<int32_t>(memory,esp+4)==10;
     random_drops=true;const bool picked=RandomizeDropItem(memory,esp,.9f) && Read<int32_t>(memory,esp+4)==77;
     crystal_amount=saved_amount;random_drops=saved_random;
-    const bool ok=doubled&&neutral&&off&&picked;
-    LOGR("dev selftest: drops crystal amount/neutral/random off/random table=%d",ok);
+    // Diagnostico do cristal: um inimigo barrado pelo atributo 73 conta no resumo; contadores restaurados.
+    bool diagnostic=false;
+    {
+        uint32_t saved_kills[kCrystalBlocks];int saved_block;uint32_t saved_logs;std::string saved_last;
+        {
+            std::lock_guard guard(crystal_lock);
+            std::memcpy(saved_kills,crystal_kills,sizeof(saved_kills));
+            saved_block=last_block;saved_logs=crystal_logs;saved_last=crystal_last;
+            std::memset(crystal_kills,0,sizeof(crystal_kills));crystal_logs=kMaxCrystalLogs;   // sem linha no log
+        }
+        const auto saved_gate=gate;
+        gate={};
+        RecordCrystalProbe(gate,CrystalProbe::Mode,0);RecordCrystalProbe(gate,CrystalProbe::Devil,0xB30000);
+        RecordCrystalProbe(gate,CrystalProbe::Hector73,0);
+        FinishCrystalGate();
+        const auto report=CrystalDiagnosticReport();
+        diagnostic=report.find("Cristais: 1 inimigos")==0 && report.find("hector73_zero 1")!=std::string::npos &&
+            report.find("-> hector73_zero")!=std::string::npos;
+        gate=saved_gate;
+        std::lock_guard guard(crystal_lock);
+        std::memcpy(crystal_kills,saved_kills,sizeof(saved_kills));
+        last_block=saved_block;crystal_logs=saved_logs;crystal_last=saved_last;
+    }
+    const bool ok=doubled&&neutral&&off&&picked&&diagnostic;
+    LOGR("dev selftest: drops crystal amount/neutral/random off/random table/crystal diagnostic=%d",ok);
     return ok;
 }
 void NoteCrystalAttributeWrite(uint32_t root,uint32_t id,uint32_t stat,int32_t value,bool absolute) {
@@ -126,7 +149,11 @@ X86_FUNC(sub_00032D90) {
     if(check==dev::DropCheck::None) return;
     double& top=ctx.st[ctx.top&7];
     top=dev::DropRoll(top,check==dev::DropCheck::Crystal ? dev::crystal_rate.load() : dev::drop_rate.load());
-    if(collecting && check==dev::DropCheck::Crystal) gate.roll=top;
+    if(collecting && check==dev::DropCheck::Crystal) {
+        gate.roll=top;  // ja com o fator do menu: e o valor que o jogo compara
+        // Em 0x8F263 o jogo faz fmul [esp+0x20]: multiplicador da chance.
+        if(dev::ReadableGuestRange(base,ctx.esp+0x20,4)) gate.multiplier=Read<float>(base,ctx.esp+0x20);
+    }
 }
 // Cristais de evolucao soltos pelo inimigo (sub_0008EF10).
 X86_FUNC(sub_002F95E0) {
@@ -138,10 +165,11 @@ X86_FUNC(sub_002F95E0) {
 }
 // Drop do inimigo derrotado: as leituras abaixo (pelo endereco de retorno) dizem qual condicao barrou o cristal.
 X86_FUNC(sub_0008EF10) {
-    gate={};collecting=true;
+    // So a chamada de fora coleta: uma chamada aninhada nao apaga a condicao em andamento.
+    static int depth=0;
+    if(depth++==0) {gate={};collecting=true;}
     __imp__sub_0008EF10(ctx,base);
-    collecting=false;
-    FinishCrystalGate();
+    if(--depth==0) {collecting=false;FinishCrystalGate();}
 }
 X86_FUNC(sub_001441F0) {
     const auto probe=ProbeHere(base,ctx.esp);
