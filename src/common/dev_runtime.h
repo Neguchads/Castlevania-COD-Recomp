@@ -71,6 +71,11 @@ inline std::atomic<float> damage_taken{1.0f},devil_damage_taken{1.0f};
 inline std::atomic<float> enemy_hp{1.0f};
 // Tamanho de todos os inimigos (escala nativa no ator); multiplica o ajuste por tipo do mod Editor.
 inline std::atomic<float> enemy_scale{1.0f};
+// Aleatorio: cada inimigo sorteia tamanho e vida nas faixas; elite (chance em %) multiplica por cima.
+inline std::atomic<bool> enemy_random{false};
+inline std::atomic<float> enemy_random_scale_min{.8f},enemy_random_scale_max{1.3f};
+inline std::atomic<float> enemy_random_hp_min{1.0f},enemy_random_hp_max{1.5f};
+inline std::atomic<float> enemy_elite_chance{0.0f},enemy_elite_scale{2.0f},enemy_elite_hp{3.0f};
 // Economia: multiplicador do ganho de ouro (stat 111) e EXP (stat 3); compras sem gastar ouro
 inline std::atomic<float> gold_gain{1.0f},exp_gain{1.0f};
 inline std::atomic<bool> free_shopping{false};

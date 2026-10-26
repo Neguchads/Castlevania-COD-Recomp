@@ -13,7 +13,9 @@ struct EnemyRow { uint32_t type = 0; int seen = 0; EnemyEdit edit; };
 float EnemyHpEdit(uint32_t type);
 float EnemyScaleEdit(uint32_t type);
 void NoteEnemy(uint32_t type, const std::string& name);
-ScaleStep EnemyScaleStep(uint32_t actor, float current, float factor);
+// Estado do ator: passo de escala (fator * sorteio) e sorteio guardado ate o ator mudar de tipo ou nascer de novo.
+struct ActorEdit { ScaleStep step; EnemyRoll roll; bool rolled = false; };
+ActorEdit EnemyActorEdit(uint32_t actor, uint32_t type, float current_scale, float factor, const EnemyRandomSettings& random);
 // Menu e mods.
 bool EnemyEditorActive();
 void RefreshEnemyEditor(const std::filesystem::path& mod_root, bool active);

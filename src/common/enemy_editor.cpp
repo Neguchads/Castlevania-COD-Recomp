@@ -5,6 +5,7 @@
 #include <fstream>
 #include <map>
 #include <mutex>
+#include <random>
 #include <unordered_map>
 #include <toml++/toml.hpp>
 #include "core/log.h"
@@ -20,7 +21,9 @@ std::array<std::atomic<bool>, kEnemyTypeLimit> named;
 std::atomic<bool> active{false};
 std::mutex lock;
 std::map<uint32_t, std::string> names;   // tipo -> nome do painel
-std::unordered_map<uint32_t, ScaleState> actors;
+struct ActorState { uint32_t type = 0; ScaleState scale; bool has_scale = false; EnemyRoll roll; };
+std::unordered_map<uint32_t, ActorState> actors;
+std::mt19937 rng{std::random_device{}()};
 fs::path root;
 struct Init { Init() { for (auto& v : hp_edits) v = 1; for (auto& v : scale_edits) v = 1; } } init;
 fs::path File() { return root.empty() ? Root()/"mods"/kEditorMod/"enemies.toml" : root/"enemies.toml"; }
@@ -41,14 +44,30 @@ void NoteEnemy(uint32_t type, const std::string& name) {
     names[type] = name;
     named[type] = true;
 }
-ScaleStep EnemyScaleStep(uint32_t actor, float current, float factor) {
+ActorEdit EnemyActorEdit(uint32_t actor, uint32_t type, float current, float factor, const EnemyRandomSettings& random) {
     std::lock_guard guard(lock);
-    // Atores mudam de endereco a cada sala; limpar de vez em quando so faz a escala atual virar base de novo.
-    if (actors.size() > 4096) actors.clear();
-    const auto it = actors.find(actor);
-    const auto step = NextScale(current, it == actors.end() ? nullptr : &it->second, factor);
-    if (step.state.base > 0 && std::isfinite(step.state.base)) actors[actor] = step.state;
-    return step;
+    // Atores mudam de endereco a cada sala; limpar so faz a escala atual virar base e sortear de novo.
+    if (actors.size() > 8192) actors.clear();
+    auto it = actors.find(actor);
+    // Novo: endereco nunca visto ou reaproveitado por outro tipo. Escala ainda invalida (modelo montando)
+    // guarda o sorteio sem base, para a vida do nascimento e o tamanho depois baterem.
+    // O jogo voltar a escala ao valor dele tambem indica inimigo novo no mesmo endereco.
+    const bool fresh = it == actors.end() || it->second.type != type ||
+        (it->second.has_scale && current > 0 && current != it->second.scale.applied && it->second.scale.applied != it->second.scale.base);
+    ActorEdit edit;
+    if (fresh) {
+        std::uniform_real_distribution<float> unit(0.0f, 1.0f);
+        edit.roll = RollEnemy(random, unit(rng), unit(rng), unit(rng));
+        edit.rolled = random.enabled;
+        it = actors.insert_or_assign(actor, ActorState{type, {}, false, edit.roll}).first;
+    } else {
+        edit.roll = it->second.roll;
+    }
+    auto& state = it->second;
+    const ScaleState* known = state.has_scale ? &state.scale : nullptr;
+    edit.step = NextScale(current, known, factor * edit.roll.scale);
+    if (edit.step.state.base > 0 && std::isfinite(edit.step.state.base)) { state.scale = edit.step.state; state.has_scale = true; }
+    return edit;
 }
 bool EnemyEditorActive() { return active.load(); }
 void RefreshEnemyEditor(const fs::path& mod_root, bool enabled) {
