@@ -82,7 +82,8 @@ inline constexpr CrystalProbe CrystalProbeAt(uint32_t return_address) {
 struct CrystalGate {
     std::optional<int32_t> mode, devil_index, hector73, devil29;
     std::optional<uint32_t> devil;
-    std::optional<double> chance, roll;
+    // O jogo solta se chance * multiplicador (float do quadro, [esp+0x20] em 0x8F263) > sorteio.
+    std::optional<double> chance, multiplier, roll;
     bool spawned = false;
 };
 inline void RecordCrystalProbe(CrystalGate& gate, CrystalProbe probe, uint32_t value) {
@@ -112,7 +113,7 @@ inline CrystalBlock CrystalBlockOf(const CrystalGate& g) {
 }
 inline const char* CrystalBlockName(CrystalBlock block) {
     switch (block) {
-        case CrystalBlock::Allowed: return "liberado";
+        case CrystalBlock::Allowed: return "portao_ok";   // passou nas condicoes; o sorteio ainda decide
         case CrystalBlock::NotReached: return "nao_chegou";
         case CrystalBlock::Mode: return "modo_especial";
         case CrystalBlock::NoDevil: return "sem_devil";
@@ -132,7 +133,7 @@ inline std::string CrystalGateText(const CrystalGate& g) {
     if (g.devil) std::snprintf(devil, sizeof(devil), "%08X", *g.devil);
     return "modo=" + number(g.mode) + " devil=" + devil + " indice=" + number(g.devil_index) +
            " hector73=" + number(g.hector73) + " devil29=" + number(g.devil29) + " chance=" + real(g.chance) +
-           " sorteio=" + real(g.roll) + " soltou=" + (g.spawned ? "1" : "0") + " -> " +
+           " mult=" + real(g.multiplier) + " sorteio=" + real(g.roll) + " soltou=" + (g.spawned ? "1" : "0") + " -> " +
            CrystalBlockName(CrystalBlockOf(g));
 }
 // Log: os 12 primeiros inimigos, toda troca de motivo e 1 a cada 50; no maximo 200 linhas.
@@ -140,9 +141,11 @@ inline constexpr uint32_t kMaxCrystalLogs = 200;
 inline bool LogCrystalGate(uint32_t kill_number, bool block_changed, uint32_t logged) {
     return logged < kMaxCrystalLogs && (kill_number <= 12 || block_changed || kill_number % 50 == 0);
 }
-// Gravacoes que ligam ou desligam o cristal: atributo 73 do Hector e atributo 29 de qualquer Devil.
-inline constexpr bool CrystalAttribute(uint32_t id, uint32_t stat) {
-    return (id == 0 && stat == kAttrHectorCrystal) || stat == kAttrDevilCrystal;
+// Gravacoes que ligam ou desligam o cristal: atributo 73 do Hector e atributo 29 de qualquer Devil,
+// so na raiz do grupo do jogador (B2A350; inimigos ficam fora dela).
+inline constexpr uint32_t kPlayerAttributeRoot = 0xB2A350;
+inline constexpr bool CrystalAttribute(uint32_t root, uint32_t id, uint32_t stat) {
+    return root == kPlayerAttributeRoot && ((id == 0 && stat == kAttrHectorCrystal) || stat == kAttrDevilCrystal);
 }
 inline std::string CrystalSummaryText(const uint32_t (&kills)[kCrystalBlocks], uint32_t spawned,
                                       const std::string& last, uint32_t writes, const std::string& last_write) {

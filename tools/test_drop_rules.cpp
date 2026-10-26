@@ -48,14 +48,16 @@ int main() {
     if (CrystalBlockOf(gate) != CrystalBlock::Allowed) return 24;
     RecordCrystalProbe(gate, CrystalProbe::DevilIndex, uint32_t(-1));
     if (CrystalBlockOf(gate) != CrystalBlock::NoDevil) return 25;              // indice negativo
-    gate.chance = .25; gate.roll = .5; gate.spawned = true;
-    if (CrystalGateText(gate).find("chance=0.250 sorteio=0.500 soltou=1") == std::string::npos) return 26;
+    gate.chance = .25; gate.multiplier = 2; gate.roll = .5; gate.spawned = true;
+    if (CrystalGateText(gate).find("chance=0.250 mult=2.000 sorteio=0.500 soltou=1") == std::string::npos) return 26;
     if (!LogCrystalGate(12, false, 11) || LogCrystalGate(13, false, 12) || !LogCrystalGate(13, true, 12)) return 27;
     if (!LogCrystalGate(100, false, 40) || LogCrystalGate(100, true, kMaxCrystalLogs)) return 28;
-    if (!CrystalAttribute(0, 0x49) || CrystalAttribute(1, 0x49) || !CrystalAttribute(3, 0x1D) || CrystalAttribute(0, 6)) return 29;
+    constexpr uint32_t root = kPlayerAttributeRoot;
+    if (!CrystalAttribute(root, 0, 0x49) || CrystalAttribute(root, 1, 0x49) || !CrystalAttribute(root, 3, 0x1D)) return 29;
+    if (CrystalAttribute(root, 0, 6) || CrystalAttribute(0x00C00000, 3, 0x1D)) return 29;   // outra raiz = inimigos
     const uint32_t kills[kCrystalBlocks]{0, 0, 0, 2, 9, 0};
     const std::string summary = CrystalSummaryText(kills, 0, "x", 1, "y");
-    if (summary.find("Cristais: 11 inimigos | liberado 0, nao_chegou 0, modo_especial 0, sem_devil 2, hector73_zero 9, devil29_bit0 0 | soltou 0") != 0 ||
+    if (summary.find("Cristais: 11 inimigos | portao_ok 0, nao_chegou 0, modo_especial 0, sem_devil 2, hector73_zero 9, devil29_bit0 0 | soltou 0") != 0 ||
         summary.find("Gravacoes atributo 73/29: 1 | ultima: y") == std::string::npos) return 30;
     std::puts("Drop rules: roll factor, check addresses, crystal amount, random table item, item scale and crystal gate passed");
 }
