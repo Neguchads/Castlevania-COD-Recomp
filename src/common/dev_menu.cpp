@@ -464,6 +464,8 @@ void ControllerPage() {
     if(ControllerConnected()) ImGui::TextColored(gold,"Controle conectado.");
     else ImGui::TextColored(crimson,"Nenhum controle conectado na porta 1.");
     Toggle("L3 + R3 abre e fecha o menu",controller_shortcut);
+    Toggle("Inverter camera horizontal (analogico direito)",invert_stick_x);
+    if(ImGui::IsItemHovered()) ImGui::SetTooltip("A opcao de inverter camera do jogo so troca o eixo vertical. Esta troca o horizontal.");
     ImGui::TextWrapped("Menu dev: direcional navega, A/cruz confirma, B/circulo volta, L1/R1 troca de aba. O menu dev, L3 + R3 e Start + Back + LT + RT usam sempre os botoes fisicos, para o controle nunca ficar travado.");
     auto map=ControllerMapping();
     const char* layouts[]{"Xbox (padrao)","PS2","personalizado"};

@@ -2,6 +2,7 @@
 #include "common/dev_runtime.h"
 #include "common/game_cheat_rules.h"
 #include "common/enemy_probe_rules.h"
+#include "common/dev_rules.h"
 #include "common/guest_test_memory.h"
 #include <array>
 #include <atomic>
@@ -15,6 +16,7 @@ X86_EXTERN_FUNC(__imp__sub_00336680);
 X86_EXTERN_FUNC(__imp__sub_00335D30);
 X86_EXTERN_FUNC(__imp__sub_00337A00);
 X86_EXTERN_FUNC(__imp__sub_002F6230);
+X86_EXTERN_FUNC(__imp__sub_0031F270);
 
 namespace {
 // Dificuldade: fator do jogador (slot fisico 0) ou dos Innocent Devils (demais slots da raiz B2A350).
@@ -135,6 +137,18 @@ X86_FUNC(sub_002F6230) {
         }
         ctx.eax = value;
     }
+}
+
+// Botoes do jogo depois da configuracao de botoes nativa (sub_002F6B50: so o direcional passa direto;
+// os demais dependem da tabela B23618). 0x20 e a acao do slot 11, Back/mapa no padrao.
+X86_FUNC(sub_0031F270) {
+    __imp__sub_0031F270(ctx, base);
+    static uint32_t last = 0;
+    static std::atomic<int> logged{0};
+    const uint32_t now = ctx.eax & 0xFFFF;
+    if (dev_rules::RisingBit(last, now, 0x20) && logged.fetch_add(1) < 8)
+        LOGR("input: game action 0x20 (Back/map) received buttons=%04X", now);
+    last = now;
 }
 
 namespace dev {

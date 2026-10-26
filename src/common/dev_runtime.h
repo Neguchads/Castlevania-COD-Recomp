@@ -49,6 +49,8 @@ bool VerifyHudHooks();
 bool VerifyIndicatorHooks();
 bool VerifyCameraHooks();
 inline std::atomic<bool> invert_mouse_x{true}, invert_mouse_y{false};
+// A opcao "inverter camera" do jogo so troca o eixo vertical (sub_002FDF90); o horizontal fica com o port.
+inline std::atomic<bool> invert_stick_x{false};
 inline std::atomic<bool> godmode{false}, godmode_ready{false};
 inline std::atomic<unsigned> prevented_damage{0};
 enum class NewGamePhase { Idle, Choosing, Starting };

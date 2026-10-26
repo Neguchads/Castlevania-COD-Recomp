@@ -62,5 +62,10 @@ int main() {
        MigratedStartKey('K',false,13,'P')!='K') return 36;
     // F3 segurado: so o primeiro WM_KEYDOWN captura; repeticoes (bit 30) nao.
     if(!FirstKeyDown(0x003D0001) || FirstKeyDown(0x403D0001) || !FirstKeyDown(0x203D0001)) return 37;
+    // Analogico direito: inverter troca o sinal sem estourar no -32768 e mantem o centro em 0.
+    if(InvertAxis(12000,true)!=-12000 || InvertAxis(-32768,true)!=32767 || InvertAxis(32767,true)!=-32767 ||
+       InvertAxis(0,true)!=0 || InvertAxis(-5000,false)!=-5000) return 38;
+    // Diagnostico do Back: so a borda de subida conta, segurar nao repete.
+    if(!RisingBit(0,0x20,0x20) || RisingBit(0x20,0x20,0x20) || RisingBit(0x20,0,0x20) || RisingBit(0,0x10,0x20)) return 39;
     std::puts("Dev: caminhos de mods, limites de cheats, volume/balanco e entradas passaram");
 }
