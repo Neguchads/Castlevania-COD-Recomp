@@ -24,6 +24,7 @@
 #include "enemy_editor.h"
 #include "drop_rules.h"
 #include "texture_lookup_rules.h"
+#include "menu_language.h"
 
 namespace kernel { bool VerifyReadOnlyOverlay(const std::string& path); }
 
@@ -170,6 +171,8 @@ void Load(const void* raw) {
     game_menu_live.store(false);
     // chave nova: a antiga (pause_with_menu, padrao ligado) fica ignorada e o jogo passa a rodar com o menu
     pause_with_menu.store(table["menu_pauses_game"].value_or(false));
+    // so troca quando a chave existe: perfil antigo ou vanilla nao muda o idioma das ferramentas
+    if(const auto language=table["menu_language"].value<std::string>()) menu_english.store(MenuLanguageIsEnglish(*language));
     damage_taken.store(ClampDamageFactor(table["damage_taken"].value_or(1.0f)));
     // chave nova: a antiga damage_dealt dizia "inimigos" mas valia para o Innocent Devil; fica ignorada
     devil_damage_taken.store(ClampDamageFactor(table["devil_damage_taken"].value_or(1.0f)));
@@ -264,6 +267,7 @@ void Save(void* raw) {
     table.insert_or_assign("game_menu_scale",game_menu_scale.load());
     table.insert_or_assign("game_menu_live",game_menu_live.load());
     table.insert_or_assign("menu_pauses_game",pause_with_menu.load());
+    table.insert_or_assign("menu_language",std::string(MenuLanguageKey(menu_english.load())));
     table.insert_or_assign("damage_taken",damage_taken.load());
     table.insert_or_assign("devil_damage_taken",devil_damage_taken.load());
     table.insert_or_assign("enemy_hp",enemy_hp.load());
@@ -870,6 +874,7 @@ void RunIntegrationChecks() {
     altered.insert_or_assign("camera_mode",3);altered.insert_or_assign("camera_distance",1.2f);
     altered.insert_or_assign("camera_height",60.0f);altered.insert_or_assign("camera_field",1.1f);
     altered.insert_or_assign("camera_fly_speed",800.0f);
+    altered.insert_or_assign("menu_language","en");
     Load(&altered);
     bool settings_ok=volume.load()==.25f && shader.load()==1 && menu_preferences.x==123 && menu_preferences.opacity==.65f &&
         !invert_mouse_x.load() && invert_mouse_y.load() && invert_stick_x.load() && Bindings()[10].key=='I' &&
@@ -881,8 +886,10 @@ void RunIntegrationChecks() {
         ControllerMapping()[0]==1 && ControllerMapping()[1]==0 && camera_roll.load()==12 && show_fps.load() &&
         gold_gain.load()==3 && free_shopping.load() && devil_damage_taken.load()==.5f && enemy_hp.load()==2.5f && enemy_scale.load()==1.5f && lament_save.load() && infinite_mp.load() &&
         enemy_random.load() && enemy_random_hp_max.load()==2 && enemy_elite_chance.load()==100 && enemy_elite_scale.load()==kMaxEnemyScale &&
-        drop_rate.load()==3 && crystal_amount.load()==kMaxCrystalAmount && random_drops.load() && item_scale.load()==.5f;
+        drop_rate.load()==3 && crystal_amount.load()==kMaxCrystalAmount && random_drops.load() && item_scale.load()==.5f &&
+        menu_english.load();
     toml::table roundtrip;Save(&roundtrip);
+    settings_ok=settings_ok && roundtrip["menu_language"].value_or(std::string{})=="en";
     settings_ok=settings_ok && roundtrip["controller_map"].value_or(std::string{})=="1,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
     settings_ok=settings_ok && roundtrip["gold_gain"].value_or(0.0f)==3 && roundtrip["free_shopping"].value_or(false) &&
         roundtrip["lament_save"].value_or(false) && roundtrip["infinite_mp"].value_or(false) &&

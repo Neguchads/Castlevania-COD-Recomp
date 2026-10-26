@@ -58,6 +58,7 @@ inline constexpr MenuSearchEntry kMenuSearchIndex[]{
     {6, "MP infinito"},
     {6, "Simular save de Lament of Innocence"},
     {7, "Aparencia"},
+    {7, "Idioma do menu"},
     {7, "Pausar o jogo com o menu aberto"},
     {7, "Opacidade do painel"},
     {7, "Restaurar aparencia padrao"},
