@@ -54,6 +54,16 @@ inline int32_t AdjustEconomyDelta(uint32_t stat, uint32_t slot, int32_t delta, c
 inline int32_t RefillHp(int32_t hp, int32_t max_hp) {
     return hp > 0 && max_hp > 0 && max_hp <= 999 && hp < max_hp ? max_hp : hp;
 }
+// MP: atributo 32 = atual, 31 = maximo (0x142730 e o item 0x123 fazem MP = atributo 31). Endereco do atributo N
+// do slot S: raiz + S*0x238 + 0x2970 + N*4. O jogo nao tem coracoes: as habilidades dos Devils gastam MP.
+inline constexpr uint32_t kStatMaxMp = 31, kStatMp = 32;
+inline bool BlockMpCost(bool enabled, uint32_t stat, uint32_t slot, int32_t delta) {
+    return enabled && stat == kStatMp && slot == 0 && delta < 0;
+}
+// MP cheio: nao depende de estar vivo, so do maximo valido.
+inline int32_t RefillMp(int32_t mp, int32_t max_mp) {
+    return max_mp > 0 && max_mp <= 999 && mp < max_mp ? max_mp : mp;
+}
 
 // Bonus do save de Lament of Innocence: a tela de save liga a flag 0x4002 ao achar o save de PS2 (0x33F310);
 // jogo novo e carregamento (0x2F4116, 0x3218A3) leem 0x4002 e gravam a flag 0x30008006 (Moai) no save.

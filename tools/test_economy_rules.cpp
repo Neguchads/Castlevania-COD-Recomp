@@ -25,5 +25,10 @@ int main() {
     // Save de Lament of Innocence: so a flag 0x4002 vira 1, e so com a opcao ligada.
     if (LamentSaveFlag(0x4002, 0, true) != 1 || LamentSaveFlag(0x4002, 0, false) != 0 || LamentSaveFlag(0x4002, 1, false) != 1) return 10;
     if (LamentSaveFlag(0x4001, 0, true) != 0 || LamentSaveFlag(0x30008006, 0, true) != 0 || LamentSaveFlag(0x4002, 1, true) != 1) return 11;
-    std::puts("Economy rules: gain factor limits, gold and EXP scaling, devil EXP untouched, free shopping, other stats untouched, HP refill, Lament save flag passed");
+    // MP infinito: so gasto (negativo) de MP do Hector; recarga, Devils e outros atributos passam.
+    if (!BlockMpCost(true, kStatMp, 0, -10) || BlockMpCost(false, kStatMp, 0, -10) || BlockMpCost(true, kStatMp, 0, 10) ||
+        BlockMpCost(true, kStatMp, 1, -10) || BlockMpCost(true, 6, 0, -10) || BlockMpCost(true, kStatMaxMp, 0, -10)) return 12;
+    // MP cheio: sobe ate o maximo valido, nunca reduz.
+    if (RefillMp(0, 80) != 80 || RefillMp(30, 80) != 80 || RefillMp(90, 80) != 90 || RefillMp(10, 0) != 10 || RefillMp(10, 5000) != 10) return 13;
+    std::puts("Economy rules: gain factor limits, gold and EXP scaling, devil EXP untouched, free shopping, other stats untouched, HP refill, Lament save flag, MP cost block and refill passed");
 }
