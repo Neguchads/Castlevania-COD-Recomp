@@ -23,6 +23,10 @@ int main() {
     if (reports[1].title != "Chao some na sala" || !reports[1].screenshot || reports[0].screenshot) return 2;
     if (reports[0].title != "(sem titulo)" || reports[2].title != "(sem relato)") return 3;
     if (dev::ListReports(root / "reports", 2).size() != 2 || !dev::ListReports(root / "nao-existe", 5).empty()) return 4;
+    // Limite antes de abrir: so as pastas mais novas sao escolhidas; arquivo solto nunca entra.
+    const auto newest = dev::NewestFolders(root / "reports", 2);
+    if (newest.size() != 2 || newest[0] != "20261025-120000-2" || newest[1] != "20261025-101500-1") return 10;
+    if (dev::NewestFolders(root / "reports", 0).size() != 0 || dev::NewestFolders(root / "reports", 99).size() != 3) return 11;
     // Final do log: so as ultimas linhas, sem quebrar no meio.
     std::string log;
     for (int i = 1; i <= 50; ++i) log += "linha " + std::to_string(i) + "\n";

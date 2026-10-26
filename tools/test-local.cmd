@@ -12,6 +12,7 @@ if not defined CLANGXX set "CLANGXX=clang++"
 if exist "%CLANGXX%" goto :clangfound
 where "%CLANGXX%" >nul 2>nul || goto :noclang
 :clangfound
+if not exist .local mkdir .local
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_translation_pack.cpp -o .local\test_translation_pack.exe
 if errorlevel 1 exit /b 1
 .local\test_translation_pack.exe

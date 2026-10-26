@@ -125,7 +125,8 @@ void GameHacks() {
     ImGui::TextWrapped("Preserva cura e outros personagens. Impactos e animacoes continuam; nao reverte morte ja iniciada.");
     ImGui::Spacing();
     float factor = speed.load();
-    if(ImGui::SliderFloat("Speedhack",&factor,.5f,2.0f,"%.2fx")) SetSpeed(factor);
+    if(ImGui::SliderFloat("Speedhack",&factor,.5f,2.0f,"%.2fx")) SetSpeed(factor,false);
+    if(ImGui::IsItemDeactivatedAfterEdit()) LOGR("dev: guest speed %.2fx (clock, waits, vblank, audio)",speed.load());
     const float factors[]{.5f,1,1.5f,2};
     const char* labels[]{"0.5x","Normal","1.5x","2x"};
     for(int i=0;i<4;i++) {
@@ -255,10 +256,15 @@ void DrawPreview(const std::filesystem::path& bmp, float max_height) {
     ImGui::Image(reinterpret_cast<ImTextureID>(static_cast<uintptr_t>(preview.texture)),{width,height});
 }
 void OpenFolder(const std::filesystem::path& folder) {
-    std::wstring command=L"explorer.exe \""+folder.wstring()+L"\"";
+    // Caminho completo do explorer: sem ele o Windows procura primeiro na pasta do exe.
+    wchar_t windows[MAX_PATH]{};
+    const UINT length=GetWindowsDirectoryW(windows,MAX_PATH);
+    if(!length || length>=MAX_PATH) return;
+    const std::wstring explorer=std::wstring(windows)+L"\\explorer.exe";
+    std::wstring command=L"\""+explorer+L"\" \""+folder.wstring()+L"\"";
     STARTUPINFOW startup{sizeof(startup)};
     PROCESS_INFORMATION process{};
-    if(!CreateProcessW(nullptr,command.data(),nullptr,nullptr,FALSE,0,nullptr,nullptr,&startup,&process)) return;
+    if(!CreateProcessW(explorer.c_str(),command.data(),nullptr,nullptr,FALSE,0,nullptr,nullptr,&startup,&process)) return;
     CloseHandle(process.hThread);CloseHandle(process.hProcess);
 }
 std::string ReadText(const std::filesystem::path& path, size_t limit) {
