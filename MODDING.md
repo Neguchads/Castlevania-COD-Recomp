@@ -22,6 +22,8 @@ Gráficos também têm brilho, contraste e saturação; Áudio tem "Silenciar qu
 
 Mouse horizontal/vertical têm inversão separada. O padrão foi invertido em relação ao build anterior por pedido do usuário. WASD movimenta, setas controlam câmera; os dois grupos podem ser remapeados. Restaurar controles padrão repõe as teclas do port.
 
+A opção "inverter câmera" das Opções do jogo só inverte o eixo vertical, como no Xbox original. Para inverter o horizontal do analógico direito, ligue "Inverter camera horizontal (analogico direito)" em Controles > Controle (`invert_stick_x` em `settings.toml`).
+
 Godmode agora intercepta também o setter absoluto de HP, além do delta: ambos passaram pelos wrappers originais em teste isolado, preservando cura e outros personagens. O segundo bypass foi reproduzido antes da correção. Reteste em combate continua necessário.
 
 O painel pode ser movido pela barra de título e redimensionado pelo canto inferior direito. A aba Aparência ajusta opacidade, fundo, seleção e foco. Os controles numéricos de posição/tamanho também aceitam navegação por controle. Restaurar aparência padrão repõe a janela e a paleta preto/vermelho/dourado; não apaga saves nem remapeamentos.

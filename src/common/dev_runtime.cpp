@@ -145,6 +145,7 @@ void Load(const void* raw) {
     mouse_camera.store(table["mouse_camera"].value_or(true));
     invert_mouse_x.store(table["invert_mouse_x"].value_or(true));
     invert_mouse_y.store(table["invert_mouse_y"].value_or(false));
+    invert_stick_x.store(table["invert_stick_x"].value_or(false));
     controller_shortcut.store(table["controller_menu_shortcut"].value_or(true));
     minimap_enabled.store(table["minimap_enabled"].value_or(true));
     minimap_rotating.store(table["minimap_rotating"].value_or(true));
@@ -232,6 +233,7 @@ void Save(void* raw) {
     table.insert_or_assign("mouse_camera", mouse_camera.load());
     table.insert_or_assign("invert_mouse_x",invert_mouse_x.load());
     table.insert_or_assign("invert_mouse_y",invert_mouse_y.load());
+    table.insert_or_assign("invert_stick_x",invert_stick_x.load());
     table.insert_or_assign("controller_menu_shortcut", controller_shortcut.load());
     table.insert_or_assign("minimap_enabled",minimap_enabled.load());
     table.insert_or_assign("minimap_rotating",minimap_rotating.load());
@@ -350,6 +352,7 @@ void RestoreVanilla() {
     defaults.insert_or_assign("muted",false);defaults.insert_or_assign("keyboard_enabled",true);
     defaults.insert_or_assign("mouse_camera",true);defaults.insert_or_assign("invert_mouse_x",true);
     defaults.insert_or_assign("invert_mouse_y",false);defaults.insert_or_assign("controller_menu_shortcut",true);
+    defaults.insert_or_assign("invert_stick_x",false);
     defaults.insert_or_assign("minimap_enabled",false);defaults.insert_or_assign("minimap_rotating",false);
     defaults.insert_or_assign("minimap_scale",1.0f);defaults.insert_or_assign("minimap_opacity",.8f);
     defaults.insert_or_assign("minimap_x",1.0f);defaults.insert_or_assign("minimap_y",0.0f);
@@ -719,9 +722,16 @@ bool Message(void*, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t* result) {
 }
 void Pad(int port, input::Pad& pad) {
     if (port != 0) return;
+    // Diagnostico do mapa: Back fisico antes de atalhos e remapeamento (o jogo e conferido em sub_0031F270).
+    static uint16_t last_buttons = 0;
+    static std::atomic<int> back_logs{0};
+    if (dev_rules::RisingBit(last_buttons, pad.buttons, 1u << 5) && back_logs.fetch_add(1) < 8)
+        LOGR("input: Back pressed (physical) menu=%d focused=%d",int(UiCapturing()),int(GameFocused()));
+    last_buttons = pad.buttons;
     ProcessControllerShortcut(pad);
     // depois dos atalhos (L3+R3, volta ao titulo), que leem os botoes fisicos
     pad = RemapPad(pad, ControllerMapping());
+    pad.rx = dev_rules::InvertAxis(pad.rx, invert_stick_x.load());
     if (UiCapturing()) {
         // Menu aberto: botoes ficam com o menu; analogicos seguem andando e girando a camera.
         const bool blocked=CharacterChoosing() || !GameFocused();
@@ -787,7 +797,7 @@ void RunIntegrationChecks() {
     altered.insert_or_assign("menu_x",123.0f);
     altered.insert_or_assign("menu_opacity",.65f);
     altered.insert_or_assign("invert_mouse_x",false);
-    altered.insert_or_assign("invert_mouse_y",true);
+    altered.insert_or_assign("invert_mouse_y",true);altered.insert_or_assign("invert_stick_x",true);
     altered.insert_or_assign("bind_10",int('I'));
     altered.insert_or_assign("minimap_enabled",false);
     altered.insert_or_assign("minimap_scale",1.25f);
@@ -812,7 +822,7 @@ void RunIntegrationChecks() {
     altered.insert_or_assign("camera_fly_speed",800.0f);
     Load(&altered);
     bool settings_ok=volume.load()==.25f && shader.load()==1 && menu_preferences.x==123 && menu_preferences.opacity==.65f &&
-        !invert_mouse_x.load() && invert_mouse_y.load() && Bindings()[10].key=='I' &&
+        !invert_mouse_x.load() && invert_mouse_y.load() && invert_stick_x.load() && Bindings()[10].key=='I' &&
         !minimap_enabled.load() && minimap_scale.load()==1.25f && minimap_opacity.load()==.6f &&
         minimap_x.load()==.25f && minimap_y.load()==.75f &&
         !hud_enabled.load() && hud_always_visible.load() && hud_scale.load()==.75f && hud_quick_hide.load() && hud_hide_delay.load()==.5f &&
@@ -823,7 +833,8 @@ void RunIntegrationChecks() {
     toml::table roundtrip;Save(&roundtrip);
     settings_ok=settings_ok && roundtrip["controller_map"].value_or(std::string{})=="1,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
     settings_ok=settings_ok && roundtrip["gold_gain"].value_or(0.0f)==3 && roundtrip["free_shopping"].value_or(false) &&
-        roundtrip["lament_save"].value_or(false) && roundtrip["infinite_mp"].value_or(false);
+        roundtrip["lament_save"].value_or(false) && roundtrip["infinite_mp"].value_or(false) &&
+        roundtrip["invert_stick_x"].value_or(false);
     settings_ok=settings_ok && roundtrip["menu_x"].value_or(0.0f)==123 && roundtrip["menu_opacity"].value_or(0.0f)==.65f;
     settings_ok=settings_ok && !roundtrip["minimap_enabled"].value_or(true) &&
         roundtrip["minimap_scale"].value_or(0.0f)==1.25f && roundtrip["minimap_opacity"].value_or(0.0f)==.6f &&

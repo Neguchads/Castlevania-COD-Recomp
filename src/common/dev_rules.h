@@ -99,4 +99,11 @@ inline int16_t MouseAxis(int delta, float sensitivity, bool invert) {
     float value = std::clamp(float(delta) * sensitivity, -1.0f, 1.0f);
     return int16_t(value * (invert ? -32767 : 32767));
 }
+// -32768 nao tem positivo: vira 32767.
+inline constexpr int16_t InvertAxis(int16_t value, bool invert) {
+    return !invert ? value : value == INT16_MIN ? INT16_MAX : int16_t(-value);
+}
+inline constexpr bool RisingBit(uint32_t before, uint32_t now, uint32_t bit) {
+    return (now & bit) && !(before & bit);
+}
 }
