@@ -38,6 +38,8 @@ inline std::atomic<bool> show_fps{false};
 inline std::atomic<int> fps_corner{1};
 // Diagnostico > Registrar desempenho: as linhas "perf:" do XBE_PERF, so nesta sessao (nao salvo)
 inline std::atomic<bool> perf_log{false};
+// Pesquisa: registra no log os inteiros do inimigo alvo que caem entre quadros (so nesta sessao)
+inline std::atomic<bool> enemy_probe{false};
 inline std::atomic<float> orbit_smoothing{8.0f};
 void OrbitCameraInput(input::Pad& pad,int mouse_x,int mouse_y);
 void FreeCameraInput(input::Pad& pad,bool forward,bool back,bool left,bool right,bool up,bool down,int mouse_x,int mouse_y);

@@ -1,6 +1,7 @@
 #include "xdk/hle.h"
 #include "common/dev_runtime.h"
 #include "common/game_cheat_rules.h"
+#include "common/enemy_probe_rules.h"
 #include "common/guest_test_memory.h"
 #include <array>
 #include <atomic>
@@ -85,6 +86,39 @@ X86_FUNC(sub_00336070) {
         }
     }
     __imp__sub_00336070(ctx, base);
+}
+
+// Painel do inimigo (roda a cada quadro com o painel visivel): alvo em [0xB251F0], ficha em alvo+0x128.
+// Com a sonda ligada, compara alvo e ficha com o quadro anterior e registra os inteiros que cairam.
+X86_EXTERN_FUNC(__imp__sub_00309010);
+X86_FUNC(sub_00309010) {
+    if (dev::enemy_probe.load() && dev::ReadableGuestRange(base, 0xB251F0, 4)) {
+        constexpr uint32_t kActorBytes = 0x400, kInfoBytes = 0x100;
+        static uint32_t last_actor = 0, last_info = 0;
+        static std::vector<uint8_t> actor_before, info_before;
+        static int logged = 0;
+        uint32_t actor = 0, info = 0;
+        std::memcpy(&actor, base + 0xB251F0, 4);
+        if (actor && dev::ReadableGuestRange(base, actor, kActorBytes)) {
+            std::memcpy(&info, base + actor + 0x128, 4);
+            const bool info_ok = info && dev::ReadableGuestRange(base, info, kInfoBytes);
+            std::vector<uint8_t> actor_now(base + actor, base + actor + kActorBytes);
+            std::vector<uint8_t> info_now;
+            if (info_ok) info_now.assign(base + info, base + info + kInfoBytes);
+            if (actor == last_actor && logged < 400) {
+                for (const auto& drop : dev::DroppedFields(actor_before, actor_now))
+                    if (logged++ < 400) LOGR("probe: actor %08X +%03X int%d %d -> %d", actor, drop.offset, drop.bits, drop.before, drop.after);
+                if (info == last_info && info_ok)
+                    for (const auto& drop : dev::DroppedFields(info_before, info_now))
+                        if (logged++ < 400) LOGR("probe: info %08X +%03X int%d %d -> %d", info, drop.offset, drop.bits, drop.before, drop.after);
+            } else if (actor != last_actor && logged < 400) {
+                LOGR("probe: new target actor=%08X info=%08X", actor, info);
+            }
+            last_actor = actor; last_info = info;
+            actor_before = std::move(actor_now); info_before = std::move(info_now);
+        }
+    }
+    __imp__sub_00309010(ctx, base);
 }
 
 // Leitura de flag (cdecl, flag em [esp+4], valor em eax). Desligado, nem le a pilha.
