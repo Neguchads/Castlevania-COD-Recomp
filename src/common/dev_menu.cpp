@@ -235,6 +235,8 @@ void Diagnostics(double fps) {
     }
     Toggle("Registrar desempenho no log (1 vez por segundo)",perf_log);
     ImGui::TextColored(muted_text,"Ligue, jogue o trecho que trava por 1 minuto e salve um relato: o log vai junto. So vale nesta sessao.");
+    Toggle("Pesquisar vida dos inimigos (log)",enemy_probe);
+    ImGui::TextColored(muted_text,"Ligue, bata em 2 ou 3 inimigos ate morrerem e salve um relato. O log mostra quais campos do alvo caem a cada golpe.");
     ImGui::Spacing();ImGui::Separator();ImGui::Spacing();
     if (ImGui::Button("Capturar e relatar bug  [F8 / Print Screen]", MenuSize(-1,36))) { CaptureBug(); ShowPage(1); }
     ImGui::TextColored(muted_text,"O mundo continua rodando. Pause pelo jogo antes de abrir as ferramentas.");
