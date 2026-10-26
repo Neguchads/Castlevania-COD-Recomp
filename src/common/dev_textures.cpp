@@ -16,18 +16,21 @@ std::shared_ptr<const TextureImage> ReplacementTexture(uint64_t hash) {
     if(auto found=cache.find(hash);found!=cache.end()) return found->second;
     if(cache.size()>4096) cache.clear();
     std::shared_ptr<const TextureImage> image;
-    if(auto path=ModTexture(hash)) {
-        std::error_code ec;
-        auto length=std::filesystem::file_size(*path,ec);
-        if(!ec && length>=54 && length<=70*1024*1024) {
-            std::ifstream input(*path,std::ios::binary);
-            std::vector<uint8_t> bytes(size_t(length),uint8_t(0));
-            if(input.read(reinterpret_cast<char*>(bytes.data()),std::streamsize(bytes.size()))) {
-                if(auto decoded=DecodePackBmp(bytes)) {image=std::make_shared<TextureImage>(std::move(*decoded));texture_replacements.fetch_add(1);}
-                else LOGE("mods: invalid texture BMP %s",path->filename().string().c_str());
-            }
+    // falta nao entra no cache: o indice responde sem disco, e faltas (texturas dinamicas mudam de hash a
+    // cada quadro) enchiam o cache ate o limpar inteiro, relendo do disco cada textura HD em uso
+    const auto path=ModTexture(hash);
+    if(!path) return image;
+    std::error_code ec;
+    auto length=std::filesystem::file_size(*path,ec);
+    if(!ec && length>=54 && length<=70*1024*1024) {
+        std::ifstream input(*path,std::ios::binary);
+        std::vector<uint8_t> bytes(size_t(length),uint8_t(0));
+        if(input.read(reinterpret_cast<char*>(bytes.data()),std::streamsize(bytes.size()))) {
+            if(auto decoded=DecodePackTexture(bytes)) {image=std::make_shared<TextureImage>(std::move(*decoded));texture_replacements.fetch_add(1);}
+            else LOGE("mods: invalid texture %s (BMP 24/32 bits or DDS BC7_UNORM)",path->filename().string().c_str());
         }
     }
+    // arquivo invalido tambem fica: sem reler do disco a cada desenho
     cache.emplace(hash,image);return image;
 }
 void DumpTexture(uint64_t hash,uint32_t width,uint32_t height,const std::vector<uint8_t>& pixels) {
