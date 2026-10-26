@@ -34,5 +34,16 @@ int main() {
        std::abs(turned.roll+.2617994f)>.0001f || turned.angles.z!=0)return 14;
     const auto clamped=AdjustViewAngles({0,0,0},0,500,-200,std::numeric_limits<float>::quiet_NaN());
     if(std::abs(clamped.angles.y+3.1415927f)>.0001f || std::abs(clamped.angles.x+1.0471976f)>.0001f || clamped.roll!=0)return 15;
-    std::puts("Presentation: HUD anchors/scale, focal ratio, free camera direction and view angle offsets passed");
+    // Minimapa: padrao (1,0) = canto superior direito com margem; (0,1) = inferior esquerdo; nunca sai da tela.
+    const auto corner=MinimapOrigin({1920,1080},{260,150},22,1,0);
+    if(corner.x!=1920-260-22 || corner.y!=22)return 16;
+    const auto bottom_left=MinimapOrigin({1920,1080},{260,150},22,0,1);
+    if(bottom_left.x!=22 || bottom_left.y!=1080-150-22)return 17;
+    const auto middle=MinimapOrigin({1920,1080},{260,150},22,.5f,.5f);
+    if(std::abs(middle.x-(22+.5f*(1920-260-44)))>.001f || std::abs(middle.y-(22+.5f*(1080-150-44)))>.001f)return 18;
+    const auto outside=MinimapOrigin({1920,1080},{260,150},22,7,-3);
+    const auto tiny=MinimapOrigin({200,100},{260,150},22,1,1);
+    const auto nan=MinimapOrigin({1920,1080},{260,150},22,std::numeric_limits<float>::quiet_NaN(),std::numeric_limits<float>::quiet_NaN());
+    if(outside.x!=corner.x || outside.y!=22 || tiny.x!=22 || tiny.y!=22 || nan.x!=corner.x || nan.y!=22)return 19;
+    std::puts("Presentation: HUD anchors/scale, focal ratio, free camera direction, view angle offsets and minimap position passed");
 }

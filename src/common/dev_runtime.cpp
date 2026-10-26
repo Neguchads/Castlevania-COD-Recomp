@@ -153,6 +153,9 @@ void Load(const void* raw) {
     const float map_opacity=table["minimap_opacity"].value_or(.8f);
     minimap_scale.store(std::isfinite(map_scale) ? std::clamp(map_scale,.6f,1.6f) : 1.0f);
     minimap_opacity.store(std::isfinite(map_opacity) ? std::clamp(map_opacity,.2f,1.0f) : .8f);
+    const float map_x=table["minimap_x"].value_or(1.0f),map_y=table["minimap_y"].value_or(0.0f);
+    minimap_x.store(std::isfinite(map_x) ? std::clamp(map_x,0.0f,1.0f) : 1.0f);
+    minimap_y.store(std::isfinite(map_y) ? std::clamp(map_y,0.0f,1.0f) : 0.0f);
     hud_enabled.store(table["hud_enabled"].value_or(true));
     hud_always_visible.store(table["hud_always_visible"].value_or(false));
     hud_quick_hide.store(table["hud_quick_hide"].value_or(false));
@@ -249,6 +252,7 @@ void Save(void* raw) {
     table.insert_or_assign("mute_unfocused",mute_unfocused.load());
     table.insert_or_assign("minimap_scale",minimap_scale.load());
     table.insert_or_assign("minimap_opacity",minimap_opacity.load());
+    table.insert_or_assign("minimap_x",minimap_x.load());table.insert_or_assign("minimap_y",minimap_y.load());
     table.insert_or_assign("hud_enabled",hud_enabled.load());
     table.insert_or_assign("hud_always_visible",hud_always_visible.load());
     table.insert_or_assign("hud_scale",hud_scale.load());
@@ -348,6 +352,7 @@ void RestoreVanilla() {
     defaults.insert_or_assign("invert_mouse_y",false);defaults.insert_or_assign("controller_menu_shortcut",true);
     defaults.insert_or_assign("minimap_enabled",false);defaults.insert_or_assign("minimap_rotating",false);
     defaults.insert_or_assign("minimap_scale",1.0f);defaults.insert_or_assign("minimap_opacity",.8f);
+    defaults.insert_or_assign("minimap_x",1.0f);defaults.insert_or_assign("minimap_y",0.0f);
     defaults.insert_or_assign("ptbr_enabled",false);defaults.insert_or_assign("hud_enabled",true);
     defaults.insert_or_assign("hud_always_visible",false);defaults.insert_or_assign("hud_scale",1.0f);defaults.insert_or_assign("hud_quick_hide",false);
     defaults.insert_or_assign("hud_hide_delay",1.0f);defaults.insert_or_assign("camera_mode",0);
@@ -786,7 +791,7 @@ void RunIntegrationChecks() {
     altered.insert_or_assign("bind_10",int('I'));
     altered.insert_or_assign("minimap_enabled",false);
     altered.insert_or_assign("minimap_scale",1.25f);
-    altered.insert_or_assign("minimap_opacity",.6f);
+    altered.insert_or_assign("minimap_opacity",.6f);altered.insert_or_assign("minimap_x",.25f);altered.insert_or_assign("minimap_y",.75f);
     altered.insert_or_assign("minimap_rotating",false);
     altered.insert_or_assign("game_menu_scale",.65f);
     altered.insert_or_assign("ptbr_enabled",true);
@@ -809,6 +814,7 @@ void RunIntegrationChecks() {
     bool settings_ok=volume.load()==.25f && shader.load()==1 && menu_preferences.x==123 && menu_preferences.opacity==.65f &&
         !invert_mouse_x.load() && invert_mouse_y.load() && Bindings()[10].key=='I' &&
         !minimap_enabled.load() && minimap_scale.load()==1.25f && minimap_opacity.load()==.6f &&
+        minimap_x.load()==.25f && minimap_y.load()==.75f &&
         !hud_enabled.load() && hud_always_visible.load() && hud_scale.load()==.75f && hud_quick_hide.load() && hud_hide_delay.load()==.5f &&
         camera_mode.load()==3 && camera_distance.load()==1.2f && camera_height.load()==60 && camera_field.load()==1.1f && camera_fly_speed.load()==800 &&
         !minimap_rotating.load() && game_menu_scale.load()==1.0f && ptbr_enabled.load() && orbit_smoothing.load()==12 && pause_with_menu.load() && damage_taken.load()==2 && contrast.load()==1.2f &&
@@ -820,7 +826,8 @@ void RunIntegrationChecks() {
         roundtrip["lament_save"].value_or(false) && roundtrip["infinite_mp"].value_or(false);
     settings_ok=settings_ok && roundtrip["menu_x"].value_or(0.0f)==123 && roundtrip["menu_opacity"].value_or(0.0f)==.65f;
     settings_ok=settings_ok && !roundtrip["minimap_enabled"].value_or(true) &&
-        roundtrip["minimap_scale"].value_or(0.0f)==1.25f && roundtrip["minimap_opacity"].value_or(0.0f)==.6f;
+        roundtrip["minimap_scale"].value_or(0.0f)==1.25f && roundtrip["minimap_opacity"].value_or(0.0f)==.6f &&
+        roundtrip["minimap_x"].value_or(0.0f)==.25f && roundtrip["minimap_y"].value_or(0.0f)==.75f;
     settings_ok=settings_ok && !roundtrip["hud_enabled"].value_or(true) && roundtrip["hud_always_visible"].value_or(false) &&
         roundtrip["hud_scale"].value_or(0.0f)==.75f && roundtrip["hud_quick_hide"].value_or(false) &&
         roundtrip["hud_hide_delay"].value_or(0.0f)==.5f;
