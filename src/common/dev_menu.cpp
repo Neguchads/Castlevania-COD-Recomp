@@ -189,6 +189,8 @@ void DifficultyPage() {
     Slider("Dano recebido pelo Innocent Devil",devil_damage_taken,kMinDamageFactor,kMaxDamageFactor,"%.2fx");
     ImGui::TextWrapped("Golpe que mata e mortes por roteiro continuam matando. Godmode, quando ligado, vale antes disto.");
     Slider("Vida dos inimigos",enemy_hp,kMinEnemyHpFactor,kMaxEnemyHpFactor,"%.2fx");
+    Slider("Tamanho dos inimigos",enemy_scale,kMinEnemyScale,kMaxEnemyScale,"%.2fx");
+    ImGui::TextColored(muted_text,"Tamanho e so visual: a area de acerto continua a original. Por tipo de inimigo: Mods > Editor de inimigos.");
     ImGui::TextColored(muted_text,"Vale para inimigos que aparecem depois da mudanca: troque de sala para ver.");
 }
 // Liga ou desliga o mod Editor; cria a pasta na primeira vez.

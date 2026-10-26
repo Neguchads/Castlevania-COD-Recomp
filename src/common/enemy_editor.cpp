@@ -33,7 +33,8 @@ float EnemyScaleEdit(uint32_t type) {
 }
 void NoteEnemy(uint32_t type, const std::string& name) {
     if (!EditableEnemyType(type)) return;
-    seen[type].fetch_add(1, std::memory_order_relaxed);
+    if (seen[type].fetch_add(1, std::memory_order_relaxed) == 0)
+        LOGR("editor: enemy type %u seen name='%s'", type, name.c_str());
     // So trava ate o tipo ganhar nome.
     if (name.empty() || named[type].load(std::memory_order_relaxed)) return;
     std::lock_guard guard(lock);

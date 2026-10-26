@@ -55,7 +55,7 @@ void ApplyEnemyEdits(X86Context& ctx,uint8_t* base,uint32_t actor) {
     if(!actor || !ReadableGuestRange(base,actor,kActorBytes) || Read<uint16_t>(base,actor)!=2) return;
     const uint32_t type=Read<uint16_t>(base,actor+2);
     NoteEnemy(type,EnemyName(base,actor));
-    const float factor=EnemyScaleEdit(type);
+    const float factor=CombinedEnemyScale(enemy_scale.load(),EnemyScaleEdit(type));
     if(ApplyScale(ctx,base,actor,factor)) {
         static std::atomic<int> logged{0};
         if(logged.fetch_add(1)<8) LOGR("editor: enemy type %u actor %08X scale %.2f",type,actor,Read<float>(base,actor+kScale));

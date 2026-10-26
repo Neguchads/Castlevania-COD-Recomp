@@ -173,6 +173,7 @@ void Load(const void* raw) {
     // chave nova: a antiga damage_dealt dizia "inimigos" mas valia para o Innocent Devil; fica ignorada
     devil_damage_taken.store(ClampDamageFactor(table["devil_damage_taken"].value_or(1.0f)));
     enemy_hp.store(ClampEnemyHpFactor(table["enemy_hp"].value_or(1.0f)));
+    enemy_scale.store(ClampEnemyScale(table["enemy_scale"].value_or(1.0f)));
     gold_gain.store(ClampGainFactor(table["gold_gain"].value_or(1.0f)));
     exp_gain.store(ClampGainFactor(table["exp_gain"].value_or(1.0f)));
     free_shopping.store(table["free_shopping"].value_or(false));
@@ -246,6 +247,7 @@ void Save(void* raw) {
     table.insert_or_assign("damage_taken",damage_taken.load());
     table.insert_or_assign("devil_damage_taken",devil_damage_taken.load());
     table.insert_or_assign("enemy_hp",enemy_hp.load());
+    table.insert_or_assign("enemy_scale",enemy_scale.load());
     table.insert_or_assign("gold_gain",gold_gain.load());
     table.insert_or_assign("exp_gain",exp_gain.load());
     table.insert_or_assign("free_shopping",free_shopping.load());
@@ -819,7 +821,7 @@ void RunIntegrationChecks() {
     altered.insert_or_assign("menu_pauses_game",true);
     altered.insert_or_assign("damage_taken",2.0f);altered.insert_or_assign("contrast",1.2f);
     altered.insert_or_assign("gold_gain",3.0f);altered.insert_or_assign("free_shopping",true);
-    altered.insert_or_assign("devil_damage_taken",.5f);altered.insert_or_assign("enemy_hp",2.5f);altered.insert_or_assign("lament_save",true);altered.insert_or_assign("infinite_mp",true);
+    altered.insert_or_assign("devil_damage_taken",.5f);altered.insert_or_assign("enemy_hp",2.5f);altered.insert_or_assign("enemy_scale",1.5f);altered.insert_or_assign("lament_save",true);altered.insert_or_assign("infinite_mp",true);
     altered.insert_or_assign("controller_map","1,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15");
     altered.insert_or_assign("camera_roll",12.0f);altered.insert_or_assign("show_fps",true);
     altered.insert_or_assign("hud_enabled",false);
@@ -839,12 +841,13 @@ void RunIntegrationChecks() {
         camera_mode.load()==3 && camera_distance.load()==1.2f && camera_height.load()==60 && camera_field.load()==1.1f && camera_fly_speed.load()==800 &&
         !minimap_rotating.load() && game_menu_scale.load()==1.0f && ptbr_enabled.load() && orbit_smoothing.load()==12 && pause_with_menu.load() && damage_taken.load()==2 && contrast.load()==1.2f &&
         ControllerMapping()[0]==1 && ControllerMapping()[1]==0 && camera_roll.load()==12 && show_fps.load() &&
-        gold_gain.load()==3 && free_shopping.load() && devil_damage_taken.load()==.5f && enemy_hp.load()==2.5f && lament_save.load() && infinite_mp.load();
+        gold_gain.load()==3 && free_shopping.load() && devil_damage_taken.load()==.5f && enemy_hp.load()==2.5f && enemy_scale.load()==1.5f && lament_save.load() && infinite_mp.load();
     toml::table roundtrip;Save(&roundtrip);
     settings_ok=settings_ok && roundtrip["controller_map"].value_or(std::string{})=="1,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
     settings_ok=settings_ok && roundtrip["gold_gain"].value_or(0.0f)==3 && roundtrip["free_shopping"].value_or(false) &&
         roundtrip["lament_save"].value_or(false) && roundtrip["infinite_mp"].value_or(false) &&
-        roundtrip["invert_stick_x"].value_or(false) && roundtrip["enemy_hp"].value_or(0.0f)==2.5f;
+        roundtrip["invert_stick_x"].value_or(false) && roundtrip["enemy_hp"].value_or(0.0f)==2.5f &&
+        roundtrip["enemy_scale"].value_or(0.0f)==1.5f;
     settings_ok=settings_ok && roundtrip["menu_x"].value_or(0.0f)==123 && roundtrip["menu_opacity"].value_or(0.0f)==.65f;
     settings_ok=settings_ok && !roundtrip["minimap_enabled"].value_or(true) &&
         roundtrip["minimap_scale"].value_or(0.0f)==1.25f && roundtrip["minimap_opacity"].value_or(0.0f)==.6f &&

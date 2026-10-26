@@ -69,6 +69,8 @@ inline std::atomic<bool> menu_adjusting{false};
 inline std::atomic<float> damage_taken{1.0f},devil_damage_taken{1.0f};
 // Multiplica a vida maxima dos inimigos (sub_00090660); vale para quem nasce depois da mudanca.
 inline std::atomic<float> enemy_hp{1.0f};
+// Tamanho de todos os inimigos (escala nativa no ator); multiplica o ajuste por tipo do mod Editor.
+inline std::atomic<float> enemy_scale{1.0f};
 // Economia: multiplicador do ganho de ouro (stat 111) e EXP (stat 3); compras sem gastar ouro
 inline std::atomic<float> gold_gain{1.0f},exp_gain{1.0f};
 inline std::atomic<bool> free_shopping{false};
