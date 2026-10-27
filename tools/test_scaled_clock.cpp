@@ -13,6 +13,14 @@ int main() {
     if(clock.Now(6000)!=5000) return 4;
     clock.SetRate(6000,std::numeric_limits<double>::quiet_NaN());
     if(clock.Rate()!=1 || clock.Now(7000)!=6000) return 5;
+    // speedhack ate 4x; acima disso e abaixo de 0,5x fica no limite
+    dev::ScaledClock fast(0);
+    fast.SetRate(0,4);
+    if(fast.Rate()!=dev::kMaxSpeed || fast.Now(1000)!=4000) return 14;
+    fast.SetRate(1000,10);
+    if(fast.Rate()!=4 || dev::kMaxSpeed!=4) return 15;
+    fast.SetRate(1000,.1);
+    if(fast.Rate()!=dev::kMinSpeed || dev::kMinSpeed!=.5) return 16;
     if(dev::GuestDeadline(-10000,100,900)!=1000100) return 6;
     if(dev::GuestDeadline(1000,100,900)!=10100 || dev::GuestDeadline(800,100,900)!=100) return 7;
     if(dev::GuestDeadline(INT64_MIN,100,900)!=INT64_MAX) return 8;

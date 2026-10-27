@@ -121,7 +121,7 @@ Cada página com opções tem "Restaurar padrões desta página"; o rodapé tem 
 
 | Aba | O que tem |
 |---|---|
-| Cheats | Godmode; speedhack (0,5x–2x); vida cheia; MP cheio; MP infinito; ouro máximo; ganho de ouro e de EXP (1x–10x); compras sem gastar ouro; "Simular save de Lament of Innocence" (libera a estátua Moai); `cheats.toml` próprio |
+| Cheats | Godmode; speedhack (0,5x–4x; acima de 1x só 1 de cada N quadros aparece, para o jogo acelerar de verdade); vida cheia; MP cheio; MP infinito; ouro máximo; ganho de ouro e de EXP (1x–10x); compras sem gastar ouro; "Simular save de Lament of Innocence" (libera a estátua Moai); `cheats.toml` próprio |
 | Mods | Lista os mods em `mods/`, com caixa para ligar cada um; recarregar a lista; exportar texturas para criar um pack HD |
 | Suporte e menu | **Relatar bug:** captura do quadro do jogo, título e texto, salvo em `reports/`. **Capturas salvas:** as 12 mais novas. **Logs e travamentos:** últimas linhas do log e dumps de travamento. **Diagnóstico:** registro de desempenho, pesquisa da vida dos inimigos e área e sala atuais. Nada é enviado para a internet. |
 | Suporte e menu > Aparência do menu | Idioma do menu, opacidade, cores, pausar com o menu aberto. |
