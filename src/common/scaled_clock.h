@@ -5,6 +5,8 @@
 #include <limits>
 
 namespace dev {
+// faixa do speedhack (menu, settings.toml e relogio)
+inline constexpr double kMinSpeed = .5, kMaxSpeed = 4;
 class ScaledClock {
     int64_t real_anchor_ = 0, virtual_anchor_ = 0;
     double rate_ = 1;
@@ -20,7 +22,7 @@ public:
     void SetRate(int64_t real_now, double rate) {
         virtual_anchor_ = Now(real_now);
         real_anchor_ = std::max(real_anchor_, real_now);
-        rate_ = std::isfinite(rate) ? std::clamp(rate, .5, 2.0) : 1;
+        rate_ = std::isfinite(rate) ? std::clamp(rate, kMinSpeed, kMaxSpeed) : 1;
     }
     // Menu dev aberto: o tempo do jogo para; ao voltar, continua de onde parou.
     void SetPaused(int64_t real_now, bool paused) {

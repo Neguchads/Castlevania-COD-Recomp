@@ -35,6 +35,7 @@
 #include "final_copy_rules.h"
 #include "shadow_volume_rules.h"
 #include "multisample_rules.h"
+#include "frame_skip_rules.h"
 #include "texture_lookup_rules.h"
 #include "core/log.h"
 #include "gpu/backend.h"
@@ -433,7 +434,7 @@ public:
     void SetGamma(const uint8_t* ramp) override;
     void ClearReport() override { counted_.clear(); }
     // done once the list being recorded, the next fence value, has run
-    void GetReport(uint32_t report) override { reports_.push_back({report, counted_, fence_value_ + 1}); }
+    void GetReport(uint32_t report) override { reports_.push_back({report, counted_, fence_value_ + 1, skip_frame_}); }
 
     ID3D12Device* Device() override { return dev_.Get(); }
     ID3D12GraphicsCommandList* List() override { return cl_.Get(); }
@@ -731,6 +732,13 @@ private:
     std::unordered_map<uint32_t, Late> late_;
     std::mutex late_lock_;                      // DeliverLate runs on the title's thread
     std::atomic<uint64_t> presents_seen_{0};    // presents_ for DeliverLate
+    // speedhack acima de 1x: quadro do jogo que nao vai para a tela (frame_skip_rules.h)
+    bool skip_frame_ = false;
+    uint64_t guest_frames_ = 0;
+    bool hold_last_ = false, has_last_shown_ = false;
+    Surface last_shown_{};
+    bool NextSkip();
+    void SkipPresent();
     Assembled asm_;  // kept between draws for its buffers
     // visibility tests: an occlusion query per counted draw, summed into report memory once the GPU is done
     struct Query {
@@ -741,7 +749,9 @@ private:
         uint32_t va;
         std::vector<Query> queries;
         uint64_t fence;
+        bool skipped;  // pedido num quadro pulado pelo speedhack
     };
+    std::unordered_map<uint32_t, uint32_t> last_report_;  // ultima contagem medida por endereco
     ComPtr<ID3D12QueryHeap> query_heap_;
     ComPtr<ID3D12Resource> query_rb_;
     const uint64_t* query_counts_ = nullptr;
@@ -2600,9 +2610,13 @@ void D3D12Backend::DeliverReports() {
         const Report& r = reports_.front();
         double pixels = 0;
         for (const Query& q : r.queries) pixels += double(query_counts_[q.index]) / q.samples_per_pixel;
+        const auto last = last_report_.find(r.va);
+        const uint32_t count = cod_graphics::ReportCount(r.skipped, uint32_t(std::lround(pixels)),
+                                                         last != last_report_.end(), last != last_report_.end() ? last->second : 0);
+        if (!r.skipped) last_report_[r.va] = count;
         kernel::W32(r.va + kTime, uint32_t(presents_));
         kernel::W32(r.va + kTimeHigh, 0);
-        kernel::W32(r.va + kCount, uint32_t(std::lround(pixels)));
+        kernel::W32(r.va + kCount, count);
         std::atomic_thread_fence(std::memory_order_release);
         kernel::W32(r.va + kStatus, 0);
         reports_.pop_front();
@@ -2613,6 +2627,7 @@ void D3D12Backend::Draw(const State& s, uint32_t prim, uint32_t start, uint32_t 
     PerfScope perf_draw{g_perf.draw};
     g_perf.draws++;
     if (cap_) CapStep(s.rt);
+    if (cod_graphics::SkipDraw(skip_frame_, s.rt.header, multisample_rules::back_buffer.load())) return;
     if (DepthCopy(s)) return;
     DrawEnd draw_end{ext_};
     if (ext_) ext_->BeginDraw(s);
@@ -2732,6 +2747,7 @@ void D3D12Backend::Clear(const State& s, uint32_t count, const uint8_t* rects, u
         fprintf(cap_, "%04u clear rt %08X ds %08X flags %X color %08X z %.3f\n", cap_i_++, s.rt.data, s.zs.data, flags,
                 color, z);
     }
+    if (cod_graphics::SkipDraw(skip_frame_, s.rt.header, multisample_rules::back_buffer.load())) return;
     Target* rt = (flags & kClearTarget) ? EnsureTarget(s.rt, false) : nullptr;
     Target* ds = (flags & (kClearZ | kClearStencil)) ? EnsureTarget(s.zs, true) : nullptr;
     uint32_t gw;
@@ -2893,6 +2909,10 @@ void D3D12Backend::CopyByRegion(const Target& src_t, ID3D12Resource* src_res, D3
 void D3D12Backend::Copy(const Surface& src, const Surface& dst, uint32_t count, uint32_t src_rects,
                         uint32_t dst_points) {
     PerfScope perf_copy{g_perf.copy};
+    // destino ou origem no back buffer: num quadro pulado ele nao foi desenhado, a textura fica com a copia anterior
+    const uint32_t back_buffer = multisample_rules::back_buffer.load();
+    if (cod_graphics::SkipDraw(skip_frame_, dst.header, back_buffer) ||
+        cod_graphics::SkipDraw(skip_frame_, src.header, back_buffer)) return;
     Target* src_t = FindTarget(src, false);
     if (cap_) {
         const char* from = "memory";
@@ -3183,8 +3203,42 @@ void LogPerf() {
     }
 }
 
-void D3D12Backend::Present(const Surface& front) {
+// speedhack: o proximo quadro do jogo fica fora da tela? Nunca durante captura F3 ou com o jogo pausado pelo menu.
+bool D3D12Backend::NextSkip() {
+    return !cap_ && !g_capture.load() && !dev::GamePaused() && !cod_graphics::ShowFrame(++guest_frames_, dev::speed.load());
+}
+
+// quadro pulado: sem montar a imagem nem trocar a swap chain; o resto do fim de quadro (envio, relatorios,
+// contadores) continua, porque o jogo espera por ele
+void D3D12Backend::SkipPresent() {
+    Submit(false);
+    DeliverReports();
+    presents_++;
+    presents_seen_.store(presents_);
+    frame_++;
+    ReleaseOldTextures();
+    ResetFrame();
+    CountFps();
+    if (diag::Perf() || dev::perf_log.load()) LogPerf();
+    skip_frame_ = NextSkip();
+}
+
+void D3D12Backend::Present(const Surface& guest_front) {
     PerfScope perf_present{g_perf.present};
+    const bool paused = dev::GamePaused();
+    if (skip_frame_ && !cap_ && !g_capture.load() && !paused) {
+        SkipPresent();
+        return;
+    }
+    // quadro pulado que chega com o menu pausando (ou com F3): o back buffer dele nao foi desenhado, entao a tela
+    // segura o ultimo quadro mostrado ate o jogo desenhar um quadro inteiro de novo
+    if (skip_frame_) hold_last_ = true;
+    else if (!paused) hold_last_ = false;
+    const Surface front = hold_last_ && has_last_shown_ ? last_shown_ : guest_front;
+    if (!hold_last_) {
+        last_shown_ = guest_front;
+        has_last_shown_ = true;
+    }
     if (cap_) {
         FinishCapture(front);
     } else if (g_capture.exchange(false)) {
@@ -3214,6 +3268,7 @@ void D3D12Backend::Present(const Surface& front) {
     CountFps();
     if (diag::Perf() || dev::perf_log.load()) LogPerf();
     ApplySettings();
+    skip_frame_ = NextSkip();
 }
 
 void D3D12Backend::ApplySettings() {

@@ -23,6 +23,7 @@
 #include "game_cheat_rules.h"
 #include "enemy_editor.h"
 #include "drop_rules.h"
+#include "scaled_clock.h"
 #include "texture_lookup_rules.h"
 #include "menu_language.h"
 
@@ -227,7 +228,7 @@ void Load(const void* raw) {
     shader.store(std::clamp(table["post_shader"].value_or(0), 0, 2));
     godmode.store(table["godmode"].value_or(false));
     const float saved_speed=table["game_speed"].value_or(1.0f);
-    speed.store(std::isfinite(saved_speed)?std::clamp(saved_speed,.5f,2.0f):1.0f);
+    speed.store(std::isfinite(saved_speed)?std::clamp(saved_speed,float(kMinSpeed),float(kMaxSpeed)):1.0f);
     selected_profile=std::clamp(table["selected_profile"].value_or(0),0,4);
     for(size_t i=0;i<user_profiles.size();++i) {
         if(auto name=table["profile_name_"+std::to_string(i)].value<std::string>())user_profiles[i].name=*name;

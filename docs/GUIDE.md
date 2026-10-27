@@ -121,7 +121,7 @@ Every page with options has "Restaurar padrões desta página" (restore this pag
 
 | Tab | What it has |
 |---|---|
-| Cheats | Godmode; speedhack (0.5x–2x); full HP; full MP; infinite MP; max gold; gold and EXP gain (1x–10x); purchases cost no gold; "Simular save de Lament of Innocence" (simulate a *Lament of Innocence* save, unlocks the Moai statue); custom `cheats.toml` |
+| Cheats | Godmode; speedhack (0.5x–4x; above 1x only 1 in N frames is shown so the game really speeds up); full HP; full MP; infinite MP; max gold; gold and EXP gain (1x–10x); purchases cost no gold; "Simular save de Lament of Innocence" (simulate a *Lament of Innocence* save, unlocks the Moai statue); custom `cheats.toml` |
 | Mods | Lists the mods in `mods/`, with a checkbox for each; reload the list; export textures to build an HD pack |
 | Suporte e menu | **Relatar bug** (report a bug): game frame capture, title and text, saved in `reports/`. **Capturas salvas** (saved captures): the 12 newest. **Logs e travamentos** (logs and crashes): last log lines and crash dumps. **Diagnóstico** (diagnostics): performance logging, enemy HP probe, current area and room. Nothing is sent to the internet. |
 | Suporte e menu > Aparência do menu (menu appearance) | Menu language, opacity, colors, pause while the menu is open. |

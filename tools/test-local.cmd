@@ -112,6 +112,10 @@ if errorlevel 1 exit /b 1
 if errorlevel 1 exit /b 1
 .local\test_scaled_clock.exe
 if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_frame_skip.cpp -o .local\test_frame_skip.exe
+if errorlevel 1 exit /b 1
+.local\test_frame_skip.exe
+if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_menu_preferences.cpp -o .local\test_menu_preferences.exe
 if errorlevel 1 exit /b 1
 .local\test_menu_preferences.exe

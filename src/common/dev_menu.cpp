@@ -27,6 +27,7 @@
 #include "menu_search_index.h"
 #include "presentation_math.h"
 #include "report_gallery.h"
+#include "scaled_clock.h"
 #include "translation_pack_rules.h"
 
 namespace dev {
@@ -150,15 +151,16 @@ void GameHacks() {
     ImGui::TextWrapped("%s",Tr("Preserva cura e outros personagens. Impactos e animacoes continuam; nao reverte morte ja iniciada."));
     ImGui::Spacing();
     float factor = speed.load();
-    if(ImGui::SliderFloat("Speedhack",&factor,.5f,2.0f,"%.2fx")) SetSpeed(factor,false);
+    if(ImGui::SliderFloat("Speedhack",&factor,float(kMinSpeed),float(kMaxSpeed),"%.2fx")) SetSpeed(factor,false);
     if(ImGui::IsItemDeactivatedAfterEdit()) LOGR("dev: guest speed %.2fx (clock, waits, vblank, audio)",speed.load());
-    const float factors[]{.5f,1,1.5f,2};
-    const char* labels[]{"0.5x",Tr("Normal"),"1.5x","2x"};
-    for(int i=0;i<4;i++) {
+    const float factors[]{.5f,1,2,3,4};
+    const char* labels[]{"0.5x",Tr("Normal"),"2x","3x","4x"};
+    for(int i=0;i<5;i++) {
         if(i) ImGui::SameLine();
         if(ImGui::Button(labels[i],MenuSize(82,30))) SetSpeed(factors[i]);
     }
     ImGui::TextWrapped("%s",Tr("Escala os relogios do Xbox, timers, quadros e audio. O tom do som acompanha a velocidade. Vsync volta a valer em 1x."));
+    ImGui::TextWrapped("%s",Tr("Acima de 1x o jogo roda todos os quadros, mas so 1 de cada 2, 3 ou 4 aparece na tela. O limite real e a CPU: se nao acelerar, baixe a resolucao interna."));
     ImGui::Spacing();ImGui::Separator();ImGui::Spacing();
     ImGui::BeginDisabled(!godmode_ready);
     static const char* action_status="";

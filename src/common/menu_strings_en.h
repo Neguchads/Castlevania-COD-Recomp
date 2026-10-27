@@ -150,6 +150,8 @@ inline constexpr std::pair<const char*, const char*> kMenuStringsEn[]{
     {"Escala de cinza", "Grayscale"},
     {"Escala do HUD e molduras", "HUD and frame scale"},
     {"Escala os relogios do Xbox, timers, quadros e audio. O tom do som acompanha a velocidade. Vsync volta a valer em 1x.", "Scales the Xbox clocks, timers, frames and audio. Sound pitch follows the speed. Vsync applies again at 1x."},
+    {"Acima de 1x o jogo roda todos os quadros, mas so 1 de cada 2, 3 ou 4 aparece na tela. O limite real e a CPU: se nao acelerar, baixe a resolucao interna.",
+     "Above 1x the game runs every frame, but only 1 in 2, 3 or 4 is shown. The real limit is the CPU: if it does not speed up, lower the internal resolution."},
     {"Escolha o personagem. O nome escolhido será mantido.", "Choose the character. The chosen name is kept."},
     {"Escolha qual botao fisico aciona cada botao do jogo (jogador 1).", "Choose which physical button triggers each game button (player 1)."},
     {"Escolha seu personagem", "Choose your character"},
