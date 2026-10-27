@@ -21,8 +21,16 @@ inline void MenuGamePad(input::Pad& pad, bool character_selection) {
     pad.buttons=0;
     for(auto& button:pad.analog) button=0;
 }
-inline void QueueMenuPad(input::Pad pad, bool active, dev_rules::ReleaseGate& back) {
+inline void QueueMenuPad(input::Pad pad, bool active, dev_rules::ReleaseGate& back, bool adjusting=false) {
     if(!active) pad={};
+    // Ajustando uma barra, o analogico esquerdo tambem arrasta (meio curso, para ignorar drift).
+    if(adjusting) {
+        constexpr int kStickStep=16000;
+        if(pad.lx>kStickStep) pad.buttons|=8;
+        if(pad.lx<-kStickStep) pad.buttons|=4;
+        if(pad.ly>kStickStep) pad.buttons|=1;
+        if(pad.ly<-kStickStep) pad.buttons|=2;
+    }
     auto& io=ImGui::GetIO();
     if(pad.connected) io.BackendFlags|=ImGuiBackendFlags_HasGamepad;
     else io.BackendFlags&=~ImGuiBackendFlags_HasGamepad;

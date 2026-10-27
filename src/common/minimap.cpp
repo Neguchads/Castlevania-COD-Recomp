@@ -2,6 +2,7 @@
 #include "guest_memory_guard.h"
 #include "minimap_model.h"
 #include "minimap_state.h"
+#include "presentation_math.h"
 #include "kernel/kernel.h"
 #include "core/log.h"
 #include <imgui.h>
@@ -103,7 +104,10 @@ void DrawMinimap() {
     // Janela local centrada no jogador: conserva tamanho das salas entre areas.
     const auto& io=ImGui::GetIO();
     const float ui_scale=std::clamp(std::min(io.DisplaySize.x/1920,io.DisplaySize.y/1080),.65f,2.0f)*minimap_scale.load();
-    const ImVec2 size{260*ui_scale,150*ui_scale},origin{io.DisplaySize.x-size.x-22*ui_scale,22*ui_scale};
+    const ImVec2 size{260*ui_scale,150*ui_scale};
+    const auto placed=cod_view::MinimapOrigin({io.DisplaySize.x,io.DisplaySize.y},{size.x,size.y},22*ui_scale,
+                                              minimap_x.load(),minimap_y.load());
+    const ImVec2 origin{placed.x,placed.y};
     const float zoom=.32f*ui_scale;
     const float heading=minimap_rotating ? camera_heading.load()-current->rotation*1.5707963268f : 0;
     auto screen=[&](Point p){

@@ -22,6 +22,7 @@
 #include "app/app.h"
 #include "core/input.h"
 #include "core/log.h"
+#include "dev_rules.h"
 #include "gpu/backend.h"
 #include "image_symbols.h"
 #include "kernel/kernel.h"
@@ -66,16 +67,15 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* e) {
                       e ? &info : nullptr, nullptr, nullptr);
     CloseHandle(f);
     logx::Flush();
+    // copia do log ao lado do dump: o runtime.log e sobrescrito na proxima execucao
+    auto log = dir / name;
+    log.replace_extension(L".log");
+    CopyFileW(std::filesystem::path(logx::Path()).c_str(), log.c_str(), FALSE);
     return EXCEPTION_CONTINUE_SEARCH;
 }
 
 void DumpThreads() {
-    const wchar_t* capture_dir=_wgetenv(L"XBE_CAPTURE_DIR");
-    if(!capture_dir || !*capture_dir) {
-        if(_wputenv_s(L"XBE_CAPTURE_DIR",L"captures/orange-marker")==0)
-            LOGR("capture: F3 will save the next frame under captures/orange-marker");
-        else LOGR("capture: set XBE_CAPTURE_DIR; default capture path could not be configured");
-    }
+    LOGR("capture: F3 requested; renderer selects configured path or captures/orange-marker");
     dev::NotifyToast("Captura F3 em andamento...");
     gpu::g_capture = true;
     for (auto& t : kernel::Threads())
@@ -128,6 +128,20 @@ void ApplyNow() {
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
+    // Atalho do hospedeiro: funciona mesmo com o painel aberto e ignora auto-repeat.
+    if (msg == WM_SYSKEYDOWN && wp == VK_RETURN && (uintptr_t(lp) & (uintptr_t(1) << 29))) {
+        if (!(uintptr_t(lp) & (uintptr_t(1) << 30))) {
+            std::lock_guard lock(UiLock());
+            auto& settings = Get();
+            settings.display_mode = settings.display_mode == DisplayMode::Windowed
+                ? DisplayMode::Fullscreen : DisplayMode::Windowed;
+            ApplyDisplay();
+            Save();
+            LOGR("display: Alt+Enter -> %s", settings.display_mode == DisplayMode::Fullscreen ? "fullscreen" : "windowed");
+        }
+        return 0;
+    }
+    if (msg == WM_SYSCHAR && wp == VK_RETURN) return 0;
     {
         std::lock_guard lock(UiLock());
         if (ImGui::GetCurrentContext() && ImGui_ImplWin32_WndProcHandler(hwnd, msg, wp, lp)) return 1;
@@ -137,7 +151,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         case WM_APP+3:
             kernel::Relaunch("CastlevaniaCOD");
         case WM_KEYDOWN:
-            if (wp == VK_F3) DumpThreads();
+            // Segurar F3 repetia a captura (pasta de relato + leituras da GPU) ~30 vezes por segundo.
+            if (wp == VK_F3 && dev_rules::FirstKeyDown(uint64_t(lp))) DumpThreads();
             return 0;
         case WM_ACTIVATE:
             if (LOWORD(wp) == WA_INACTIVE) {
