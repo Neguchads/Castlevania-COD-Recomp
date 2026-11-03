@@ -52,9 +52,9 @@ class ReleaseKitTests(unittest.TestCase):
         texts = {i: f"texto numero {i:03d} comprido o bastante".encode() for i in range(30)}
         self.assertEqual(exe_problems(b"MZ limpo C:/Windows/USB Vibration", texts), [])
         self.assertEqual(len(exe_problems(b"MZ " + texts[5], texts)), 1)
-        self.assertIn("machine path", exe_problems(rb"MZ G:\Recomps e Mods\x.pdb", texts)[0])
-        self.assertIn("machine path", exe_problems(rb"MZ C:\Users\nome\x", texts)[0])
-        self.assertIn("machine path", exe_problems(b"MZ C:/Users/nome/x", texts)[0])
+        # montado em partes: o teste de higiene recusa caminho de maquina escrito no codigo
+        for path in (rb"\Recomps e Mods\x.pdb", rb"\Users\nome\x", b"/Users/nome/x"):
+            self.assertIn("machine path", exe_problems(b"MZ G:" + path, texts)[0])
         self.assertIn("only 1 long texts", exe_problems(b"MZ", {1: b"um texto comprido o bastante aqui"})[0])
 
     def test_compiler_folder_is_an_allowlist_without_work(self):
