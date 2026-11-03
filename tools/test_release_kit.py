@@ -39,7 +39,7 @@ class ReleaseKitTests(unittest.TestCase):
             self.assertIsNotNone(forbidden_entry(name), name)
         for name in ("CastlevaniaCOD.exe", "compiler/xbe_recomp.exe", "compiler/clang.exe",
                      "compiler/config/game.toml", "compiler/include/cpu/x86_ops.h", "compiler/vcruntime140.dll",
-                     "assets/LEIA-ME.txt", "mods/LEIA-ME.txt", "LICENSES/XboxXBERecomp-MIT.txt", "README.md"):
+                     "README.txt", "assets/README.txt", "mods/README.txt", "LICENSES/XboxXBERecomp-MIT.txt", "README.md"):
             self.assertIsNone(forbidden_entry(name), name)
 
     def test_catalog_texts_in_the_exe_are_reported(self):
@@ -100,13 +100,37 @@ class ReleaseKitTests(unittest.TestCase):
             packs(Namespace(mods=str(mods), out=str(out), catalog=str(catalog), only=["PTBR-PS2", "PS2-Botoes"]))
             with zipfile.ZipFile(out / "Castlevania-COD-Recomp-PTBR-PS2.zip") as zipped:
                 self.assertEqual(sorted(zipped.namelist()),
-                                 ["mods/PTBR-PS2/files/data/a.dar", "mods/PTBR-PS2/ptbr_strings.bin"])
+                                 ["mods/PTBR-PS2/README.txt", "mods/PTBR-PS2/files/data/a.dar",
+                                  "mods/PTBR-PS2/ptbr_strings.bin"])
+                readme = zipped.read("mods/PTBR-PS2/README.txt").decode("utf-8")
+                self.assertLess(readme.index("ENGLISH"), readme.index("PORTUGUES (BRASIL)"))
+                self.assertIn("\r\n", readme)
                 self.assertEqual(zipped.read("mods/PTBR-PS2/ptbr_strings.bin"), GOLDEN)
             with zipfile.ZipFile(out / "Castlevania-COD-Recomp-PS2-Botoes.zip") as zipped:
-                self.assertEqual(zipped.namelist(), ["mods/PS2-Botoes/textures/b.dds"])
+                self.assertEqual(sorted(zipped.namelist()),
+                                 ["mods/PS2-Botoes/README.txt", "mods/PS2-Botoes/textures/b.dds"])
+            self.assertIn("ENGLISH", (out / "README.txt").read_text(encoding="utf-8"))
             sums = (out / "SHA256SUMS.txt").read_text().splitlines()
+            # o README da pasta de saida nao entra nos SHA256 (so os zips)
             self.assertEqual([line.split("  ")[1] for line in sums],
                              ["Castlevania-COD-Recomp-PS2-Botoes.zip", "Castlevania-COD-Recomp-PTBR-PS2.zip"])
+
+
+class ReadmeTextTests(unittest.TestCase):
+    def test_docs_named_in_the_readmes_ship_in_the_zip(self):
+        import re as regex
+        from release_kit import DOCS, KIT_README, PACKS, pack_readme
+        named = set()
+        for text in (KIT_README, *map(pack_readme, PACKS)):
+            named |= {name.replace(chr(92), "/") for name in regex.findall(r"(?:docs\\)?[A-Z]+\.md", text)}
+        self.assertTrue({"docs/GUIDE.md", "MODDING.md", "docs/CREDITS.md"} <= named, named)
+        self.assertEqual(named - set(DOCS), set())
+
+    def test_every_text_for_players_is_english_then_portuguese(self):
+        from release_kit import ASSETS_README, KIT_README, MODS_README, PACKS, RELEASE_FOLDER_README, pack_readme
+        for text in (KIT_README, ASSETS_README, MODS_README, RELEASE_FOLDER_README, *map(pack_readme, PACKS)):
+            self.assertLess(text.index("ENGLISH"), text.index("PORTUGUES (BRASIL)"))
+            self.assertTrue(text.isascii(), text[:40])  # abre igual em qualquer Bloco de Notas
 
 
 if __name__ == "__main__":

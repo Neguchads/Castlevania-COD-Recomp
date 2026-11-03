@@ -51,13 +51,15 @@ function Copy-Tree([string]$from, [string]$to, [string[]]$extra = @()) {
 New-Item -ItemType Directory -Force $Destination | Out-Null
 
 'Copiando exe e dll...'
-& robocopy $release $Destination 'CastlevaniaCOD.exe' 'CastlevaniaCOD.dll' 'CastlevaniaCOD.pdb' 'MODDING.md' 'MODDING.pt-BR.md' 'cheats.example.toml' /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
+& robocopy $release $Destination 'CastlevaniaCOD.exe' 'CastlevaniaCOD.dll' 'CastlevaniaCOD.pdb' 'MODDING.md' 'cheats.example.toml' /R:1 /W:1 /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "robocopy falhou ($LASTEXITCODE) no exe" }
-# Guia do jogador: GUIA.md em portugues, GUIDE.md em ingles.
-foreach ($pair in @(@('docs\GUIDE.pt-BR.md', 'GUIA.md'), @('docs\GUIDE.md', 'GUIDE.md'))) {
-    $guide = Join-Path $Project $pair[0]
-    if (Test-Path $guide) { Copy-Item $guide (Join-Path $Destination $pair[1]) }
+# Guias em docs\, como no zip da release (os links entre eles continuam valendo); ingles em cima, portugues embaixo.
+# Os antigos da raiz (GUIDE.md, GUIA.md, MODDING.pt-BR.md) saem.
+New-Item -ItemType Directory -Force (Join-Path $Destination 'docs') | Out-Null
+foreach ($doc in 'GUIDE.md', 'CREDITS.md', 'TRANSLATION.md') {
+    Copy-Item (Join-Path $Project "docs\$doc") (Join-Path $Destination "docs\$doc")
 }
+foreach ($old in 'GUIDE.md', 'GUIA.md', 'MODDING.pt-BR.md') { Remove-Item (Join-Path $Destination $old) -ErrorAction SilentlyContinue }
 if (-not (Test-DllCurrent $Destination)) { throw 'A copia perdeu a data da dll; o jogo tentaria recompilar. Rode de novo.' }
 'Copiando o jogo (assets)...'
 Copy-Tree $assets (Join-Path $Destination 'assets') @('/XF', '*.private.h')
@@ -78,10 +80,35 @@ foreach ($name in @('settings.toml', 'cheats.toml')) {
 
 $readme = @'
 Castlevania: Curse of Darkness Recomp
+=====================================
+
+ENGLISH
+
+What it is: a Windows port of the Xbox game, made by static recompilation. This folder is
+ready to play and holds your own game files.
+
+How to play: double-click CastlevaniaCOD.exe.
+Tools menu: L3 + R3 on the controller or F1 on the keyboard.
+Full guide (hotkeys, options, mods, cheats): docs\GUIDE.md, opens in Notepad.
+Saves are in hdd\E\UDATA; options in settings.toml. To start over, delete the save
+folder inside hdd\E\UDATA\4b4e002d (the one with C2Save.dat).
+Folders: assets = game files, mods = HD textures and the PT-BR translation.
+If Windows reports a missing MSVCP140.dll or VCRUNTIME140.dll, install the
+"Microsoft Visual C++ Redistributable 2015-2022 x64".
+To move it to another disk or PC: copy the whole folder (Explorer keeps the dates).
+The dll must stay newer than the exe; if the game mentions the "compiler folder",
+the copy lost the dates: copy it again from the original folder.
+This folder has your game files: do not share it.
+
+PORTUGUES (BRASIL)
+
+O que e: port para Windows do jogo de Xbox, feito por recompilacao estatica. Esta pasta
+esta pronta para jogar e tem os arquivos do seu jogo.
+
 Para jogar: clique duas vezes em CastlevaniaCOD.exe.
 Menu de ferramentas: L3 + R3 no controle ou F1 no teclado.
-Guia completo (atalhos, opcoes, mods, cheats): GUIA.md, abre no Bloco de Notas.
-English guide: GUIDE.md.
+Guia completo (atalhos, opcoes, mods, cheats): docs\GUIDE.md (portugues na segunda metade),
+abre no Bloco de Notas.
 Saves ficam em hdd\E\UDATA; opcoes em settings.toml. Para comecar do zero, apague a pasta
 do save dentro de hdd\E\UDATA\4b4e002d (a que tem C2Save.dat).
 Pastas: assets = arquivos do jogo, mods = texturas HD e traducao PT-BR.
@@ -92,7 +119,8 @@ A dll precisa continuar mais nova que o exe; se o jogo falar em "compiler folder
 a copia perdeu as datas: copie de novo a partir da pasta original.
 Esta pasta tem os arquivos do seu jogo: nao compartilhe.
 '@
-Set-Content -Path (Join-Path $Destination 'LEIA-ME.txt') -Value $readme -Encoding utf8
+Set-Content -Path (Join-Path $Destination 'README.txt') -Value $readme -Encoding utf8
+Remove-Item (Join-Path $Destination 'LEIA-ME.txt') -ErrorAction SilentlyContinue
 
 $vc = (Test-Path "$env:WINDIR\System32\msvcp140.dll") -and (Test-Path "$env:WINDIR\System32\vcruntime140_1.dll")
 if (-not $vc) { 'AVISO: Visual C++ Redistributable 2015-2022 x64 nao encontrado; instale antes de jogar.' }
