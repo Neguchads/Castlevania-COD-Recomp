@@ -2,6 +2,8 @@
 
 English · [Português (Brasil)](#pt-br)
 
+**Download:** game port in [Releases](../../releases) (no game files: bring your own Xbox copy) · optional packs (HD4K, PT-BR, PS2 buttons) in the [Google Drive folder](https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk). Steps: [Download and play](#download-and-play-no-build).
+
 Experimental Windows port of *Castlevania: Curse of Darkness* (Xbox, 2005), made by static recompilation. The x86 code of the original XBE becomes native C++, and a custom runtime replaces the Xbox services: Direct3D 8 on top of Direct3D 12, XAudio2 audio, SDL3 controllers and files on the local disk.
 
 ## The problem it solves
@@ -54,7 +56,7 @@ On the test machine the game runs at 4K with 200% internal resolution and 60 FPS
 1. Download `Castlevania-COD-Recomp-<version>-win64.zip` from [Releases](../../releases) and extract it to a folder with about 4 GB free.
 2. Put your own copy of *Curse of Darkness* for Xbox (USA) in `assets\`: the `.iso`, or `default.xbe` with the game folders. The zip does not include the game.
 3. Open `CastlevaniaCOD.exe`. On the first start it builds the game code from your copy (with a progress window; it can take a long time, do not close it); after that it opens directly.
-4. Optional: the HD4K, PTBR-PS2 and PS2-Botoes packs are linked in the release description. Extract each zip into the game folder (it creates `mods\<pack>`) and turn it on in the Mods tab of the tools menu (F1). PT-BR shows up under Options > Language.
+4. Optional: the HD4K, PTBR-PS2 and PS2-Botoes packs are in the [Google Drive folder](https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk). Extract each zip into the game folder (it creates `mods\<pack>`) and turn it on in the Mods tab of the tools menu (F1). PT-BR shows up under Options > Language.
 
 Check a download with `Get-FileHash <file>.zip` in PowerShell against the release's `SHA256SUMS.txt`. The zip ships the Visual C++ runtime beside the exe; if Windows still reports a missing DLL, install the Visual C++ Redistributable 2015–2022 x64.
 
@@ -109,6 +111,8 @@ No license has been chosen yet for this project's changes: the code is visible, 
 
 [English](#castlevania-curse-of-darkness-recomp) · Português (Brasil)
 
+**Download:** o port em [Releases](../../releases) (sem arquivos do jogo: use a sua cópia de Xbox) · pacotes opcionais (HD4K, PT-BR, botões do PS2) na [pasta do Google Drive](https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk). Passo a passo: [Baixar e jogar](#baixar-e-jogar-sem-compilar).
+
 Port experimental de *Castlevania: Curse of Darkness* (Xbox, 2005) para Windows, por recompilação estática. O código x86 do XBE original vira C++ nativo, e um runtime próprio substitui os serviços do Xbox: Direct3D 8 sobre Direct3D 12, áudio em XAudio2, controle por SDL3 e arquivos no disco local.
 
 ## Problema que resolve
@@ -161,7 +165,7 @@ Na máquina de teste o jogo roda em 4K, com resolução interna de 200% e 60 FPS
 1. Baixe `Castlevania-COD-Recomp-<versão>-win64.zip` em [Releases](../../releases) e extraia numa pasta com uns 4 GB livres.
 2. Coloque a sua cópia de *Curse of Darkness* para Xbox (USA) em `assets\`: a `.iso`, ou `default.xbe` com as pastas do jogo. O zip não traz o jogo.
 3. Abra `CastlevaniaCOD.exe`. Na primeira abertura ele gera o código do jogo a partir da sua cópia (com janela de progresso; pode demorar bastante, não feche); depois abre direto.
-4. Opcional: os pacotes HD4K, PTBR-PS2 e PS2-Botoes têm links na descrição da release. Extraia cada zip na pasta do jogo (eles criam `mods\<pacote>`) e ative na aba Mods do menu (F1). O PT-BR aparece em Opções > Idioma.
+4. Opcional: os pacotes HD4K, PTBR-PS2 e PS2-Botoes estão na [pasta do Google Drive](https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk). Extraia cada zip na pasta do jogo (eles criam `mods\<pacote>`) e ative na aba Mods do menu (F1). O PT-BR aparece em Opções > Idioma.
 
 Confira o download com `Get-FileHash <arquivo>.zip` no PowerShell e compare com o `SHA256SUMS.txt` da release. O zip leva o Visual C++ runtime ao lado do exe; se o Windows reclamar de DLL, instale o Visual C++ Redistributable 2015–2022 x64.
 

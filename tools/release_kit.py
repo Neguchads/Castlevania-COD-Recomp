@@ -49,8 +49,9 @@ How to play:
    copy (progress window; it can take a while, do not close it). After that it opens directly.
 3. Tools menu: F1 on the keyboard or L3 + R3 on the controller.
 
-Optional packs (HD4K textures, PT-BR translation and dub, PS2 buttons): links on the release
-page. Extract each zip into this folder (it creates mods/<pack>) and turn it on in F1 > Mods.
+Optional packs (HD4K textures, PT-BR translation and dub, PS2 buttons), on Google Drive:
+https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk
+Extract each zip into this folder (it creates mods/<pack>) and turn it on in F1 > Mods.
 Portuguese text: in game, Options > Language.
 
 Guides: docs\\GUIDE.md (player guide), MODDING.md (mods and cheats), docs\\CREDITS.md (authors
@@ -70,8 +71,9 @@ Como jogar:
    partir da sua copia (janela de progresso; pode demorar, nao feche). Depois abre direto.
 3. Menu de ferramentas: F1 no teclado ou L3 + R3 no controle.
 
-Pacotes opcionais (texturas HD4K, traducao e dublagem PT-BR, botoes do PS2): links na pagina
-da release. Extraia cada zip nesta pasta (ele cria mods/<pacote>) e ative em F1 > Mods.
+Pacotes opcionais (texturas HD4K, traducao e dublagem PT-BR, botoes do PS2), no Google Drive:
+https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk
+Extraia cada zip nesta pasta (ele cria mods/<pacote>) e ative em F1 > Mods.
 Texto em portugues: no jogo, Opcoes > Idioma.
 
 Guias: docs\\GUIDE.md (guia do jogador), MODDING.md (mods e cheats), docs\\CREDITS.md (autores
@@ -115,6 +117,7 @@ PACK_README = {
     "PS2-Botoes": ("PS2 button icons instead of the Xbox ones.", "Icones de botao do PS2 no lugar dos de Xbox.",
                    "Turn on PS2-Botoes in F1 > Mods.", "Ative PS2-Botoes em F1 > Mods."),
 }
+DRIVE_FOLDER = "https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk"
 RELEASE_FOLDER_README = """Castlevania: Curse of Darkness Recomp - release files
 ====================================================
 

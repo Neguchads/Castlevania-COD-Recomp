@@ -126,6 +126,12 @@ class ReadmeTextTests(unittest.TestCase):
         self.assertTrue({"docs/GUIDE.md", "MODDING.md", "docs/CREDITS.md"} <= named, named)
         self.assertEqual(named - set(DOCS), set())
 
+    def test_kit_readme_points_to_the_packs_in_both_languages(self):
+        from release_kit import DRIVE_FOLDER, KIT_README
+        english, portuguese = KIT_README.split("PORTUGUES (BRASIL)")
+        self.assertIn(DRIVE_FOLDER, english)
+        self.assertIn(DRIVE_FOLDER, portuguese)
+
     def test_every_text_for_players_is_english_then_portuguese(self):
         from release_kit import ASSETS_README, KIT_README, MODS_README, PACKS, RELEASE_FOLDER_README, pack_readme
         for text in (KIT_README, ASSETS_README, MODS_README, RELEASE_FOLDER_README, *map(pack_readme, PACKS)):
