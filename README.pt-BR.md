@@ -49,7 +49,16 @@ Na máquina de teste o jogo roda em 4K, com resolução interna de 200% e 60 FPS
 
 [docs/GUIDE.pt-BR.md](docs/GUIDE.pt-BR.md) explica atalhos, cada aba e opção do menu, os mods incluídos, os cheats, a pasta pronta para jogar, os saves e o que muda em relação ao Xbox original.
 
-## Como instalar e rodar
+## Baixar e jogar (sem compilar)
+
+1. Baixe `Castlevania-COD-Recomp-<versão>-win64.zip` em [Releases](../../releases) e extraia numa pasta com uns 4 GB livres.
+2. Coloque a sua cópia de *Curse of Darkness* para Xbox (USA) em `assets\`: a `.iso`, ou `default.xbe` com as pastas do jogo. O zip não traz o jogo.
+3. Abra `CastlevaniaCOD.exe`. Na primeira abertura ele gera o código do jogo a partir da sua cópia (com janela de progresso; pode demorar bastante, não feche); depois abre direto.
+4. Opcional: os pacotes HD4K, PTBR-PS2 e PS2-Botoes têm links na descrição da release. Extraia cada zip na pasta do jogo (eles criam `mods\<pacote>`) e ative na aba Mods do menu (F1). O PT-BR aparece em Opções > Idioma.
+
+Confira o download com `Get-FileHash <arquivo>.zip` no PowerShell e compare com o `SHA256SUMS.txt` da release. O zip leva o Visual C++ runtime ao lado do exe; se o Windows reclamar de DLL, instale o Visual C++ Redistributable 2015–2022 x64.
+
+## Como compilar
 
 Requisitos para compilar: Windows 10/11, Visual Studio 2022 com "Desenvolvimento para desktop com C++" e "C++ Clang tools", Git, Python 3.12, e sua própria cópia de *Curse of Darkness* para Xbox (USA).
 
@@ -82,7 +91,7 @@ Capturas e vídeo ainda vão entrar aqui. No jogo: menu dev (F1), câmera livre 
 
 ## Não inclui
 
-Este repositório não distribui ISO/XBE, arquivos extraídos, o código C++ gerado do jogo, a DLL recompilada, saves, capturas, o catálogo de textos PT-BR nem os arquivos da tradução, da dublagem ou do pacote 4K. Tudo isso é gerado localmente a partir das cópias do usuário.
+Este repositório não distribui ISO/XBE, arquivos extraídos, o código C++ gerado do jogo, a DLL recompilada, saves, capturas, o catálogo de textos PT-BR nem os arquivos da tradução, da dublagem ou do pacote 4K. Tudo isso é gerado localmente a partir das cópias do usuário. O zip da release segue a mesma regra: leva o exe público (compilado com `-DCOD_PUBLIC_BUILD=ON`, sem texto PT-BR dentro) e a pasta `compiler`, cujo `config/game.toml` lista só endereços das funções do XBE, que a primeira abertura usa para gerar o código do jogo. Os pacotes opcionais ficam hospedados fora do GitHub, com créditos em [CREDITS.pt-BR.md](docs/CREDITS.pt-BR.md).
 
 ## Créditos e estado
 

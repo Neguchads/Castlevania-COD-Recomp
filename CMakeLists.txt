@@ -45,6 +45,14 @@ add_xbe_image(CastlevaniaCOD default.xbe game.toml ${GAME_PARTITIONS} game)
 # SDL e a unica fonte de controle na UI; XInput duplicado disputa foco com mouse/teclado.
 target_compile_definitions(CastlevaniaCOD PRIVATE IMGUI_IMPL_WIN32_DISABLE_GAMEPAD)
 
+# Build publico (release no GitHub): o texto PT-BR nao entra no exe, vem de mods/PTBR-PS2/ptbr_strings.bin.
+option(COD_PUBLIC_BUILD "Build without the private PT-BR catalog compiled in" OFF)
+if(COD_PUBLIC_BUILD)
+    target_compile_definitions(CastlevaniaCOD PRIVATE COD_NO_PRIVATE_CATALOG)
+    # o exe guarda so o nome do .pdb, nao o caminho da maquina que compilou
+    target_link_options(CastlevaniaCOD PRIVATE -Wl,/pdbaltpath:%_PDB%)
+endif()
+
 
 
 # O módulo local inclui o áudio original e acrescenta SetPitch.

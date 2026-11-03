@@ -5,6 +5,8 @@
 #include "common/guest_test_memory.h"
 #include "core/log.h"
 #include "common/ptbr_strings.h"
+#include "common/ptbr_catalog.h"
+#include "app/app.h"
 #include <map>
 #include <mutex>
 #include <cstring>
@@ -19,7 +21,26 @@ namespace {
 template<class T> T Read(uint8_t* base,uint32_t address){T value{};std::memcpy(&value,base+address,sizeof(T));return value;}
 void Write(uint8_t* base,uint32_t address,uint32_t value){std::memcpy(base+address,&value,4);}
 // Catalogo em UTF-8, como a tabela PAL PT-BR; o atlas da fonte segue Windows-1252.
-using cod_ptbr::translations;
+// Compilado (build de desenvolvimento) ou lido uma vez de mods/PTBR-PS2/ptbr_strings.bin (build publico).
+const std::map<uint32_t,std::string>& Translations() {
+    static const std::map<uint32_t,std::string> catalog=[] {
+        std::map<uint32_t,std::string> out;
+        if(!cod_ptbr::translations.empty()) {
+            for(const auto& [id,text]:cod_ptbr::translations) out.emplace(id,text);
+            LOGR("language: pt-BR catalog compiled in, %u texts",unsigned(out.size()));
+            return out;
+        }
+        // lido uma vez: instalar o pacote com o jogo aberto pede reiniciar (o aviso do idioma diz isso)
+        const auto path=app::ExeDir()/"mods"/"PTBR-PS2"/cod_ptbr::kCatalogFile;
+        switch(cod_ptbr::LoadCatalogFile(path,out)) {
+        case cod_ptbr::CatalogLoad::Missing: LOGR("language: pt-BR catalog missing (%s); texts stay in English",path.string().c_str());break;
+        case cod_ptbr::CatalogLoad::Invalid: LOGR("language: pt-BR catalog invalid (%s); texts stay in English",path.string().c_str());break;
+        case cod_ptbr::CatalogLoad::Loaded: LOGR("language: pt-BR catalog from the pack, %u texts",unsigned(out.size()));break;
+        }
+        return out;
+    }();
+    return catalog;
+}
 std::mutex strings_lock;
 std::map<uint32_t,uint32_t> strings;
 uint32_t storage=0,used=0;
@@ -40,8 +61,10 @@ void SelectTextLanguage(int language) {
     if(ptbr_enabled.exchange(translated)!=translated) {
         texture_generation.fetch_add(1);
         // Imagens e vozes ja carregadas ficam em cache ate o jogo reabrir os arquivos.
-        NotifyToast(translated ? "Português (Brasil) ativo. Reinicie o jogo para carregar todas as imagens e vozes."
-                               : "Idioma original ativo. Reinicie o jogo para restaurar todas as imagens e vozes.");
+        // Build publico sem o pacote: sem catalogo, o texto fica em ingles; o aviso diz como resolver.
+        NotifyToast(!translated ? "Idioma original ativo. Reinicie o jogo para restaurar todas as imagens e vozes."
+                    : Translations().empty() ? "Textos PT-BR ausentes: instale o pacote PTBR-PS2 (mods\\PTBR-PS2\\ptbr_strings.bin) e reinicie o jogo."
+                                             : "Português (Brasil) ativo. Reinicie o jogo para carregar todas as imagens e vozes.");
     }
     // Ingles e PT-BR (que traduz a base inglesa) usam texto (B235E0) e voz (B235E4, faixa dublada) em ingles;
     // o seletor do menu dev tambem tira o jogo do japones.
@@ -61,17 +84,19 @@ bool VerifyLanguageHooks() {
         sub_003681B0(call,base);return call.eax;
     };
     const auto english=text(false),portuguese=text(true);
-    bool ok=english==0x220000 && portuguese!=english && ReadableGuestRange(kernel::g_base,portuguese,5) &&
-        std::strcmp(reinterpret_cast<char*>(kernel::g_base+portuguese),"Mapa")==0;
-    for(const auto& [id,translation]:translations) {
+    // sem catalogo (build publico sem o pacote) o texto PT-BR fica no original, como no jogo
+    const bool has_catalog=!Translations().empty();
+    bool ok=english==0x220000 && (has_catalog ? portuguese!=english && ReadableGuestRange(kernel::g_base,portuguese,5) &&
+        std::strcmp(reinterpret_cast<char*>(kernel::g_base+portuguese),"Mapa")==0 : portuguese==english);
+    for(const auto& [id,translation]:Translations()) {
         Write(base,0x210000+16+id*4,0x220000);
         call.esp=GuestTestMemory::stack;Write(base,call.esp,0x12345);Write(base,call.esp+4,id);
         sub_003681B0(call,base);
-        ok=ok&&ReadableGuestRange(kernel::g_base,call.eax,uint32_t(std::strlen(translation)+1))&&
-            std::strcmp(reinterpret_cast<char*>(kernel::g_base+call.eax),translation)==0;
+        ok=ok&&ReadableGuestRange(kernel::g_base,call.eax,uint32_t(translation.size()+1))&&
+            std::strcmp(reinterpret_cast<char*>(kernel::g_base+call.eax),translation.c_str())==0;
     }
     ptbr_enabled=saved;
-    LOGR("dev selftest: PTBR text hook=%d translations=%u preserves-original=%d",ok,unsigned(translations.size()),english==0x220000);
+    LOGR("dev selftest: PTBR text hook=%d translations=%u preserves-original=%d",ok,unsigned(Translations().size()),english==0x220000);
     LOGR("dev selftest: PTBR complete catalog allocation/token-safe lookup=%d",ok);
     return ok;
 }
@@ -83,7 +108,8 @@ X86_FUNC(sub_003681B0) {
     if(caller==0x30B750 && candidate==2) {
         if(auto address=Store(0xFFFFFFFE,"Português (Brasil)"))ctx.eax=address;
     } else if(dev::ptbr_enabled) {
-        if(auto it=translations.find(id);it!=translations.end())if(auto address=Store(id,it->second))ctx.eax=address;
+        const auto& catalog=Translations();
+        if(auto it=catalog.find(id);it!=catalog.end())if(auto address=Store(id,it->second.c_str()))ctx.eax=address;
     }
 }
 // Opcoes > Idioma: B25360/B25364 sao a copia editada de B235E0 (texto) e B235E4 (voz).
@@ -117,7 +143,8 @@ X86_FUNC(sub_002F62E0) {
     __imp__sub_002F62E0(ctx,base);
     if(caption) {
         dev::SelectTextLanguage(candidate);
-        LOGR("language: confirmed=%d pt-BR pack=%s",candidate,dev::TranslationPackAvailable() ? "installed" : "missing");
+        LOGR("language: confirmed=%d pt-BR pack=%s texts=%u",candidate,dev::TranslationPackAvailable() ? "installed" : "missing",
+             unsigned(Translations().size()));
     }
 }
 // Lista de Opcoes: com partida ativa (variavel 0x4007) o jogo esconde a linha Idioma

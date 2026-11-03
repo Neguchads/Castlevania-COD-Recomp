@@ -309,6 +309,7 @@ inline constexpr std::pair<const char*, const char*> kMenuStringsEn[]{
     {"Pesquisar vida dos inimigos (log)", "Enemy HP probe (log)"},
     {"Por tipo", "Per type"},
     {"Português (Brasil) ativo. Reinicie o jogo para carregar todas as imagens e vozes.", "Brazilian Portuguese on. Restart the game to load all images and voices."},
+    {"Textos PT-BR ausentes: instale o pacote PTBR-PS2 (mods\\PTBR-PS2\\ptbr_strings.bin) e reinicie o jogo.", "PT-BR texts missing: install the PTBR-PS2 pack (mods\\PTBR-PS2\\ptbr_strings.bin) and restart the game."},
     {"Posicao horizontal", "Horizontal position"},
     {"Posicao horizontal do minimapa", "Minimap horizontal position"},
     {"Posicao vertical", "Vertical position"},

@@ -38,7 +38,7 @@ if errorlevel 1 exit /b 1
 .local\test_capture_path.exe
 if errorlevel 1 exit /b 1
 set "PYTHONPATH=%CD%\tools;%PYTHONPATH%"
-python -m unittest tools.test_extract_xiso tools.test_game_features tools.test_graphics_signature tools.test_pitch_signature tools.test_ptbr tools.test_ps2_ptbr_import tools.test_ps2_movie_dub tools.test_ps2_voice_dub tools.test_ps2_texture_import tools.test_dar_texture tools.test_hd_pack_match tools.test_menu_search_index tools.test_menu_strings tools.test_public_hygiene
+python -m unittest tools.test_extract_xiso tools.test_game_features tools.test_graphics_signature tools.test_pitch_signature tools.test_ptbr tools.test_ps2_ptbr_import tools.test_ps2_movie_dub tools.test_ps2_voice_dub tools.test_ps2_texture_import tools.test_dar_texture tools.test_hd_pack_match tools.test_menu_search_index tools.test_menu_strings tools.test_public_hygiene tools.test_release_kit
 if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_audio_math.cpp -o .local\test_audio_math.exe
 if errorlevel 1 exit /b 1
@@ -115,6 +115,13 @@ if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_frame_skip.cpp -o .local\test_frame_skip.exe
 if errorlevel 1 exit /b 1
 .local\test_frame_skip.exe
+if errorlevel 1 exit /b 1
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_ptbr_catalog.cpp -o .local\test_ptbr_catalog.exe
+if errorlevel 1 exit /b 1
+.local\test_ptbr_catalog.exe
+if errorlevel 1 exit /b 1
+rem o exportador do .bin compila em qualquer checkout (sem o catalogo privado ele so recusa rodar)
+"%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\ptbr_catalog_export.cpp -o .local\ptbr_catalog_export.exe
 if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_menu_preferences.cpp -o .local\test_menu_preferences.exe
 if errorlevel 1 exit /b 1

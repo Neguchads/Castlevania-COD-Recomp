@@ -49,7 +49,16 @@ On the test machine the game runs at 4K with 200% internal resolution and 60 FPS
 
 [docs/GUIDE.md](docs/GUIDE.md) covers hotkeys, every tab and option of the tools menu, the bundled mods, the cheats, the ready-to-play folder, saves and what changes compared to the original Xbox game.
 
-## Install and run
+## Download and play (no build)
+
+1. Download `Castlevania-COD-Recomp-<version>-win64.zip` from [Releases](../../releases) and extract it to a folder with about 4 GB free.
+2. Put your own copy of *Curse of Darkness* for Xbox (USA) in `assets\`: the `.iso`, or `default.xbe` with the game folders. The zip does not include the game.
+3. Open `CastlevaniaCOD.exe`. On the first start it builds the game code from your copy (with a progress window; it can take a long time, do not close it); after that it opens directly.
+4. Optional: the HD4K, PTBR-PS2 and PS2-Botoes packs are linked in the release description. Extract each zip into the game folder (it creates `mods\<pack>`) and turn it on in the Mods tab of the tools menu (F1). PT-BR shows up under Options > Language.
+
+Check a download with `Get-FileHash <file>.zip` in PowerShell against the release's `SHA256SUMS.txt`. The zip ships the Visual C++ runtime beside the exe; if Windows still reports a missing DLL, install the Visual C++ Redistributable 2015–2022 x64.
+
+## Build from source
 
 Build requirements: Windows 10/11, Visual Studio 2022 with "Desktop development with C++" and "C++ Clang tools", Git, Python 3.12, and your own copy of *Curse of Darkness* for Xbox (USA).
 
@@ -82,7 +91,7 @@ Screenshots and video are still to come. In game: tools menu (F1), free and orbi
 
 ## Not included
 
-This repository does not distribute ISO/XBE files, extracted files, the game's generated C++ code, the recompiled DLL, saves, captures, the PT-BR text catalog, or the translation, dub or 4K pack files. All of that is generated locally from the user's own copies.
+This repository does not distribute ISO/XBE files, extracted files, the game's generated C++ code, the recompiled DLL, saves, captures, the PT-BR text catalog, or the translation, dub or 4K pack files. All of that is generated locally from the user's own copies. The release zip follows the same rule: it has the public exe (built with `-DCOD_PUBLIC_BUILD=ON`, no PT-BR text inside) and the `compiler` folder, whose `config/game.toml` lists only addresses of the XBE's functions, which the first start needs to build the game code. The optional packs are hosted outside GitHub and credited in [CREDITS.md](docs/CREDITS.md).
 
 ## Credits and status
 
