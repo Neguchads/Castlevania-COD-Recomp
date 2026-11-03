@@ -13,7 +13,7 @@ if exist "%CLANGXX%" goto :clangfound
 where "%CLANGXX%" >nul 2>nul || goto :noclang
 :clangfound
 set "PYTHONPATH=%CD%\tools;%PYTHONPATH%"
-python -m unittest tools.test_extract_xiso tools.test_game_features tools.test_graphics_signature tools.test_pitch_signature tools.test_ptbr tools.test_public_hygiene
+python -m unittest tools.test_extract_xiso tools.test_game_features tools.test_graphics_signature tools.test_pitch_signature tools.test_ptbr tools.test_public_hygiene tools.test_doc_links
 if errorlevel 1 exit /b 1
 "%CLANGXX%" -std=c++20 -Wall -Wextra -Werror tools\test_audio_math.cpp -o .local\test_audio_math.exe
 if errorlevel 1 exit /b 1
