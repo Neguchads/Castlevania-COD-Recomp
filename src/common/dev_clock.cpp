@@ -17,12 +17,18 @@ uint64_t VirtualNanoseconds() {
     std::lock_guard guard(state.lock);
     return uint64_t(state.clock.Now(HostNow()));
 }
-void SetSpeed(float factor) {
+void SetSpeed(float factor, bool log) {
     auto& state = State();
     std::lock_guard guard(state.lock);
     state.clock.SetRate(HostNow(), factor);
     speed.store(float(state.clock.Rate()));
-    LOGR("dev: guest speed %.2fx (clock, waits, vblank, audio)", speed.load());
+    if (log) LOGR("dev: guest speed %.2fx (clock, waits, vblank, audio)", speed.load());
+}
+void PauseClock(bool paused) {
+    auto& state = State();
+    std::lock_guard guard(state.lock);
+    state.clock.SetPaused(HostNow(), paused);
+    LOGR("dev: guest clock %s", paused ? "paused by dev menu" : "resumed");
 }
 int64_t RealWaitNanoseconds(int64_t virtual_ns) {
     const long double value = std::max(0.0L,static_cast<long double>(virtual_ns) / speed.load());

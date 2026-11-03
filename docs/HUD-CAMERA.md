@@ -2,8 +2,6 @@
 
 English · [Português (Brasil)](#pt-br)
 
-> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
-
 ## HUD, Esc and camera modes (2026-10-24)
 
 - The minimap moved to Game → game options. Same block: show original HUD, scale 0.35–1× (default 0.5×), 50% button, fast hiding and a 0.2–5 s delay. HUD/camera/minimap persistence was exercised in the runtime.
@@ -25,8 +23,6 @@ See MODDING.md for controls. Sources: src/game/hud.cpp, src/game/camera.cpp, src
 # HUD e câmeras
 
 [English](#hud-and-cameras) · Português (Brasil)
-
-> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 ## HUD, Esc e modos de câmera (2026-10-24)
 

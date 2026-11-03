@@ -9,6 +9,7 @@
 #include <mutex>
 #include <sstream>
 #include <cctype>
+#include <cstring>
 #include <toml++/toml.hpp>
 #include "app/app.h"
 #include "core/log.h"
@@ -17,6 +18,14 @@
 #include "dev_rules.h"
 #include "menu_input.h"
 #include "guest_memory_guard.h"
+#include "translation_pack_rules.h"
+#include "presentation_math.h"
+#include "game_cheat_rules.h"
+#include "enemy_editor.h"
+#include "drop_rules.h"
+#include "scaled_clock.h"
+#include "texture_lookup_rules.h"
+#include "menu_language.h"
 
 namespace kernel { bool VerifyReadOnlyOverlay(const std::string& path); }
 
@@ -32,6 +41,8 @@ std::mutex input_lock;
 dev_rules::MenuKeyPulse native_menu_key;
 fs::path report_dir;
 bool screenshot_pending = false;
+std::optional<fs::path> preview_request;
+ReportPreview report_preview;
 std::string report_status;
 std::string toast_message;
 std::chrono::steady_clock::time_point toast_expiry{};
@@ -46,11 +57,12 @@ std::vector<Binding> bindings{
     {"Ataque (X)", VK_LBUTTON, 2}, {"Ataque especial (Y)", VK_RBUTTON, 3},
     {"Botao preto", 'Q', 4}, {"Botao branco", 'R', 5},
     {"Gatilho esquerdo", VK_SHIFT, 6}, {"Gatilho direito", VK_CONTROL, 7},
-    {"Start / menu", VK_RETURN, 8}, {"Back / mapa", VK_TAB, 9},
+    {"Start / menu", 'P', 8}, {"Back / mapa", VK_TAB, 9},
     {"Movimento: frente",'W',20},{"Movimento: tras",'S',21},
     {"Movimento: esquerda",'A',22},{"Movimento: direita",'D',23},
-    {"Camera: cima",VK_UP,24},{"Camera: baixo",VK_DOWN,25},
-    {"Camera: esquerda",VK_LEFT,26},{"Camera: direita",VK_RIGHT,27},
+    {"Direcional: cima",VK_UP,24},{"Direcional: baixo",VK_DOWN,25},
+    {"Direcional: esquerda",VK_LEFT,26},{"Direcional: direita",VK_RIGHT,27},
+    {"Confirmar no menu (A)",VK_RETURN,0},
 };
 bool Pressed(int key) { return key > 0 && key < 256 && keys[size_t(key)].load(); }
 void ClearInput() {
@@ -97,8 +109,8 @@ void SetBinding(int index, int key) {
         key != VK_F1 && key != VK_F8 && key != VK_F9 && key != VK_ESCAPE) bindings[size_t(index)].key = key;
 }
 void ResetBindings() {
-    constexpr int defaults[]{VK_SPACE,'E',VK_LBUTTON,VK_RBUTTON,'Q','R',VK_SHIFT,VK_CONTROL,VK_RETURN,VK_TAB,
-        'W','S','A','D',VK_UP,VK_DOWN,VK_LEFT,VK_RIGHT};
+    constexpr int defaults[]{VK_SPACE,'E',VK_LBUTTON,VK_RBUTTON,'Q','R',VK_SHIFT,VK_CONTROL,'P',VK_TAB,
+        'W','S','A','D',VK_UP,VK_DOWN,VK_LEFT,VK_RIGHT,VK_RETURN};
     for(size_t i=0;i<std::size(defaults);++i) SetBinding(int(i),defaults[i]);
     invert_mouse_x.store(true);invert_mouse_y.store(false);sensitivity.store(.012f);
 }
@@ -137,6 +149,7 @@ void Load(const void* raw) {
     mouse_camera.store(table["mouse_camera"].value_or(true));
     invert_mouse_x.store(table["invert_mouse_x"].value_or(true));
     invert_mouse_y.store(table["invert_mouse_y"].value_or(false));
+    invert_stick_x.store(table["invert_stick_x"].value_or(false));
     controller_shortcut.store(table["controller_menu_shortcut"].value_or(true));
     minimap_enabled.store(table["minimap_enabled"].value_or(true));
     minimap_rotating.store(table["minimap_rotating"].value_or(true));
@@ -145,7 +158,11 @@ void Load(const void* raw) {
     const float map_opacity=table["minimap_opacity"].value_or(.8f);
     minimap_scale.store(std::isfinite(map_scale) ? std::clamp(map_scale,.6f,1.6f) : 1.0f);
     minimap_opacity.store(std::isfinite(map_opacity) ? std::clamp(map_opacity,.2f,1.0f) : .8f);
+    const float map_x=table["minimap_x"].value_or(1.0f),map_y=table["minimap_y"].value_or(0.0f);
+    minimap_x.store(std::isfinite(map_x) ? std::clamp(map_x,0.0f,1.0f) : 1.0f);
+    minimap_y.store(std::isfinite(map_y) ? std::clamp(map_y,0.0f,1.0f) : 0.0f);
     hud_enabled.store(table["hud_enabled"].value_or(true));
+    hud_always_visible.store(table["hud_always_visible"].value_or(false));
     hud_quick_hide.store(table["hud_quick_hide"].value_or(false));
     const float interface_scale=table["hud_scale"].value_or(.5f);
     const float hide_delay=table["hud_hide_delay"].value_or(1.0f);
@@ -153,6 +170,40 @@ void Load(const void* raw) {
     // Experimento de escala adiado por pedido do usuario: menu original intacto.
     game_menu_scale.store(1.0f);
     game_menu_live.store(false);
+    // chave nova: a antiga (pause_with_menu, padrao ligado) fica ignorada e o jogo passa a rodar com o menu
+    pause_with_menu.store(table["menu_pauses_game"].value_or(false));
+    // so troca quando a chave existe: perfil antigo ou vanilla nao muda o idioma das ferramentas
+    if(const auto language=table["menu_language"].value<std::string>()) menu_english.store(MenuLanguageIsEnglish(*language));
+    damage_taken.store(ClampDamageFactor(table["damage_taken"].value_or(1.0f)));
+    // chave nova: a antiga damage_dealt dizia "inimigos" mas valia para o Innocent Devil; fica ignorada
+    devil_damage_taken.store(ClampDamageFactor(table["devil_damage_taken"].value_or(1.0f)));
+    enemy_hp.store(ClampEnemyHpFactor(table["enemy_hp"].value_or(1.0f)));
+    enemy_scale.store(ClampEnemyScale(table["enemy_scale"].value_or(1.0f)));
+    enemy_random.store(table["enemy_random"].value_or(false));
+    enemy_random_scale_min.store(ClampEnemyScale(table["enemy_random_scale_min"].value_or(.8f)));
+    enemy_random_scale_max.store(ClampEnemyScale(table["enemy_random_scale_max"].value_or(1.3f)));
+    enemy_random_hp_min.store(ClampEnemyHpFactor(table["enemy_random_hp_min"].value_or(1.0f)));
+    enemy_random_hp_max.store(ClampEnemyHpFactor(table["enemy_random_hp_max"].value_or(1.5f)));
+    {
+        const float chance=table["enemy_elite_chance"].value_or(0.0f);
+        enemy_elite_chance.store(std::isfinite(chance)?std::clamp(chance,0.0f,100.0f):0.0f);
+    }
+    enemy_elite_scale.store(ClampEnemyScale(table["enemy_elite_scale"].value_or(2.0f)));
+    enemy_elite_hp.store(ClampEnemyHpFactor(table["enemy_elite_hp"].value_or(3.0f)));
+    drop_rate.store(ClampDropFactor(table["drop_rate"].value_or(1.0f)));
+    crystal_rate.store(ClampDropFactor(table["crystal_rate"].value_or(1.0f)));
+    {
+        const float amount=table["crystal_amount"].value_or(1.0f);
+        crystal_amount.store(std::isfinite(amount)?std::clamp(amount,1.0f,kMaxCrystalAmount):1.0f);
+    }
+    random_drops.store(table["random_drops"].value_or(false));
+    item_scale.store(ClampItemScale(table["item_scale"].value_or(1.0f)));
+    gold_gain.store(ClampGainFactor(table["gold_gain"].value_or(1.0f)));
+    exp_gain.store(ClampGainFactor(table["exp_gain"].value_or(1.0f)));
+    free_shopping.store(table["free_shopping"].value_or(false));
+    lament_save.store(table["lament_save"].value_or(false));
+    infinite_mp.store(table["infinite_mp"].value_or(false));
+    mute_unfocused.store(table["mute_unfocused"].value_or(false));
     hud_hide_delay.store(std::isfinite(hide_delay) ? std::clamp(hide_delay,.2f,5.0f) : 1.0f);
     camera_mode.store(std::clamp(table["camera_mode"].value_or(0),0,5));
     auto setting=[&](const char* key,float fallback,float minimum,float maximum) {
@@ -164,11 +215,20 @@ void Load(const void* raw) {
     camera_field.store(setting("camera_field",1,.65f,1.5f));
     camera_fly_speed.store(setting("camera_fly_speed",600,100,2000));
     orbit_smoothing.store(setting("orbit_smoothing",8,1,20));
+    camera_yaw.store(setting("camera_yaw",0,-cod_view::kMaxCameraYaw,cod_view::kMaxCameraYaw));
+    camera_pitch.store(setting("camera_pitch",0,-cod_view::kMaxCameraPitch,cod_view::kMaxCameraPitch));
+    camera_roll.store(setting("camera_roll",0,-cod_view::kMaxCameraRoll,cod_view::kMaxCameraRoll));
+    brightness.store(setting("brightness",0,-.3f,.3f));
+    contrast.store(setting("contrast",1,.5f,1.5f));
+    saturation.store(setting("saturation",1,0,2));
+    show_fps.store(table["show_fps"].value_or(false));
+    character_shadow.store(table["character_shadow"].value_or(false));
+    fps_corner.store(std::clamp(table["fps_corner"].value_or(1),0,3));
     sensitivity.store(std::clamp(table["mouse_sensitivity"].value_or(.012f), .001f, .1f));
     shader.store(std::clamp(table["post_shader"].value_or(0), 0, 2));
     godmode.store(table["godmode"].value_or(false));
     const float saved_speed=table["game_speed"].value_or(1.0f);
-    speed.store(std::isfinite(saved_speed)?std::clamp(saved_speed,.5f,2.0f):1.0f);
+    speed.store(std::isfinite(saved_speed)?std::clamp(saved_speed,float(kMinSpeed),float(kMaxSpeed)):1.0f);
     selected_profile=std::clamp(table["selected_profile"].value_or(0),0,4);
     for(size_t i=0;i<user_profiles.size();++i) {
         if(auto name=table["profile_name_"+std::to_string(i)].value<std::string>())user_profiles[i].name=*name;
@@ -179,6 +239,8 @@ void Load(const void* raw) {
         for (const auto& node : *array) if (auto name = node.value<std::string>()) enabled_mods.push_back(*name);
     for (size_t i = 0; i < bindings.size(); ++i)
         SetBinding(int(i), table["bind_" + std::to_string(i)].value_or(bindings[i].key));
+    SetBinding(8,dev_rules::MigratedStartKey(Bindings()[8].key,table.contains("bind_18"),VK_RETURN,'P'));
+    SetControllerMapping(ParseControllerMap(table["controller_map"].value_or(FormatControllerMap(IdentityControllerMap()))));
 }
 void Save(void* raw) {
     auto& table = *static_cast<toml::table*>(raw);
@@ -199,15 +261,46 @@ void Save(void* raw) {
     table.insert_or_assign("mouse_camera", mouse_camera.load());
     table.insert_or_assign("invert_mouse_x",invert_mouse_x.load());
     table.insert_or_assign("invert_mouse_y",invert_mouse_y.load());
+    table.insert_or_assign("invert_stick_x",invert_stick_x.load());
     table.insert_or_assign("controller_menu_shortcut", controller_shortcut.load());
     table.insert_or_assign("minimap_enabled",minimap_enabled.load());
     table.insert_or_assign("minimap_rotating",minimap_rotating.load());
     table.insert_or_assign("ptbr_enabled",ptbr_enabled.load());
     table.insert_or_assign("game_menu_scale",game_menu_scale.load());
     table.insert_or_assign("game_menu_live",game_menu_live.load());
+    table.insert_or_assign("menu_pauses_game",pause_with_menu.load());
+    table.insert_or_assign("menu_language",std::string(MenuLanguageKey(menu_english.load())));
+    table.insert_or_assign("damage_taken",damage_taken.load());
+    table.insert_or_assign("devil_damage_taken",devil_damage_taken.load());
+    table.insert_or_assign("enemy_hp",enemy_hp.load());
+    table.insert_or_assign("enemy_scale",enemy_scale.load());
+    table.insert_or_assign("enemy_random",enemy_random.load());
+    table.insert_or_assign("enemy_random_scale_min",enemy_random_scale_min.load());
+    table.insert_or_assign("enemy_random_scale_max",enemy_random_scale_max.load());
+    table.insert_or_assign("enemy_random_hp_min",enemy_random_hp_min.load());
+    table.insert_or_assign("enemy_random_hp_max",enemy_random_hp_max.load());
+    table.insert_or_assign("enemy_elite_chance",enemy_elite_chance.load());
+    table.insert_or_assign("enemy_elite_scale",enemy_elite_scale.load());
+    table.insert_or_assign("enemy_elite_hp",enemy_elite_hp.load());
+    table.insert_or_assign("drop_rate",drop_rate.load());
+    table.insert_or_assign("crystal_rate",crystal_rate.load());
+    table.insert_or_assign("crystal_amount",crystal_amount.load());
+    table.insert_or_assign("random_drops",random_drops.load());
+    table.insert_or_assign("item_scale",item_scale.load());
+    table.insert_or_assign("gold_gain",gold_gain.load());
+    table.insert_or_assign("exp_gain",exp_gain.load());
+    table.insert_or_assign("free_shopping",free_shopping.load());
+    table.insert_or_assign("lament_save",lament_save.load());
+    table.insert_or_assign("infinite_mp",infinite_mp.load());
+    table.insert_or_assign("brightness",brightness.load());
+    table.insert_or_assign("contrast",contrast.load());
+    table.insert_or_assign("saturation",saturation.load());
+    table.insert_or_assign("mute_unfocused",mute_unfocused.load());
     table.insert_or_assign("minimap_scale",minimap_scale.load());
     table.insert_or_assign("minimap_opacity",minimap_opacity.load());
+    table.insert_or_assign("minimap_x",minimap_x.load());table.insert_or_assign("minimap_y",minimap_y.load());
     table.insert_or_assign("hud_enabled",hud_enabled.load());
+    table.insert_or_assign("hud_always_visible",hud_always_visible.load());
     table.insert_or_assign("hud_scale",hud_scale.load());
     table.insert_or_assign("hud_quick_hide",hud_quick_hide.load());
     table.insert_or_assign("hud_hide_delay",hud_hide_delay.load());
@@ -217,6 +310,12 @@ void Save(void* raw) {
     table.insert_or_assign("camera_field",camera_field.load());
     table.insert_or_assign("camera_fly_speed",camera_fly_speed.load());
     table.insert_or_assign("orbit_smoothing",orbit_smoothing.load());
+    table.insert_or_assign("camera_yaw",camera_yaw.load());
+    table.insert_or_assign("camera_pitch",camera_pitch.load());
+    table.insert_or_assign("camera_roll",camera_roll.load());
+    table.insert_or_assign("show_fps",show_fps.load());
+    table.insert_or_assign("character_shadow",character_shadow.load());
+    table.insert_or_assign("fps_corner",fps_corner.load());
     table.insert_or_assign("mouse_sensitivity", sensitivity.load());
     table.insert_or_assign("post_shader", shader.load());
     table.insert_or_assign("godmode",godmode.load());
@@ -231,6 +330,7 @@ void Save(void* raw) {
     table.insert_or_assign("enabled_mods", enabled);
     const auto current_bindings = Bindings();
     for (size_t i = 0; i < current_bindings.size(); ++i) table.insert_or_assign("bind_" + std::to_string(i), current_bindings[i].key);
+    table.insert_or_assign("controller_map", FormatControllerMap(ControllerMapping()));
 }
 std::array<std::string,3> UserProfileNames() {
     return {user_profiles[0].name,user_profiles[1].name,user_profiles[2].name};
@@ -297,10 +397,12 @@ void RestoreVanilla() {
     defaults.insert_or_assign("muted",false);defaults.insert_or_assign("keyboard_enabled",true);
     defaults.insert_or_assign("mouse_camera",true);defaults.insert_or_assign("invert_mouse_x",true);
     defaults.insert_or_assign("invert_mouse_y",false);defaults.insert_or_assign("controller_menu_shortcut",true);
+    defaults.insert_or_assign("invert_stick_x",false);
     defaults.insert_or_assign("minimap_enabled",false);defaults.insert_or_assign("minimap_rotating",false);
     defaults.insert_or_assign("minimap_scale",1.0f);defaults.insert_or_assign("minimap_opacity",.8f);
+    defaults.insert_or_assign("minimap_x",1.0f);defaults.insert_or_assign("minimap_y",0.0f);
     defaults.insert_or_assign("ptbr_enabled",false);defaults.insert_or_assign("hud_enabled",true);
-    defaults.insert_or_assign("hud_scale",1.0f);defaults.insert_or_assign("hud_quick_hide",false);
+    defaults.insert_or_assign("hud_always_visible",false);defaults.insert_or_assign("hud_scale",1.0f);defaults.insert_or_assign("hud_quick_hide",false);
     defaults.insert_or_assign("hud_hide_delay",1.0f);defaults.insert_or_assign("camera_mode",0);
     defaults.insert_or_assign("camera_distance",1.0f);defaults.insert_or_assign("camera_height",0.0f);
     defaults.insert_or_assign("camera_field",1.0f);defaults.insert_or_assign("camera_fly_speed",600.0f);
@@ -313,8 +415,9 @@ void RestoreVanilla() {
 }
 void ActivateDevProfile() {
     minimap_enabled=true;minimap_rotating=true;minimap_scale=1.0f;minimap_opacity=.8f;
-    hud_enabled=true;hud_scale=.5f;hud_quick_hide=true;hud_hide_delay=1.0f;
-    camera_mode=0;shader=0;ptbr_enabled=true;
+    hud_enabled=true;hud_always_visible=false;hud_scale=.5f;hud_quick_hide=true;hud_hide_delay=1.0f;
+    // ptbr_enabled fica com SelectTextLanguage(2): ligar antes escondia a troca e as texturas PT-BR nao recarregavam.
+    camera_mode=0;shader=0;
     godmode.store(godmode_ready.load());SetSpeed(1.0f);
     for(auto& cheat:Cheats())ToggleCheat(cheat,false);
     SelectTextLanguage(2);selected_profile=1;
@@ -345,8 +448,29 @@ bool VerifyProfileStorage() {
     } catch(const toml::parse_error&) {ok=false;}
     const bool rejected=!SaveUserProfile(1,"   ");
     user_profiles[0]=saved;selected_profile=old_selection;Cheats()=std::move(saved_cheats);
-    LOGR("dev selftest: user profile save/serialization/no recursion=%d",ok&&rejected);
-    return ok&&rejected;
+    // Perfil Dev vindo do ingles troca a geracao das texturas (senao o PT-BR em imagem fica pela metade).
+    toml::table before;Save(&before);
+    std::vector<size_t> active_cheats;
+    for(size_t i=0;i<Cheats().size();++i) if(Cheats()[i].enabled) active_cheats.push_back(i);
+    uint8_t guest_language[8]{};
+    const bool guest=kernel::g_base&&ReadableGuestRange(kernel::g_base,0xB235E0,8);
+    if(guest) std::memcpy(guest_language,kernel::g_base+0xB235E0,8);
+    const bool was_ptbr=ptbr_enabled.load();
+    ptbr_enabled.store(false);
+    const auto generation=texture_generation.load();
+    ActivateDevProfile();
+    const bool dev_reload=ptbr_enabled.load()&&texture_generation.load()!=generation;
+    Load(&before);ptbr_enabled.store(was_ptbr);texture_generation.fetch_add(1);
+    for(size_t i:active_cheats) if(i<Cheats().size()) ToggleCheat(Cheats()[i],true);
+    if(guest) std::memcpy(kernel::g_base+0xB235E0,guest_language,8);
+    selected_profile=old_selection;
+    LOGR("dev selftest: user profile save/serialization/no recursion=%d dev-profile texture reload=%d",ok&&rejected,dev_reload);
+    return ok&&rejected&&dev_reload;
+}
+// Editor de inimigos segue o mod "Editor" (chamada com mods_lock tomado).
+static void RefreshEditorMod() {
+    const auto it = std::find_if(mods.begin(), mods.end(), [](const Mod& mod) { return mod.name == kEditorMod; });
+    RefreshEnemyEditor(it == mods.end() ? fs::path{} : it->root, it != mods.end() && it->enabled);
 }
 void ReloadMods() {
     std::lock_guard lock(mods_lock);
@@ -359,33 +483,69 @@ void ReloadMods() {
         mods.push_back({name, entry.path(), std::find(enabled_mods.begin(), enabled_mods.end(), name) != enabled_mods.end()});
     }
     std::sort(mods.begin(), mods.end(), [](const Mod& a, const Mod& b) { return a.name < b.name; });
+    RefreshEditorMod();
     texture_packs.store(std::any_of(mods.begin(),mods.end(),[](const Mod& mod){return mod.enabled;}));
+    translation_textures.store(std::any_of(mods.begin(),mods.end(),[&](const Mod& mod){
+        return mod.name==kTranslationTextureMod && fs::is_directory(mod.root/"textures",ec);
+    }));
     texture_generation.fetch_add(1);
 }
+bool HdTexturesActive() {return HdLookup(texture_packs.load(),ptbr_enabled.load(),translation_textures.load());}
 void EnableMod(size_t index, bool enabled) {
     std::lock_guard lock(mods_lock);
     if (index >= mods.size()) return;
     mods[index].enabled = enabled;
     enabled_mods.clear();
     for (const auto& mod : mods) if (mod.enabled) enabled_mods.push_back(mod.name);
+    if (mods[index].name == kEditorMod) RefreshEditorMod();
     texture_packs.store(!enabled_mods.empty()); texture_generation.fetch_add(1);
 }
 std::optional<fs::path> ModTexture(uint64_t hash) {
-    char name[32];std::snprintf(name,sizeof(name),"%016llX.bmp",static_cast<unsigned long long>(hash));
+    std::lock_guard lock(mods_lock);
+    // Indice das pastas feito uma vez por carga dos mods ou troca de idioma: textura sem substituta nao
+    // consulta mais o disco na thread de renderizacao (eram ate 4 is_regular_file por textura nova).
+    static texture_lookup::Index<fs::path> index;
+    static unsigned built_generation=~0u;
+    static bool built_ptbr=false;
+    const bool ptbr=ptbr_enabled.load();
+    if(built_generation!=texture_generation.load() || built_ptbr!=ptbr) {
+        index=texture_lookup::Index<fs::path>{};
+        std::error_code ec;
+        auto add_folder=[&](const fs::path& textures) {
+            // A pasta e conferida uma vez; nos arquivos basta recusar link simbolico (nome vindo da listagem nao
+            // tem ".."). Canonicalizar cada um dos milhares de arquivos travava a thread de render sob mods_lock.
+            if(SafeChild(Root()/"mods",textures))
+                for(const auto& entry:fs::directory_iterator(textures,ec)) {
+                    if(entry.is_symlink(ec) || !entry.is_regular_file(ec)) continue;
+                    // DDS BC7 primeiro (comprimido na placa); BMP continua aceito.
+                    const auto file=texture_lookup::ParseTextureFile(entry.path().filename().string());
+                    if(file) index.Add(file->hash,file->dds,entry.path());
+                }
+            index.NextFolder();
+        };
+        // O pacote PT-BR deve vencer packs genericos nas texturas que traduz.
+        if(ptbr)for(const auto& mod:mods)if(mod.name==kTranslationTextureMod) add_folder(mod.root/"textures");
+        for(auto it=mods.rbegin();it!=mods.rend();++it) if(ModApplies(it->name,it->enabled,ptbr)) add_folder(it->root/"textures");
+        built_generation=texture_generation.load();built_ptbr=ptbr;
+        LOGR("mods: texture index %zu files",index.Size());
+    }
+    if(const auto* path=index.Find(hash)) return *path;
+    return std::nullopt;
+}
+bool TranslationPackAvailable() {
     std::lock_guard lock(mods_lock);
     std::error_code ec;
-    for(auto it=mods.rbegin();it!=mods.rend();++it) if(it->enabled) {
-        fs::path path=it->root/"textures"/name;
-        if(SafeChild(it->root/"textures",path) && fs::is_regular_file(path,ec)) return path;
-    }
-    return std::nullopt;
+    return std::any_of(mods.begin(),mods.end(),[&](const Mod& mod) {
+        return mod.name==kTranslationTextureMod && fs::is_directory(mod.root/"files",ec);
+    });
 }
 std::optional<fs::path> ModFile(const fs::path& relative) {
     if (!dev_rules::RelativeAsset(relative)) return std::nullopt;
     std::lock_guard lock(mods_lock);
     std::error_code ec;
     for (auto it = mods.rbegin(); it != mods.rend(); ++it) {
-        if (!it->enabled) continue;
+        // O pacote PT-BR substitui arquivos so com Portugues escolhido em Opcoes > Idioma.
+        if (!ModApplies(it->name, it->enabled, ptbr_enabled.load())) continue;
         fs::path candidate = it->root / "files" / relative;
         if (SafeChild(it->root/"files", candidate) && fs::is_regular_file(candidate, ec)) return candidate;
     }
@@ -464,6 +624,7 @@ void ScreenshotDone(bool ok) {
     {
         std::lock_guard lock(report_lock);
         report_status = ok ? "Imagem salva. Descreva o que aconteceu." : "A imagem falhou; o texto ainda pode ser salvo.";
+        report_preview.path.clear();  // a previa pode ter sido pedida antes do arquivo existir
     }
     if (ConsumeTestRequest()) {
         bool saved=SaveReport("Autoteste do relato", "Teste local: captura da GPU, texto e log. Nenhum envio externo.");
@@ -485,7 +646,8 @@ bool SaveReport(const std::string& title, const std::string& text) {
         << " | aniso: " << app::Get().aniso << " | vsync: " << app::Get().vsync << "\n"
         << "Menu: " << menu_preferences.width << "x" << menu_preferences.height
         << " at " << menu_preferences.x << "," << menu_preferences.y
-        << " | opacity: " << menu_preferences.opacity << "\n";
+        << " | opacity: " << menu_preferences.opacity << "\n"
+        << CrystalDiagnosticReport() << "\n";
     out.close();
     if (!out) { report_status = "Falha ao salvar o relato"; return false; }
     logx::Flush();
@@ -530,7 +692,8 @@ std::optional<fs::path> SaveF3Report(const fs::path& capture_dir) {
         << " | shader: " << shader.load() << " | speed: " << speed.load() << "x"
         << " | godmode: " << godmode.load() << "\n"
         << "Output: " << app::Get().width << "x" << app::Get().height
-        << " | aniso: " << app::Get().aniso << " | vsync: " << app::Get().vsync << "\n";
+        << " | aniso: " << app::Get().aniso << " | vsync: " << app::Get().vsync << "\n"
+        << CrystalDiagnosticReport() << "\n";
     out.close();
     if(!out) {
         LOGE("F3 report: failed writing report.txt under %s",directory.string().c_str());
@@ -542,13 +705,29 @@ std::optional<fs::path> SaveF3Report(const fs::path& capture_dir) {
     if(ec)LOGE("F3 report: report saved but runtime log copy failed: %s",ec.message().c_str());
     return directory;
 }
+void RequestReportPreview(const fs::path& bmp) {
+    std::lock_guard lock(report_lock);
+    if (report_preview.path != bmp || preview_request) preview_request = bmp;
+}
+std::optional<fs::path> TakeReportPreviewRequest() {
+    std::lock_guard lock(report_lock);
+    return std::exchange(preview_request, std::nullopt);
+}
+void SetReportPreview(const fs::path& bmp, uint64_t texture, uint32_t width, uint32_t height) {
+    std::lock_guard lock(report_lock);
+    report_preview = {bmp, texture, width, height};
+}
+ReportPreview CurrentReportPreview() {
+    std::lock_guard lock(report_lock);
+    return report_preview;
+}
 void Window(void* hwnd) {
     window = static_cast<HWND>(hwnd);
     RAWINPUTDEVICE device{1, 2, 0, window};
     if (!RegisterRawInputDevices(&device, 1, sizeof(device))) LOGE("input: mouse raw registration failed");
 }
 void ShutdownInput() { ClipCursor(nullptr); ClearInput(); binding_capture.store(-1);std::lock_guard guard(input_lock);native_menu_key.Clear(); }
-void RequestTitleRestart() { if(window) PostMessageW(window,WM_APP+3,0,0); }
+void RequestTitleRestart() { menu_open.store(false); if(window) PostMessageW(window,WM_APP+3,0,0); }
 bool Message(void*, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t* result) {
     if (msg == WM_ACTIVATE) { focus.store(LOWORD(wp) != WA_INACTIVE); if (!focus) ShutdownInput(); }
     if (msg == WM_KILLFOCUS) { focus.store(false); ShutdownInput(); }
@@ -567,6 +746,8 @@ bool Message(void*, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t* result) {
     }
     int key = -1;
     bool down = false;
+    // Print Screen so chega no soltar da tecla (o Windows nao manda WM_KEYDOWN dela).
+    if ((msg == WM_KEYUP || msg == WM_SYSKEYUP) && wp == VK_SNAPSHOT) { CaptureBug(); return true; }
     if (msg == WM_KEYDOWN || msg == WM_KEYUP || msg == WM_SYSKEYUP) { key = int(wp); down = msg == WM_KEYDOWN; }
     if (msg == WM_LBUTTONDOWN || msg == WM_LBUTTONUP) { key = VK_LBUTTON; down = msg == WM_LBUTTONDOWN; }
     if (msg == WM_RBUTTONDOWN || msg == WM_RBUTTONUP) { key = VK_RBUTTON; down = msg == WM_RBUTTONDOWN; }
@@ -595,9 +776,23 @@ bool Message(void*, uint32_t msg, uintptr_t wp, intptr_t lp, intptr_t* result) {
 }
 void Pad(int port, input::Pad& pad) {
     if (port != 0) return;
+    // Diagnostico do mapa: Back fisico antes de atalhos e remapeamento (o jogo e conferido em sub_0031F270).
+    static uint16_t last_buttons = 0;
+    static std::atomic<int> back_logs{0};
+    if (dev_rules::RisingBit(last_buttons, pad.buttons, 1u << 5) && back_logs.fetch_add(1) < 8)
+        LOGR("input: Back pressed (physical) menu=%d focused=%d",int(UiCapturing()),int(GameFocused()));
+    last_buttons = pad.buttons;
     ProcessControllerShortcut(pad);
+    // depois dos atalhos (L3+R3, volta ao titulo), que leem os botoes fisicos
+    pad = RemapPad(pad, ControllerMapping());
+    pad.rx = dev_rules::InvertAxis(pad.rx, invert_stick_x.load());
     if (UiCapturing()) {
-        MenuGamePad(pad,CharacterChoosing() || !GameFocused() || (camera_mode==4 && camera_live));
+        // Menu aberto: botoes ficam com o menu; analogicos seguem andando e girando a camera.
+        const bool blocked=CharacterChoosing() || !GameFocused();
+        MenuGamePad(pad,blocked);
+        if(menu_adjusting.load()) { pad.lx=0;pad.ly=0; }
+        if(!blocked && camera_live && camera_mode==4) FreeCameraInput(pad,false,false,false,false,false,false,0,0);
+        else if(!blocked && camera_live && camera_mode==5) OrbitCameraInput(pad,0,0);
         return;
     }
     if(camera_mode==4 && camera_live) {
@@ -625,7 +820,7 @@ void Pad(int port, input::Pad& pad) {
     if (x || y) { pad.lx = x; pad.ly = y; }
     for (const auto& binding : bindings) if (Pressed(binding.key)) {
         if (binding.button < 8) pad.analog[binding.button] = 255;
-        else if(binding.button<10) pad.buttons |= uint16_t(1u << (binding.button == 8 ? 4 : 5));
+        else pad.buttons |= dev_rules::KeyboardDigitalBit(binding.button);
     }
     static auto last = std::chrono::steady_clock::now();
     const auto now = std::chrono::steady_clock::now();
@@ -636,9 +831,6 @@ void Pad(int port, input::Pad& pad) {
         last = now;
     }
     if (!orbital && mouse_camera && (rx || ry)) { pad.rx = rx; pad.ry = ry; }
-    const auto camera_x=dev_rules::MoveAxis(held(17),held(16));
-    const auto camera_y=dev_rules::MoveAxis(held(14),held(15));
-    if(!orbital && (camera_x || camera_y)){pad.rx=camera_x;pad.ry=camera_y;}
 }
 void Initialize() {
     ReloadMods(); ReloadCheats();
@@ -659,34 +851,63 @@ void RunIntegrationChecks() {
     altered.insert_or_assign("menu_x",123.0f);
     altered.insert_or_assign("menu_opacity",.65f);
     altered.insert_or_assign("invert_mouse_x",false);
-    altered.insert_or_assign("invert_mouse_y",true);
+    altered.insert_or_assign("invert_mouse_y",true);altered.insert_or_assign("invert_stick_x",true);
     altered.insert_or_assign("bind_10",int('I'));
     altered.insert_or_assign("minimap_enabled",false);
     altered.insert_or_assign("minimap_scale",1.25f);
-    altered.insert_or_assign("minimap_opacity",.6f);
+    altered.insert_or_assign("minimap_opacity",.6f);altered.insert_or_assign("minimap_x",.25f);altered.insert_or_assign("minimap_y",.75f);
     altered.insert_or_assign("minimap_rotating",false);
     altered.insert_or_assign("game_menu_scale",.65f);
     altered.insert_or_assign("ptbr_enabled",true);
     altered.insert_or_assign("orbit_smoothing",12.0f);
-    altered.insert_or_assign("hud_enabled",false);
+    altered.insert_or_assign("menu_pauses_game",true);
+    altered.insert_or_assign("damage_taken",2.0f);altered.insert_or_assign("contrast",1.2f);
+    altered.insert_or_assign("gold_gain",3.0f);altered.insert_or_assign("free_shopping",true);
+    altered.insert_or_assign("devil_damage_taken",.5f);altered.insert_or_assign("enemy_hp",2.5f);altered.insert_or_assign("enemy_scale",1.5f);
+    altered.insert_or_assign("enemy_random",true);altered.insert_or_assign("enemy_random_hp_max",2.0f);
+    altered.insert_or_assign("enemy_elite_chance",250.0f);altered.insert_or_assign("enemy_elite_scale",9.0f);
+    altered.insert_or_assign("drop_rate",3.0f);altered.insert_or_assign("crystal_amount",9.0f);
+    altered.insert_or_assign("random_drops",true);altered.insert_or_assign("item_scale",.5f);
+    altered.insert_or_assign("lament_save",true);altered.insert_or_assign("infinite_mp",true);
+    altered.insert_or_assign("controller_map","1,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15");
+    altered.insert_or_assign("camera_roll",12.0f);altered.insert_or_assign("show_fps",true);
+    altered.insert_or_assign("hud_enabled",false);altered.insert_or_assign("character_shadow",true);
+    altered.insert_or_assign("hud_always_visible",true);
     altered.insert_or_assign("hud_scale",.75f);
     altered.insert_or_assign("hud_quick_hide",true);
     altered.insert_or_assign("hud_hide_delay",.5f);
     altered.insert_or_assign("camera_mode",3);altered.insert_or_assign("camera_distance",1.2f);
     altered.insert_or_assign("camera_height",60.0f);altered.insert_or_assign("camera_field",1.1f);
     altered.insert_or_assign("camera_fly_speed",800.0f);
+    altered.insert_or_assign("menu_language","en");
     Load(&altered);
     bool settings_ok=volume.load()==.25f && shader.load()==1 && menu_preferences.x==123 && menu_preferences.opacity==.65f &&
-        !invert_mouse_x.load() && invert_mouse_y.load() && Bindings()[10].key=='I' &&
+        !invert_mouse_x.load() && invert_mouse_y.load() && invert_stick_x.load() && Bindings()[10].key=='I' &&
         !minimap_enabled.load() && minimap_scale.load()==1.25f && minimap_opacity.load()==.6f &&
-        !hud_enabled.load() && hud_scale.load()==.75f && hud_quick_hide.load() && hud_hide_delay.load()==.5f &&
+        minimap_x.load()==.25f && minimap_y.load()==.75f &&
+        !hud_enabled.load() && hud_always_visible.load() && hud_scale.load()==.75f && hud_quick_hide.load() && hud_hide_delay.load()==.5f &&
         camera_mode.load()==3 && camera_distance.load()==1.2f && camera_height.load()==60 && camera_field.load()==1.1f && camera_fly_speed.load()==800 &&
-        !minimap_rotating.load() && game_menu_scale.load()==1.0f && ptbr_enabled.load() && orbit_smoothing.load()==12;
+        !minimap_rotating.load() && game_menu_scale.load()==1.0f && ptbr_enabled.load() && orbit_smoothing.load()==12 && pause_with_menu.load() && damage_taken.load()==2 && contrast.load()==1.2f &&
+        ControllerMapping()[0]==1 && ControllerMapping()[1]==0 && camera_roll.load()==12 && show_fps.load() && character_shadow.load() &&
+        gold_gain.load()==3 && free_shopping.load() && devil_damage_taken.load()==.5f && enemy_hp.load()==2.5f && enemy_scale.load()==1.5f && lament_save.load() && infinite_mp.load() &&
+        enemy_random.load() && enemy_random_hp_max.load()==2 && enemy_elite_chance.load()==100 && enemy_elite_scale.load()==kMaxEnemyScale &&
+        drop_rate.load()==3 && crystal_amount.load()==kMaxCrystalAmount && random_drops.load() && item_scale.load()==.5f &&
+        menu_english.load();
     toml::table roundtrip;Save(&roundtrip);
+    settings_ok=settings_ok && roundtrip["menu_language"].value_or(std::string{})=="en";
+    settings_ok=settings_ok && roundtrip["controller_map"].value_or(std::string{})=="1,0,2,3,4,5,6,7,8,9,10,11,12,13,14,15";
+    settings_ok=settings_ok && roundtrip["gold_gain"].value_or(0.0f)==3 && roundtrip["free_shopping"].value_or(false) &&
+        roundtrip["lament_save"].value_or(false) && roundtrip["infinite_mp"].value_or(false) &&
+        roundtrip["invert_stick_x"].value_or(false) && roundtrip["enemy_hp"].value_or(0.0f)==2.5f &&
+        roundtrip["enemy_scale"].value_or(0.0f)==1.5f && roundtrip["enemy_random"].value_or(false) &&
+        roundtrip["enemy_random_hp_max"].value_or(0.0f)==2 && roundtrip["enemy_elite_chance"].value_or(0.0f)==100 &&
+        roundtrip["drop_rate"].value_or(0.0f)==3 && roundtrip["random_drops"].value_or(false) && roundtrip["item_scale"].value_or(0.0f)==.5f &&
+        roundtrip["character_shadow"].value_or(false);
     settings_ok=settings_ok && roundtrip["menu_x"].value_or(0.0f)==123 && roundtrip["menu_opacity"].value_or(0.0f)==.65f;
     settings_ok=settings_ok && !roundtrip["minimap_enabled"].value_or(true) &&
-        roundtrip["minimap_scale"].value_or(0.0f)==1.25f && roundtrip["minimap_opacity"].value_or(0.0f)==.6f;
-    settings_ok=settings_ok && !roundtrip["hud_enabled"].value_or(true) &&
+        roundtrip["minimap_scale"].value_or(0.0f)==1.25f && roundtrip["minimap_opacity"].value_or(0.0f)==.6f &&
+        roundtrip["minimap_x"].value_or(0.0f)==.25f && roundtrip["minimap_y"].value_or(0.0f)==.75f;
+    settings_ok=settings_ok && !roundtrip["hud_enabled"].value_or(true) && roundtrip["hud_always_visible"].value_or(false) &&
         roundtrip["hud_scale"].value_or(0.0f)==.75f && roundtrip["hud_quick_hide"].value_or(false) &&
         roundtrip["hud_hide_delay"].value_or(0.0f)==.5f;
     Load(&saved);
@@ -723,6 +944,8 @@ void RunIntegrationChecks() {
     VerifyHudHooks();
     VerifyIndicatorHooks();
     VerifyCameraHooks();
+    VerifyEnemyEditorHooks();
+    VerifyDropHooks();
     VerifyLanguageHooks();
     VerifyMenuBackground();
     LOGR("dev selftest: native character selection passed=%d",VerifyCharacterSelection());

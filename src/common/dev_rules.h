@@ -22,6 +22,26 @@ struct MenuChord {
         return false;
     }
 };
+// Volta ao titulo segurando Start + Back + LT + RT, como o reset do PS2
+// (Start + Select + L2 + R2). O tempo evita reinicio por toque acidental.
+struct TitleResetChord {
+    static constexpr uint16_t mask = (1u << 4) | (1u << 5);
+    static constexpr uint8_t trigger = 128;
+    static constexpr double hold = 2.0;
+    enum Result { Idle, Started, Fire };
+    double since = -1;
+    bool fired = false;
+    static bool Held(uint16_t buttons, uint8_t left, uint8_t right) {
+        return (buttons & mask) == mask && left >= trigger && right >= trigger;
+    }
+    Result Update(uint16_t buttons, uint8_t left, uint8_t right, double now) {
+        if (!Held(buttons, left, right)) { since = -1; fired = false; return Idle; }
+        if (fired) return Idle;
+        if (since < 0) { since = now; return Started; }
+        if (now - since >= hold) { fired = true; return Fire; }
+        return Idle;
+    }
+};
 struct ReleaseGate {
     bool armed = false;
     bool Filter(bool enabled, bool held) {
@@ -59,11 +79,31 @@ inline void MixAudio(std::span<float> frames, float gain, float balance, bool mu
         frames[i + 1] = AudioSample(frames[i + 1], right);
     }
 }
+// Botao digital do teclado: Start/Back e direcional (setas navegam nos menus nativos).
+inline constexpr uint16_t KeyboardDigitalBit(int code) {
+    if(code==8) return 1u<<4;
+    if(code==9) return 1u<<5;
+    if(code>=24 && code<28) return uint16_t(1u<<(code-24));
+    return 0;
+}
+// Configuracao salva antes de bind_18 tinha Enter no Start; Enter agora confirma (A).
+inline constexpr int MigratedStartKey(int saved,bool has_menu_confirm,int enter,int start_default) {
+    return !has_menu_confirm && saved==enter ? start_default : saved;
+}
+// WM_KEYDOWN: bit 30 do lParam = tecla ja estava apertada (auto-repeat do Windows).
+inline constexpr bool FirstKeyDown(uint64_t lparam) { return !(lparam & (uint64_t(1) << 30)); }
 inline int16_t MoveAxis(bool positive, bool negative) {
     return positive == negative ? 0 : positive ? 32767 : -32767;
 }
 inline int16_t MouseAxis(int delta, float sensitivity, bool invert) {
     float value = std::clamp(float(delta) * sensitivity, -1.0f, 1.0f);
     return int16_t(value * (invert ? -32767 : 32767));
+}
+// -32768 nao tem positivo: vira 32767.
+inline constexpr int16_t InvertAxis(int16_t value, bool invert) {
+    return !invert ? value : value == INT16_MIN ? INT16_MAX : int16_t(-value);
+}
+inline constexpr bool RisingBit(uint32_t before, uint32_t now, uint32_t bit) {
+    return (now & bit) && !(before & bit);
 }
 }

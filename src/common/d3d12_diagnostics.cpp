@@ -3,5 +3,5 @@
 #include "core/log.h"
 #include "core/diag.h"
 #undef LOGI
-#define LOGI(...) do { if (diag::Perf()) LOGR(__VA_ARGS__); } while (0)
+#define LOGI(...) do { if (diag::Perf() || dev::perf_log.load()) LOGR(__VA_ARGS__); } while (0)
 #include "d3d12_runtime.inc"

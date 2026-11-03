@@ -82,14 +82,26 @@ void FreeCameraInput(input::Pad& pad,bool forward,bool back,bool left,bool right
 }
 X86_FUNC(sub_00362190) {
     uint32_t view=0;const int mode=dev::camera_mode.load();
-    if(mode<1 || mode>3 || !ViewArg(ctx,base,view)) {__imp__sub_00362190(ctx,base);return;}
+    if(mode<1 || mode>4 || !ViewArg(ctx,base,view)) {__imp__sub_00362190(ctx,base);return;}
     const auto saved=Read<Vec3>(base,view+0x10);
-    if(!Finite(saved)){__imp__sub_00362190(ctx,base);return;}
-    float distance=dev::camera_distance.load(),height=dev::camera_height.load();
-    if(mode==1){distance=1.4f;height=110;}
-    if(mode==2){distance=.8f;height=35;}
-    Write(base,view+0x10,Vec3{saved.x*distance,saved.y*distance+height,saved.z*distance});
-    __imp__sub_00362190(ctx,base);Write(base,view+0x10,saved);
+    const auto angles=Read<Vec3>(base,view+0x20);
+    const float roll=Read<float>(base,view+0x15C);
+    if(!Finite(saved) || !Finite(angles) || !std::isfinite(roll)){__imp__sub_00362190(ctx,base);return;}
+    if(mode<=3) {
+        float distance=dev::camera_distance.load(),height=dev::camera_height.load();
+        if(mode==1){distance=1.4f;height=110;}
+        if(mode==2){distance=.8f;height=35;}
+        Write(base,view+0x10,Vec3{saved.x*distance,saved.y*distance+height,saved.z*distance});
+    }
+    // Angulo/inclinacao/rotacao so quando a matriz e refeita dos angulos neste quadro (0x171): sem isso
+    // o jogo gira a matriz guardada em Z de novo a cada quadro e a rotacao acumularia.
+    const bool rebuilt=Read<uint8_t>(base,view+0x171)!=0;
+    if((mode==3 || mode==4) && rebuilt) {
+        const auto adjusted=cod_view::AdjustViewAngles(angles,roll,dev::camera_yaw.load(),dev::camera_pitch.load(),dev::camera_roll.load());
+        Write(base,view+0x20,adjusted.angles);Write(base,view+0x15C,adjusted.roll);
+    }
+    __imp__sub_00362190(ctx,base);
+    Write(base,view+0x10,saved);Write(base,view+0x20,angles);Write(base,view+0x15C,roll);
 }
 X86_FUNC(sub_003623B0) {
     uint32_t view=0;
@@ -131,7 +143,9 @@ X86_FUNC(sub_003623B0) {
     const float dt=std::clamp(std::chrono::duration<float>(now-fly_time).count(),0.0f,.05f);fly_time=now;
     FlyInput input;
     {std::lock_guard guard(fly_lock);input=fly_input;fly_input.mouse_x=fly_input.mouse_y=0;}
-    if(!dev::GameFocused() || dev::UiCapturing()) input={};
+    // menu aberto: analogicos continuam valendo, mouse fica com o menu
+    if(!dev::GameFocused()) input={};
+    else if(dev::UiCapturing()) {input.mouse_x=0;input.mouse_y=0;}
     fly_yaw+=input.yaw*dt*1.8f+input.mouse_x*.003f;
     dev::camera_heading.store(fly_yaw);
     fly_pitch=std::clamp(fly_pitch+input.pitch*dt*1.8f-input.mouse_y*.003f,-1.45f,1.45f);
@@ -224,6 +238,20 @@ bool VerifyCameraHooks() {
     const auto adjusted=apply(3);const auto restored=Read<Vec3>(memory,view+0x10);
     bool ok=Finite(original)&&Finite(adjusted)&&std::abs(original.x+100)<.01f && std::abs(adjusted.x+150)<.01f &&
         std::abs(adjusted.y+60)<.01f && std::abs(adjusted.z+450)<.01f && restored.x==100&&restored.y==20&&restored.z==300;
+    // Angulo/rotacao do usuario: com a matriz refeita (0x171) a matriz nativa muda e os campos voltam.
+    const float prior_yaw=camera_yaw.load(),prior_pitch=camera_pitch.load(),prior_roll=camera_roll.load();
+    camera_distance=1;camera_height=0;
+    Write(memory,view+0x20,Vec3{});Write(memory,view+0x15C,0.0f);Write(memory,view+0x171,uint8_t(1));
+    apply(3);const auto plain=Read<std::array<float,16>>(memory,view+0x90);
+    camera_yaw=30;camera_pitch=10;camera_roll=20;Write(memory,view+0x171,uint8_t(1));
+    apply(3);const auto turned=Read<std::array<float,16>>(memory,view+0x90);
+    const bool angles_ok=plain!=turned && Read<Vec3>(memory,view+0x20).y==0 && Read<float>(memory,view+0x15C)==0 &&
+        std::all_of(turned.begin(),turned.end(),[](float value){return std::isfinite(value);});
+    // Sem 0x171 o jogo reaproveita a matriz: nada de angulo extra (a rotacao acumularia).
+    Write(memory,view+0x171,uint8_t(0));apply(3);
+    const bool held_ok=Read<std::array<float,16>>(memory,view+0x90)==turned;
+    camera_yaw=prior_yaw;camera_pitch=prior_pitch;camera_roll=prior_roll;
+    ok=ok&&angles_ok&&held_ok;
     Write(memory,view+0x150,uint32_t(0x3622C0));Write(memory,view+0x170,uint16_t(1));
     std::array<uint8_t,0x90> saved{};std::memcpy(saved.data(),memory+view,saved.size());
     camera_mode=4;X86Context call{};call.esp=GuestTestMemory::stack;Write(memory,call.esp+4,view);

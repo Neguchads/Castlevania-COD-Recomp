@@ -3,6 +3,7 @@
 #include "common/guest_memory_guard.h"
 #include "common/guest_test_memory.h"
 #include "common/minimap_state.h"
+#include "game/enemy_edits.h"
 #include "core/log.h"
 #include <array>
 #include <cstring>
@@ -14,11 +15,15 @@ namespace {
 template<class T> T Read(const uint8_t* base,uint32_t address) {T value{};std::memcpy(&value,base+address,sizeof(T));return value;}
 template<class T> void Write(uint8_t* base,uint32_t address,T value) {std::memcpy(base+address,&value,sizeof(T));}
 }
-// Modelo emcmzoneyaji/1137: somente a escala da seta, sem alterar outros efeitos.
+// Escala de objeto de cena (objeto em [esp+4], vetor em [esp+8]). Seta (emcmzoneyaji/1137, retorno 0x8AC5C):
+// so a escala dela. Outros objetos: inimigos e itens no chao recebem o tamanho escolhido por cima do jogo.
 X86_FUNC(sub_0035BA40) {
     const uint32_t stack=ctx.esp;
     if(!dev::ReadableGuestRange(base,stack,12) || Read<uint32_t>(base,stack)!=0x8AC5C) {
-        __imp__sub_0035BA40(ctx,base);return;
+        const uint32_t object=dev::ReadableGuestRange(base,stack,8) ? Read<uint32_t>(base,stack+4) : 0;
+        __imp__sub_0035BA40(ctx,base);
+        dev::GameScaleSet(ctx,base,object);
+        return;
     }
     const auto vector=Read<uint32_t>(base,stack+8);
     if(stack<64 || !dev::ReadableGuestRange(base,stack-64,64) || !dev::ReadableGuestRange(base,vector,16)) {

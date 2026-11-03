@@ -2,8 +2,6 @@
 
 English · [Português (Brasil)](#pt-br)
 
-> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
-
 ## Real evidence
 - The Audiosrv and AudioEndpointBuilder services are running; the sound devices queried report status OK.
 - The same src/common/xaudio2_output.cpp linked into the game was compiled in the tools/probe-audio.cmd test.
@@ -38,8 +36,6 @@ English · [Português (Brasil)](#pt-br)
 # Verificação de áudio, 2026-10-23
 
 [English](#audio-check-2026-10-23) · Português (Brasil)
-
-> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 ## Evidência real
 - Serviços Audiosrv e AudioEndpointBuilder ativos; dispositivos de som consultados com status OK.

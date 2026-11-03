@@ -2,8 +2,6 @@
 
 English · [Português (Brasil)](#pt-br)
 
-> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
-
 The tools menu starts in Brazilian Portuguese; the **PT-BR** / **EN** buttons in its top-right corner (or Suporte e menu > Aparência do menu > "Idioma do menu") switch its language, saved as `menu_language` in `settings.toml`. Option names appear below as they do in the Portuguese menu, with an English translation in parentheses where it helps. The English text lives in `src/common/menu_strings_en.h`, keyed by the Portuguese text; `python tools/menu_strings.py` fails when a menu string has no translation or a translation changes the printf format.
 
 ## Panel customization
@@ -191,8 +189,6 @@ Português (Brasil): choose it in the game's **Options → Language**. It turns 
 # Ferramentas e mods
 
 [English](#tools-and-mods) · Português (Brasil)
-
-> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 ## Personalização do painel
 

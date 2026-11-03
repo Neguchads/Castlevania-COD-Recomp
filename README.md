@@ -2,8 +2,6 @@
 
 English · [Português (Brasil)](#pt-br)
 
-> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
-
 **Download:** game port in [Releases](../../releases) (no game files: bring your own Xbox copy) · optional packs (HD4K, PT-BR, PS2 buttons) in the [Google Drive folder](https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk). Steps: [Download and play](#download-and-play-no-build).
 
 Experimental Windows port of *Castlevania: Curse of Darkness* (Xbox, 2005), made by static recompilation. The x86 code of the original XBE becomes native C++, and a custom runtime replaces the Xbox services: Direct3D 8 on top of Direct3D 12, XAudio2 audio, SDL3 controllers and files on the local disk.
@@ -112,8 +110,6 @@ No license has been chosen yet for this project's changes: the code is visible, 
 # Castlevania: Curse of Darkness Recomp
 
 [English](#castlevania-curse-of-darkness-recomp) · Português (Brasil)
-
-> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 **Download:** o port em [Releases](../../releases) (sem arquivos do jogo: use a sua cópia de Xbox) · pacotes opcionais (HD4K, PT-BR, botões do PS2) na [pasta do Google Drive](https://drive.google.com/drive/folders/14RMjeEP5_lL7bLUTY70CBQKBv3nOjcJk). Passo a passo: [Baixar e jogar](#baixar-e-jogar-sem-compilar).
 

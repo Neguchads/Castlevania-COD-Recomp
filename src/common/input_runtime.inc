@@ -27,7 +27,10 @@ void AddPad(SDL_JoystickID id) {
     if (slot == std::end(g_pads)) return;
     *slot = SDL_OpenGamepad(id);
     const char* name = *slot ? SDL_GetGamepadName(*slot) : SDL_GetError();
-    LOGI("input: controller %d %s: %s", int(slot - g_pads) + 1, *slot ? "plugged in" : "failed to open", name ? name : "");
+    // Report: o tipo diz como o SDL nomeia Select/Share/Create/- desse controle.
+    const char* type = *slot ? SDL_GetGamepadStringForType(SDL_GetGamepadType(*slot)) : nullptr;
+    LOGR("input: controller %d %s: %s (type %s)", int(slot - g_pads) + 1, *slot ? "plugged in" : "failed to open",
+         name ? name : "", type ? type : "unknown");
 }
 
 void RemovePad(SDL_JoystickID id) {
@@ -87,6 +90,20 @@ Pad RawPoll(int port) {
         UpdatePads();
         if (SDL_Gamepad* pad = port >= 0 && port < 4 ? g_pads[port] : nullptr) {
             p.connected = true;
+            // Diagnostico: os primeiros botoes apertados com o nome do SDL, inclusive os que o port nao le
+            // (touchpad, misc), para achar o que o controle chama de Select.
+            static uint64_t held_before[4] = {};
+            static int named = 0;
+            uint64_t held = 0;
+            for (int b = 0; b < SDL_GAMEPAD_BUTTON_COUNT && b < 64; b++)
+                if (SDL_GetGamepadButton(pad, SDL_GamepadButton(b))) held |= uint64_t(1) << b;
+            for (int b = 0; b < SDL_GAMEPAD_BUTTON_COUNT && b < 64 && named < 48; b++)
+                if ((held >> b) & 1 && !((held_before[port] >> b) & 1)) {
+                    const char* button = SDL_GetGamepadStringForButton(SDL_GamepadButton(b));
+                    LOGR("input: controller %d button %s (%d) pressed", port + 1, button ? button : "?", b);
+                    named++;
+                }
+            held_before[port] = held;
             constexpr SDL_GamepadButton kButtons[] = {
                 SDL_GAMEPAD_BUTTON_DPAD_UP,   SDL_GAMEPAD_BUTTON_DPAD_DOWN,  SDL_GAMEPAD_BUTTON_DPAD_LEFT,
                 SDL_GAMEPAD_BUTTON_DPAD_RIGHT, SDL_GAMEPAD_BUTTON_START,     SDL_GAMEPAD_BUTTON_BACK,

@@ -2,8 +2,6 @@
 
 English · [Português (Brasil)](#pt-br)
 
-> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
-
 This recomp would have no translation, dub or high-resolution textures without the work
 of the people below. The project only adapts that work to the Xbox version; the authorship is
 theirs. If you use the PT-BR translation or the HD pack, visit the original pages and support the authors.
@@ -82,8 +80,6 @@ or missing, open an issue to fix it.
 # Créditos
 
 [English](#credits) · Português (Brasil)
-
-> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 Este recomp não teria tradução, dublagem nem texturas em alta resolução sem o trabalho
 das pessoas abaixo. O projeto só adapta esse trabalho para a versão Xbox; a autoria é
