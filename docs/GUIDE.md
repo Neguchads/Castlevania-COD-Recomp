@@ -2,6 +2,8 @@
 
 English · [Português (Brasil)](#pt-br)
 
+> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
+
 This guide explains how to install, play and configure everything the port offers. The technical side of mods (file format, texture packs, `cheats.toml`) is in [MODDING.md](../MODDING.md).
 
 The tools menu starts in Brazilian Portuguese. Switch it with the **PT-BR** and **EN** buttons in its top-right corner (it changes immediately), or in Suporte e menu > Aparência do menu > "Idioma do menu" with the controller. The choice is saved in `settings.toml` (`menu_language`). Option names below appear as they do in the Portuguese menu, with the English menu name in parentheses.
@@ -203,6 +205,8 @@ Mods never change the original game files: they replace them in memory only. To 
 # Guia do jogador: Castlevania: Curse of Darkness Recomp
 
 [English](#player-guide-castlevania-curse-of-darkness-recomp) · Português (Brasil)
+
+> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 Este guia explica como instalar, jogar e configurar tudo o que o port oferece. A parte técnica de mods (formato dos arquivos, packs de textura, `cheats.toml`) fica em [MODDING.md](../MODDING.md#pt-br).
 

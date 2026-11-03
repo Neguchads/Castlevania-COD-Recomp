@@ -2,6 +2,8 @@
 
 English · [Português (Brasil)](#pt-br)
 
+> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
+
 A native in-game operating surface that refines the existing tabs. Visual reference: the gold Castlevania logo, the red subtitle and the dark backgrounds seen in the USA game. Do not change the game's rendering when applying the theme.
 
 - Near-black background with red; selection in deep red, action/focus in gold, ivory text and beige secondary text.
@@ -22,6 +24,8 @@ A native in-game operating surface that refines the existing tabs. Visual refere
 # Menu de ferramentas de Curse of Darkness
 
 [English](#curse-of-darkness-tools-menu) · Português (Brasil)
+
+> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 Superfície nativa de operação dentro do jogo, refinando as sete abas existentes. Referência visual: logo dourado de Castlevania, subtítulo vermelho e fundos escuros observados no jogo USA. Não mudar a renderização do jogo ao aplicar o tema.
 

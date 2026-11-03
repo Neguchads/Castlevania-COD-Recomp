@@ -2,6 +2,8 @@
 
 English · [Português (Brasil)](#pt-br)
 
+> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
+
 Choose it in the game itself: **Options → Language → Português (Brasil)** and confirm with **Sim** (yes).
 The choices are English, Japanese and Português (Brasil). The same screen is in the pause menu
 (Options → Language) during play.
@@ -84,6 +86,8 @@ The extracted data and the saves must stay intact.
 # Tradução PT-BR
 
 [English](#brazilian-portuguese-translation) · Português (Brasil)
+
+> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 Escolha no próprio jogo: **Opções → Idioma → Português (Brasil)** e confirme com **Sim**.
 As opções são English, Japanese e Português (Brasil). A mesma tela fica na pausa

@@ -2,6 +2,8 @@
 
 English · [Português (Brasil)](#pt-br)
 
+> **Note:** this page describes the code in [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), which the upcoming v0.1.0 release is built from. Until it is merged, some tools, scripts and options named here exist only on that branch.
+
 ## Automatic native minimap (2026-10-24)
 
 - Delivered a minimap on by default: top-right corner, 260x150 px at 1080p, transparent background, blue rooms and a gold marker centered on the player. Settings in Imagem: visibility/size/opacity, saved in settings.toml. It uses a draw list without capturing input and keeps working with the menu closed.
@@ -27,6 +29,8 @@ Models are read only in the first game session; rooms are reprojected when the s
 # Minimapa nativo
 
 [English](#native-minimap) · Português (Brasil)
+
+> **Nota:** esta página descreve o código do [PR #2](https://github.com/Neguchads/Castlevania-COD-Recomp/pull/2) (`fix/visual-hud`), do qual sai a release v0.1.0. Até o merge, algumas ferramentas, scripts e opções citados aqui só existem nessa branch.
 
 ## Minimapa nativo automático (2026-10-24)
 
